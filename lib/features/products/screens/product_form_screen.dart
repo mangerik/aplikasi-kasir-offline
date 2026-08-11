@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
+import '../../inventory/providers/stock_providers.dart';
 import '../../inventory/screens/stock_adjustment_screen.dart';
 import '../../inventory/screens/stock_movement_history_screen.dart';
 import '../providers/category_providers.dart';
@@ -49,6 +50,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   bool _loading = false;
   bool _saving = false;
   Product? _existing;
+  double _defaultThreshold = Product.defaultLowStockThreshold;
 
   @override
   void initState() {
@@ -222,6 +224,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoryListProvider);
+    _defaultThreshold =
+        ref.watch(lowStockDefaultThresholdProvider).value ?? Product.defaultLowStockThreshold;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.isEdit ? 'Ubah Produk' : 'Tambah Produk')),
@@ -348,7 +352,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       controller: _thresholdController,
                       decoration: InputDecoration(
                         labelText: 'Threshold stok menipis (opsional)',
-                        hintText: 'Kosongkan untuk pakai default (${Product.defaultLowStockThreshold.toInt()})',
+                        hintText: 'Kosongkan untuk pakai default (${_defaultThreshold.toInt()})',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.done,

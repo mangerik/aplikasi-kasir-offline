@@ -18,6 +18,8 @@ class LowStockScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(lowStockListProvider);
+    final lowStockThreshold =
+        ref.watch(lowStockDefaultThresholdProvider).value ?? Product.defaultLowStockThreshold;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stok Menipis')),
@@ -34,6 +36,7 @@ class LowStockScreen extends ConsumerWidget {
               final product = products[index];
               return _LowStockTile(
                 product: product,
+                defaultThreshold: lowStockThreshold,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => StockAdjustmentScreen(product: product)),
                 ),
@@ -54,10 +57,11 @@ class LowStockScreen extends ConsumerWidget {
 }
 
 class _LowStockTile extends StatelessWidget {
-  const _LowStockTile({required this.product, required this.onTap});
+  const _LowStockTile({required this.product, required this.onTap, required this.defaultThreshold});
 
   final Product product;
   final VoidCallback onTap;
+  final double defaultThreshold;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +80,7 @@ class _LowStockTile extends StatelessWidget {
       title: Text(product.name, style: theme.textTheme.titleMedium),
       subtitle: Text(
         'Stok: ${_formatNum(product.stock)} ${product.unit} '
-        '(batas: ${_formatNum(product.lowStockThreshold ?? Product.defaultLowStockThreshold)} ${product.unit})',
+        '(batas: ${_formatNum(product.lowStockThreshold ?? defaultThreshold)} ${product.unit})',
       ),
       trailing: Text(CurrencyFormatter.format(product.sellPrice)),
     );

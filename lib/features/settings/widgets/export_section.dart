@@ -109,17 +109,7 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
 
     await _run('Laporan Penjualan', () async {
       final sales = await _loadSalesInRange(start, end);
-      final products = await ref.read(productRepoProvider).watchAll().first;
-      final costPriceById = {
-        for (final p in products)
-          if (p.costPrice != null) p.id: p.costPrice!,
-      };
-      return ExcelExportService.exportSalesReport(
-        sales: sales,
-        productCostPriceById: costPriceById,
-        startDate: start,
-        endDate: end,
-      );
+      return ExcelExportService.exportSalesReport(sales: sales, startDate: start, endDate: end);
     });
   }
 

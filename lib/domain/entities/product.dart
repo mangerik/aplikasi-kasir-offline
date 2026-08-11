@@ -54,7 +54,21 @@ class Product {
   final DateTime updatedAt;
 
   /// Stok dianggap menipis bila kurang dari atau sama dengan threshold.
+  ///
+  /// Memakai [defaultLowStockThreshold] hardcode — dipertahankan untuk
+  /// kompatibilitas test/kode lama. UI produksi (tab Produk & Kasir)
+  /// sebaiknya memakai [isLowStockWith] dengan threshold global dari
+  /// `settings.low_stock_default` (lihat `lowStockDefaultThresholdProvider`),
+  /// supaya konsisten dengan nilai yang bisa diubah pengguna di Pengaturan.
   bool get isLowStock => stock <= (lowStockThreshold ?? defaultLowStockThreshold);
+
+  /// Sama seperti [isLowStock], tapi memakai [defaultThreshold] (mis. dari
+  /// `settings.low_stock_default`) sebagai fallback bila produk ini tidak
+  /// punya [lowStockThreshold] sendiri — dipakai UI produksi sejak
+  /// Milestone 6 agar konsisten dengan threshold global yang bisa diubah
+  /// pengguna, BUKAN nilai hardcode [defaultLowStockThreshold].
+  bool isLowStockWith(double defaultThreshold) =>
+      stock <= (lowStockThreshold ?? defaultThreshold);
 
   Product copyWith({
     int? id,

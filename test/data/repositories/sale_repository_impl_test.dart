@@ -58,6 +58,10 @@ void main() {
       expect(result.subtotal, 10000);
       expect(result.total, 10000);
       expect(result.changeAmount, 0);
+      // costPrice snapshot (plan.md M6 perbaikan tertunda: laba kotor di
+      // export Excel wajib pakai snapshot sale_items.cost_price, bukan
+      // harga modal produk saat ini) harus ikut kembali di SaleResultItem.
+      expect(result.items.single.costPrice, 3000);
 
       final sales = await db.select(db.sales).get();
       final saleItems = await db.select(db.saleItems).get();
@@ -384,6 +388,7 @@ void main() {
             unit: 'pcs',
             qty: 2,
             sellPrice: 5000,
+            costPrice: 3000,
           ),
           const CartItem(key: 'f_1', name: 'Jasa Bungkus', unit: 'pcs', qty: 1, sellPrice: 1000),
         ],
@@ -398,6 +403,15 @@ void main() {
       expect(detail.status, 'completed');
       expect(detail.items, hasLength(2));
       expect(detail.items.map((i) => i.name), containsAll(['Teh Botol', 'Jasa Bungkus']));
+
+      // getDetail (dibaca ulang dari DB, bukan dari state saveSale di
+      // memori) juga harus membawa snapshot costPrice per item — item
+      // terdaftar (Teh Botol) punya snapshot, item bebas (Jasa Bungkus)
+      // tidak (plan.md M6 perbaikan tertunda).
+      final tehBotol = detail.items.firstWhere((i) => i.name == 'Teh Botol');
+      final jasaBungkus = detail.items.firstWhere((i) => i.name == 'Jasa Bungkus');
+      expect(tehBotol.costPrice, 3000);
+      expect(jasaBungkus.costPrice, isNull);
     });
 
     test('getDetail melempar TransaksiTidakDitemukanException untuk id tidak ada', () {

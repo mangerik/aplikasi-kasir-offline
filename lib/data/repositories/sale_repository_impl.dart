@@ -110,6 +110,7 @@ class SaleRepositoryImpl implements SaleRepository {
             sellPrice: item.sellPrice,
             discount: item.discount,
             lineTotal: item.lineTotal,
+            costPrice: item.costPrice,
           ),
         );
       }
@@ -221,6 +222,7 @@ class SaleRepositoryImpl implements SaleRepository {
               sellPrice: row.sellPrice,
               discount: row.discount,
               lineTotal: row.lineTotal,
+              costPrice: row.costPrice,
             ),
           )
           .toList(),

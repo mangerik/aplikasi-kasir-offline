@@ -6,6 +6,7 @@ import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/entities/product.dart';
+import '../../inventory/providers/stock_providers.dart';
 import '../../products/providers/category_providers.dart';
 import '../../products/providers/product_providers.dart';
 import '../../products/widgets/barcode_scanner_page.dart';
@@ -65,6 +66,8 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
     final productsAsync = ref.watch(posProductListProvider);
     final categoriesAsync = ref.watch(categoryListProvider);
     final filter = ref.watch(posProductFilterProvider);
+    final lowStockThreshold =
+        ref.watch(lowStockDefaultThresholdProvider).value ?? Product.defaultLowStockThreshold;
 
     return Column(
       children: [
@@ -148,7 +151,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final product = products[index];
-                  return _ProductCard(product: product);
+                  return _ProductCard(product: product, lowStockThreshold: lowStockThreshold);
                 },
               );
             },
@@ -162,9 +165,10 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
 }
 
 class _ProductCard extends ConsumerWidget {
-  const _ProductCard({required this.product});
+  const _ProductCard({required this.product, required this.lowStockThreshold});
 
   final Product product;
+  final double lowStockThreshold;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -215,7 +219,9 @@ class _ProductCard extends ConsumerWidget {
                   Text(
                     'Stok ${_formatQty(product.stock)} ${product.unit}',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: product.isLowStock ? AppColors.warning : AppColors.textSecondary,
+                      color: product.isLowStockWith(lowStockThreshold)
+                          ? AppColors.warning
+                          : AppColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),

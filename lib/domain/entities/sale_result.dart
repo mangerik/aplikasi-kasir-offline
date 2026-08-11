@@ -74,6 +74,7 @@ class SaleResultItem {
     required this.sellPrice,
     required this.discount,
     required this.lineTotal,
+    this.costPrice,
   });
 
   final int? productId;
@@ -83,4 +84,13 @@ class SaleResultItem {
   final int sellPrice;
   final int discount;
   final int lineTotal;
+
+  /// Snapshot harga modal (Rp) SAAT TRANSAKSI terjadi — dibaca langsung dari
+  /// `sale_items.cost_price` (kolom ini SUDAH ADA & SUDAH diisi sejak M0/M2,
+  /// lihat `sale_items_table.dart`), bukan harga modal produk saat ini.
+  /// `null` bila produk tidak punya harga modal saat item ini terjual, atau
+  /// item bebas (`productId == null`). Dipakai untuk menghitung laba kotor
+  /// secara konsisten dengan dashboard laporan (`ReportRepositoryImpl.
+  /// getSummary`) — lihat `ExcelExportService.exportSalesReport`.
+  final int? costPrice;
 }

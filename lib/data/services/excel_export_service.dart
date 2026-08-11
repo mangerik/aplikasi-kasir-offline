@@ -184,20 +184,20 @@ abstract final class ExcelExportService {
   /// kotor, breakdown per metode bayar, hutang belum lunas (sheet
   /// "Ringkasan"), dan produk terlaris (sheet "Produk Terlaris").
   ///
-  /// [productCostPriceById] adalah harga modal PRODUK SAAT INI (bukan
-  /// snapshot harga modal saat transaksi terjadi — `SaleResultItem` tidak
-  /// menyimpan snapshot itu, lihat catatan di docs/laporan-m5.md) dipakai
-  /// untuk MENGESTIMASI laba kotor; item bebas (`productId == null`)
-  /// tidak diikutsertakan dalam estimasi laba.
+  /// Laba kotor dihitung dari `SaleResultItem.costPrice` — snapshot harga
+  /// modal SAAT TRANSAKSI terjadi (`sale_items.cost_price`), BUKAN harga
+  /// modal produk saat ini — SAMA PERSIS logikanya dengan dashboard laporan
+  /// (`ReportRepositoryImpl.getSummary`): item tanpa snapshot harga modal
+  /// (`costPrice == null`, termasuk seluruh item bebas) tidak diikutkan
+  /// dalam estimasi laba (bukan dianggap modal Rp0).
   static Future<String> exportSalesReport({
     required List<SaleResult> sales,
-    required Map<int, int> productCostPriceById,
     required DateTime startDate,
     required DateTime endDate,
   }) async {
     final bytes = await compute(
       _buildReportWorkbook,
-      _ReportExportArgs(sales, productCostPriceById, startDate, endDate),
+      _ReportExportArgs(sales, startDate, endDate),
     );
     return _saveFile(bytes, _fileName('laporan_${_rangeSuffix(startDate, endDate)}'));
   }
@@ -235,11 +235,8 @@ abstract final class ExcelExportService {
         qtyByProduct[item.name] = (qtyByProduct[item.name] ?? 0) + item.qty;
         valueByProduct[item.name] = (valueByProduct[item.name] ?? 0) + item.lineTotal;
 
-        if (item.productId != null) {
-          final costPrice = args.productCostPriceById[item.productId];
-          if (costPrice != null) {
-            estimasiLaba += item.lineTotal - (costPrice * item.qty).round();
-          }
+        if (item.costPrice != null) {
+          estimasiLaba += item.lineTotal - (item.costPrice! * item.qty).round();
         }
       }
     }
@@ -405,10 +402,9 @@ class _TransactionsExportArgs {
 }
 
 class _ReportExportArgs {
-  const _ReportExportArgs(this.sales, this.productCostPriceById, this.startDate, this.endDate);
+  const _ReportExportArgs(this.sales, this.startDate, this.endDate);
 
   final List<SaleResult> sales;
-  final Map<int, int> productCostPriceById;
   final DateTime startDate;
   final DateTime endDate;
 }

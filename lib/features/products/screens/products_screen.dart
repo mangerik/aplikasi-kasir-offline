@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/router/app_router.dart';
 import '../../../domain/entities/category.dart';
+import '../../../domain/entities/product.dart';
 import '../../inventory/providers/stock_providers.dart';
 import '../../inventory/screens/low_stock_screen.dart';
 import '../providers/category_providers.dart';
@@ -38,6 +39,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final categoriesAsync = ref.watch(categoryListProvider);
     final filter = ref.watch(productFilterProvider);
     final lowStockCount = ref.watch(lowStockCountProvider).value ?? 0;
+    final lowStockThreshold =
+        ref.watch(lowStockDefaultThresholdProvider).value ?? Product.defaultLowStockThreshold;
 
     return Scaffold(
       appBar: AppBar(
@@ -126,6 +129,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                       product: product,
                       categoryName: categoryName,
                       onTap: () => context.push('${AppRoutes.products}/${product.id}/ubah'),
+                      lowStockThreshold: lowStockThreshold,
                     );
                   },
                 );

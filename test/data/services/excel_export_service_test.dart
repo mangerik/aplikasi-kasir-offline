@@ -66,6 +66,7 @@ void main() {
     String paymentMethod = 'cash',
     String status = 'completed',
     int total = 10000,
+    int? itemCostPrice = 3000,
   }) {
     return SaleResult(
       saleId: saleId,
@@ -79,7 +80,7 @@ void main() {
       createdAt: DateTime(2026, 8, 5, 10, 30),
       status: status,
       items: [
-        const SaleResultItem(
+        SaleResultItem(
           productId: 1,
           name: 'Teh Botol',
           unit: 'pcs',
@@ -87,6 +88,7 @@ void main() {
           sellPrice: 5000,
           discount: 0,
           lineTotal: 10000,
+          costPrice: itemCostPrice,
         ),
       ],
     );
@@ -198,7 +200,6 @@ void main() {
 
       final path = await ExcelExportService.exportSalesReport(
         sales: sales,
-        productCostPriceById: {1: 3000},
         startDate: DateTime(2026, 8, 1),
         endDate: DateTime(2026, 8, 31),
       );
@@ -218,6 +219,43 @@ void main() {
       final topRow1 = topProduct.row(1).map((c) => c?.value).toList();
       expect(topRow1[0], TextCellValue('Teh Botol'));
       expect(_asNum(topRow1[1]), 2); // qty dari 1 transaksi aktif saja
+    });
+
+    test(
+      'Estimasi Laba Kotor memakai snapshot SaleResultItem.costPrice (sale_items.cost_price), '
+      'BUKAN harga modal produk saat ini — konsisten dengan dashboard laporan (ReportRepositoryImpl)',
+      () async {
+        // costPrice snapshot 3000 (BUKAN harga modal "produk saat ini" mana pun
+        // — exportSalesReport tidak lagi menerima/membaca data produk sama
+        // sekali) -> laba = lineTotal(10000) - costPrice(3000) * qty(2) = 4000.
+        final sales = [buildSale(saleId: 1, invoiceNumber: '20260805-0001', itemCostPrice: 3000)];
+
+        final path = await ExcelExportService.exportSalesReport(
+          sales: sales,
+          startDate: DateTime(2026, 8, 1),
+          endDate: DateTime(2026, 8, 31),
+        );
+
+        final excel = Excel.decodeBytes(await File(path).readAsBytes());
+        final rows = excel['Ringkasan'].rows.map((r) => r.map((c) => c?.value).toList()).toList();
+        final labaRow = rows.firstWhere((r) => r[0] == TextCellValue('Estimasi Laba Kotor'));
+        expect(labaRow[1], const IntCellValue(4000));
+      },
+    );
+
+    test('item tanpa snapshot costPrice (null) TIDAK ikut menyumbang laba (bukan dianggap modal 0)', () async {
+      final sales = [buildSale(saleId: 1, invoiceNumber: '20260805-0001', itemCostPrice: null)];
+
+      final path = await ExcelExportService.exportSalesReport(
+        sales: sales,
+        startDate: DateTime(2026, 8, 1),
+        endDate: DateTime(2026, 8, 31),
+      );
+
+      final excel = Excel.decodeBytes(await File(path).readAsBytes());
+      final rows = excel['Ringkasan'].rows.map((r) => r.map((c) => c?.value).toList()).toList();
+      final labaRow = rows.firstWhere((r) => r[0] == TextCellValue('Estimasi Laba Kotor'));
+      expect(labaRow[1], const IntCellValue(0));
     });
   });
 }

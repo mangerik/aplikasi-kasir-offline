@@ -14,11 +14,16 @@ class ProductListTile extends StatelessWidget {
     required this.product,
     required this.categoryName,
     required this.onTap,
+    required this.lowStockThreshold,
   });
 
   final Product product;
   final String? categoryName;
   final VoidCallback onTap;
+
+  /// Threshold default global (`settings.low_stock_default`) dipakai bila
+  /// produk ini tidak punya threshold sendiri — lihat [Product.isLowStockWith].
+  final double lowStockThreshold;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +82,7 @@ class ProductListTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (product.isLowStock) ...[
+                    if (product.isLowStockWith(lowStockThreshold)) ...[
                       const SizedBox(height: 2),
                       Row(
                         mainAxisSize: MainAxisSize.min,
