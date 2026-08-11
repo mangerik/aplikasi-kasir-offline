@@ -4,9 +4,9 @@ import '../db/app_database.dart' as db;
 /// Implementasi [SettingsRepository] di atas Drift/SQLite — tabel
 /// `settings` (key-value), lihat architecture.md §4.
 ///
-/// Milestone 3 hanya memakai [getValue] (hook PIN sebelum void, lihat
-/// `features/transactions/utils/pin_gate.dart`). Method tulis (`setValue`,
-/// dsb.) menyusul di Milestone 5 bersama layar Pengaturan.
+/// [getValue] sudah dipakai sejak Milestone 3 (hook PIN sebelum void,
+/// lihat `features/transactions/utils/pin_gate.dart`). [setValue]/
+/// [deleteValue] ditambah di Milestone 5 untuk layar Pengaturan penuh.
 class SettingsRepositoryImpl implements SettingsRepository {
   SettingsRepositoryImpl(this._db);
 
@@ -18,5 +18,17 @@ class SettingsRepositoryImpl implements SettingsRepository {
       _db.settings,
     )..where((s) => s.key.equals(key))).getSingleOrNull();
     return row?.value;
+  }
+
+  @override
+  Future<void> setValue(String key, String value) async {
+    await _db
+        .into(_db.settings)
+        .insertOnConflictUpdate(db.SettingsCompanion.insert(key: key, value: value));
+  }
+
+  @override
+  Future<void> deleteValue(String key) async {
+    await (_db.delete(_db.settings)..where((s) => s.key.equals(key))).go();
   }
 }

@@ -104,3 +104,72 @@ class TransaksiSudahDibatalkanException implements Exception {
   @override
   String toString() => 'Transaksi ini sudah dibatalkan sebelumnya.';
 }
+
+/// Dilempar saat PIN yang diisi (set/ubah) BUKAN 6 digit angka (plan.md
+/// Milestone 5 poin 6).
+class PinTidakValidException implements Exception {
+  const PinTidakValidException();
+
+  @override
+  String toString() => 'PIN harus terdiri dari 6 digit angka.';
+}
+
+/// Dilempar saat PIN yang diketik (verifikasi/ubah/hapus) tidak cocok
+/// dengan PIN yang tersimpan.
+class PinSalahException implements Exception {
+  const PinSalahException();
+
+  @override
+  String toString() => 'PIN yang dimasukkan salah.';
+}
+
+/// Dilempar saat `RemovePinUsecase`/`ChangePinUsecase` dipanggil padahal
+/// belum ada PIN yang aktif tersimpan.
+class PinBelumDiaturException implements Exception {
+  const PinBelumDiaturException();
+
+  @override
+  String toString() => 'Kunci PIN belum diaktifkan.';
+}
+
+/// Dilempar saat file yang dipilih untuk restore BUKAN backup database
+/// aplikasi yang valid (bukan file SQLite, atau tabel wajib tidak lengkap)
+/// — plan.md Milestone 5 poin 5.
+class FileBackupTidakValidException implements Exception {
+  const FileBackupTidakValidException(this.alasan);
+
+  final String alasan;
+
+  @override
+  String toString() => 'File backup tidak valid: $alasan';
+}
+
+/// Dilempar saat `AdjustStockUsecase`/`StockRepository.adjustStock`
+/// dipanggil untuk `productId` yang tidak ada di database (plan.md
+/// Milestone 4 poin 1).
+class ProdukTidakDitemukanException implements Exception {
+  const ProdukTidakDitemukanException();
+
+  @override
+  String toString() => 'Produk tidak ditemukan.';
+}
+
+/// Dilempar saat jumlah penyesuaian stok tidak valid: nol/negatif untuk
+/// stok masuk & keluar, atau negatif untuk hasil opname (plan.md
+/// Milestone 4 poin 1).
+class JumlahPenyesuaianTidakValidException implements Exception {
+  const JumlahPenyesuaianTidakValidException();
+
+  @override
+  String toString() => 'Jumlah penyesuaian stok tidak valid.';
+}
+
+/// Dilempar saat penyesuaian stok manual tidak menyertakan alasan/catatan
+/// (wajib — lihat architecture.md §4 `stock_movements.note`, PRD §3.1.B
+/// "dengan catatan alasan").
+class AlasanPenyesuaianWajibException implements Exception {
+  const AlasanPenyesuaianWajibException();
+
+  @override
+  String toString() => 'Alasan penyesuaian stok wajib diisi.';
+}
