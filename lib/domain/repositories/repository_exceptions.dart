@@ -76,3 +76,31 @@ class NamaPelangganWajibException implements Exception {
   @override
   String toString() => 'Nama pelanggan wajib diisi untuk transaksi hutang.';
 }
+
+/// Dilempar saat `saleId` yang diminta (detail/pelunasan/void) tidak ada
+/// di database (plan.md Milestone 3 poin 2 & 3).
+class TransaksiTidakDitemukanException implements Exception {
+  const TransaksiTidakDitemukanException();
+
+  @override
+  String toString() => 'Transaksi tidak ditemukan.';
+}
+
+/// Dilempar saat `MarkDebtPaidUsecase` dipanggil untuk transaksi yang
+/// bukan hutang belum lunas (mis. sudah lunas, atau bukan transaksi
+/// hutang sama sekali) — plan.md Milestone 3 poin 4.
+class TransaksiBukanHutangException implements Exception {
+  const TransaksiBukanHutangException();
+
+  @override
+  String toString() => 'Transaksi ini bukan hutang yang belum lunas.';
+}
+
+/// Dilempar saat `VoidSaleUsecase` dipanggil untuk transaksi yang sudah
+/// pernah di-void sebelumnya (plan.md Milestone 3 poin 5).
+class TransaksiSudahDibatalkanException implements Exception {
+  const TransaksiSudahDibatalkanException();
+
+  @override
+  String toString() => 'Transaksi ini sudah dibatalkan sebelumnya.';
+}

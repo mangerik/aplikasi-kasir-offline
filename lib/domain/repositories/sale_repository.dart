@@ -1,4 +1,5 @@
 import '../entities/cart_item.dart';
+import '../entities/sale.dart';
 import '../entities/sale_result.dart';
 
 /// Kontrak repository Penjualan.
@@ -24,4 +25,47 @@ abstract class SaleRepository {
     String? customerName,
     String? note,
   });
+
+  /// Daftar riwayat transaksi, terbaru dulu, difilter & DIPAGINASI lewat
+  /// SQL `LIMIT`/`OFFSET` (plan.md Milestone 3 poin 2: "infinite
+  /// scroll/pagination efisien" — memakai index `sales(created_at)`/
+  /// `sales(status)` dari architecture.md §4).
+  ///
+  /// Semua filter `null` berarti "semua": [startDate]/[endDate] rentang
+  /// tanggal (inklusif), [paymentMethod] (`'cash'|'noncash'|'debt'`),
+  /// [status] (`'completed'|'debt_unpaid'|'voided'`).
+  Future<List<Sale>> getHistory({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? paymentMethod,
+    String? status,
+    required int limit,
+    required int offset,
+  });
+
+  /// Detail LENGKAP satu transaksi (header + seluruh item), dipakai layar
+  /// Detail Transaksi dan dibagikan ulang sebagai struk lewat
+  /// `ReceiptService` (reuse format Milestone 2, plan.md Milestone 3 poin
+  /// 3). Melempar `TransaksiTidakDitemukanException` bila [saleId] tidak
+  /// ada.
+  Future<SaleResult> getDetail(int saleId);
+
+  /// Tandai transaksi hutang sebagai LUNAS: `status` -> `'completed'`,
+  /// `debt_paid_at` -> sekarang (plan.md Milestone 3 poin 4).
+  ///
+  /// Validasi bahwa [saleId] memang berstatus `'debt_unpaid'` ada di
+  /// `MarkDebtPaidUsecase` (domain), BUKAN di sini.
+  Future<void> markDebtPaid(int saleId);
+
+  /// Void/batalkan transaksi (plan.md Milestone 3 poin 5,
+  /// architecture.md §4 "Aturan Integritas" poin 2): `status` ->
+  /// `'voided'`, `voided_at` -> sekarang, KEMBALIKAN stok tiap item
+  /// terdaftar (`productId != null`) + insert
+  /// `stock_movements(type='void_return')` — SEMUA dalam SATU
+  /// `db.transaction()`. Item bebas (`productId == null`) TIDAK menyentuh
+  /// stok. Transaksi tidak pernah dihapus, hanya ditandai.
+  ///
+  /// Validasi bahwa [saleId] belum pernah di-void ada di `VoidSaleUsecase`
+  /// (domain), BUKAN di sini.
+  Future<void> voidSale(int saleId);
 }
