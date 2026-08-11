@@ -17,6 +17,9 @@ class SaleResult {
     this.note,
     required this.createdAt,
     required this.items,
+    this.status = 'completed',
+    this.voidedAt,
+    this.debtPaidAt,
   });
 
   final int saleId;
@@ -44,6 +47,20 @@ class SaleResult {
   final String? note;
   final DateTime createdAt;
   final List<SaleResultItem> items;
+
+  /// `'completed'` | `'debt_unpaid'` | `'voided'`. Default `'completed'`
+  /// supaya konstruktor lama (`SaveSaleUsecase`/`SaleRepositoryImpl.saveSale`
+  /// untuk metode tunai/non-tunai) tidak perlu berubah — layar Riwayat/
+  /// Detail (Milestone 3) yang membaca transaksi lama lewat
+  /// `SaleRepository.getDetail` mengisi field ini sesuai `sales.status`
+  /// sungguhan.
+  final String status;
+
+  /// Terisi jika transaksi ini pernah di-void (plan.md Milestone 3 poin 5).
+  final DateTime? voidedAt;
+
+  /// Terisi jika hutang ini sudah dilunasi (plan.md Milestone 3 poin 4).
+  final DateTime? debtPaidAt;
 }
 
 /// Snapshot satu baris item penjualan (untuk struk & ringkasan) — nilainya
