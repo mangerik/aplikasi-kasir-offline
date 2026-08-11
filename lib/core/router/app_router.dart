@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/pos/screens/pos_screen.dart';
+import '../../features/products/screens/product_form_screen.dart';
 import '../../features/products/screens/products_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
@@ -40,6 +41,18 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.products,
               builder: (context, state) => const ProductsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'tambah',
+                  builder: (context, state) => const ProductFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id/ubah',
+                  builder: (context, state) => ProductFormScreen(
+                    productId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
