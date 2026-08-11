@@ -33,16 +33,16 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 ## Milestone 2 — Kasir (POS) inti
 > Hasil: transaksi tunai end-to-end.
 
-- [ ] `cartProvider` (tambah/kurang qty, hapus, diskon per item, diskon total, subtotal/total)
-- [ ] Layar kasir HP portrait: grid produk + pencarian + bar keranjang bawah
-- [ ] Layout tablet dua panel (breakpoint ≥ 600dp)
-- [ ] Scan barcode → tambah ke keranjang (mobile_scanner)
-- [ ] Item bebas (nama + harga manual)
-- [ ] Sheet pembayaran tunai: input uang diterima (tombol pecahan cepat 10rb/20rb/50rb/100rb/uang pas), kembalian otomatis
-- [ ] **Usecase simpan penjualan atomik** (sales + sale_items + stok + stock_movements dalam satu transaksi DB) + generator nomor invoice harian
-- [ ] Layar sukses + struk digital + share struk (gambar/teks)
-- [ ] Hold/parkir & lanjutkan transaksi
-- [ ] Unit test: perhitungan keranjang, kembalian, atomisitas simpan (in-memory DB)
+- [x] `cartProvider` (tambah/kurang qty, hapus, diskon per item, diskon total, subtotal/total)
+- [x] Layar kasir HP portrait: grid produk + pencarian + bar keranjang bawah
+- [x] Layout tablet dua panel (breakpoint ≥ 600dp)
+- [x] Scan barcode → tambah ke keranjang (mobile_scanner)
+- [x] Item bebas (nama + harga manual)
+- [x] Sheet pembayaran tunai: input uang diterima (tombol pecahan cepat 10rb/20rb/50rb/100rb/uang pas), kembalian otomatis
+- [x] **Usecase simpan penjualan atomik** (sales + sale_items + stok + stock_movements dalam satu transaksi DB) + generator nomor invoice harian
+- [x] Layar sukses + struk digital + share struk (gambar/teks)
+- [x] Hold/parkir & lanjutkan transaksi
+- [x] Unit test: perhitungan keranjang, kembalian, atomisitas simpan (in-memory DB)
 
 ## Milestone 3 — Pembayaran non-tunai, hutang, riwayat, void
 > Hasil: semua jenis transaksi + riwayat lengkap.
@@ -142,3 +142,17 @@ M0 ──► M1 ──► M2 ──► M3 ──► M6
   test navigasi tab gagal dengan `A Timer is still pending...` sejak tab
   Produk memakai provider berbasis stream. Detail di `docs/laporan-m1.md`
   §3 poin 7.
+- **2026-08-11 (M2):** Diskon per item/transaksi SELALU disimpan sebagai
+  nominal (Rp) di `CartItem`/`CartState`/DB — mode input persen di
+  `DiscountDialog` cuma alat bantu UI, dikonversi ke nominal sebelum
+  dipanggil ke provider. Nomor invoice harian dibangkitkan dengan query
+  `MAX(invoice_number) WHERE LIKE 'YYYYMMDD-%'` di dalam `db.transaction()`
+  yang sama dengan insert `sales` — cukup untuk skala single-user offline
+  (bukan multi-writer concurrent) sesuai PRD §8 "satu perangkat = satu
+  toko". Detail di `docs/laporan-m2.md` §3.
+- **2026-08-11 (M2):** Pembayaran non-tunai & hutang sudah didukung penuh
+  di level domain/data (`SaveSaleUsecase`, `SaleRepositoryImpl`,
+  `NamaPelangganWajibException`) karena skema `sales.payment_method`
+  memang mencakup ketiganya sejak M0, tapi UI kasir M2 baru membangun alur
+  **tunai** (sesuai cakupan resmi milestone ini di §5.2 PRD via alur
+  utama). UI pilih metode non-tunai/hutang menyusul di Milestone 3.
