@@ -63,6 +63,8 @@ dev_dependencies:
   drift_dev: ^2.34.5
   build_runner: ^2.15.1
   path_provider_platform_interface: ^2.1.3
+  flutter_launcher_icons: ^0.9.3
+  flutter_native_splash: ^2.2.16
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -105,3 +107,39 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  assets:
+    - assets/icon/
+    - assets/splash/
+
+# Konfigurasi flutter_launcher_icons (plan.md Milestone 6 poin 4) — ikon
+# sederhana keranjang belanja warna hijau brand (AppColors.primary), sesuai
+# tema "Kasir Warung". `assets/icon/icon.png` (1024x1024, background hijau
+# solid) dipakai untuk launcher icon biasa; `icon_foreground.png` (glyph
+# putih transparan) dipakai untuk adaptive icon Android 8+ dengan background
+# warna solid yang sama. Nama key top-level HARUS `flutter_icons` (bukan
+# `flutter_launcher_icons`) karena versi package yang berhasil ter-resolve
+# tanpa bentrok dependency dengan `excel` adalah 0.9.3 (lihat komentar di
+# `dev_dependencies` di atas) — versi ini masih memakai skema config lama.
+# Jalankan: flutter pub run flutter_launcher_icons:main
+flutter_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#1B7A43"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+
+# Konfigurasi flutter_native_splash (plan.md Milestone 6 poin 4) — splash
+# native warna tema (hijau brand) + logo keranjang di tengah, sebelum
+# Flutter engine selesai dimuat. Memakai `icon_foreground.png` (glyph PUTIH
+# transparan, SAMA seperti foreground adaptive icon di atas) — BUKAN
+# `assets/splash/splash_logo.png` (dicoba lebih dulu, tapi ternyata warna
+# glyph-nya hijau/hijau-tua, nyaris tak terlihat di atas `color` hijau yang
+# sama; sudah diverifikasi lewat komposit piksel). Jalankan:
+#   flutter pub run flutter_native_splash:create
+flutter_native_splash:
+  color: "#1B7A43"
+  image: assets/icon/icon_foreground.png
+  android_12:
+    color: "#1B7A43"
+    image: assets/icon/icon_foreground.png

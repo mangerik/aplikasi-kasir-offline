@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warna latar ikon adaptif (Android 8.0+ / API 26) — sama dengan
+         AppColors.primary (lib/core/constants/app_colors.dart), plan.md
+         Milestone 6 poin 4. -->
+    <color name="ic_launcher_background">#1B7A43</color>
+</resources>

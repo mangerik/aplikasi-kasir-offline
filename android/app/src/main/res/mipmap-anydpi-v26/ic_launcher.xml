@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikon adaptif Android 8.0+ (API 26) — plan.md Milestone 6 poin 4.
+     flutter_launcher_icons 0.9.3 tidak bisa membuat file ini otomatis (tool
+     itu membaca android/app/build.gradle untuk deteksi minSdk, sedangkan
+     proyek ini memakai build.gradle.kts / Kotlin DSL) sehingga dibuat manual
+     mengikuti konvensi resource Android standar; PNG foreground per densitas
+     tetap dihasilkan dari assets/icon/icon_foreground.png yang sama. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
