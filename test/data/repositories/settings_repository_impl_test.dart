@@ -31,4 +31,32 @@ void main() {
       expect(value, 'abc123');
     });
   });
+
+  group('SettingsRepositoryImpl — setValue', () {
+    test('menyimpan nilai baru (insert) bila key belum ada', () async {
+      await repo.setValue('store_name', 'Warung Bu Siti');
+      expect(await repo.getValue('store_name'), 'Warung Bu Siti');
+    });
+
+    test('menimpa nilai lama (upsert) bila key sudah ada', () async {
+      await repo.setValue('store_name', 'Nama Lama');
+      await repo.setValue('store_name', 'Nama Baru');
+
+      expect(await repo.getValue('store_name'), 'Nama Baru');
+      final rows = await db.select(db.settings).get();
+      expect(rows.where((r) => r.key == 'store_name'), hasLength(1));
+    });
+  });
+
+  group('SettingsRepositoryImpl — deleteValue', () {
+    test('menghapus key yang sudah diisi', () async {
+      await repo.setValue('pin_hash', 'abc123');
+      await repo.deleteValue('pin_hash');
+      expect(await repo.getValue('pin_hash'), isNull);
+    });
+
+    test('tidak error bila key belum pernah diisi', () async {
+      await expectLater(repo.deleteValue('tidak_ada'), completes);
+    });
+  });
 }
