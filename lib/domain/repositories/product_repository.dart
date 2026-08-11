@@ -21,6 +21,11 @@ abstract class ProductRepository {
 
   Future<Product?> getById(int id);
 
+  /// Mencari SATU produk aktif dengan barcode PERSIS sama. Dipakai layar
+  /// Kasir untuk hasil scan (plan.md Milestone 2 poin 4). `null` bila tidak
+  /// ditemukan atau produk yang cocok sedang nonaktif.
+  Future<Product?> getByBarcode(String barcode);
+
   /// Menambah produk baru, mengembalikan id produk yang baru dibuat.
   ///
   /// Melempar `BarcodeSudahDipakaiException` (lihat repository_exceptions.dart)
