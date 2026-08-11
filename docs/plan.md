@@ -23,12 +23,12 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 ## Milestone 1 — Produk & Kategori
 > Hasil: kelola produk lengkap.
 
-- [ ] Entity + repository + provider produk & kategori
-- [ ] Layar daftar produk: pencarian, filter kategori, indikator stok menipis
-- [ ] Form tambah/edit produk (nama, barcode via ketik/scan, kategori, harga jual, harga modal, stok awal, satuan, threshold, foto opsional)
-- [ ] CRUD kategori (dialog sederhana)
-- [ ] Nonaktifkan produk (soft-hide dari kasir) & validasi barcode unik
-- [ ] Unit test repository + validasi form
+- [x] Entity + repository + provider produk & kategori
+- [x] Layar daftar produk: pencarian, filter kategori, indikator stok menipis
+- [x] Form tambah/edit produk (nama, barcode via ketik/scan, kategori, harga jual, harga modal, stok awal, satuan, threshold, foto opsional)
+- [x] CRUD kategori (dialog sederhana)
+- [x] Nonaktifkan produk (soft-hide dari kasir) & validasi barcode unik
+- [x] Unit test repository + validasi form
 
 ## Milestone 2 — Kasir (POS) inti
 > Hasil: transaksi tunai end-to-end.
@@ -128,3 +128,17 @@ M0 ──► M1 ──► M2 ──► M3 ──► M6
   bukan `DateTimeColumn` bawaan Drift, karena Drift secara default
   menyimpan `DateTime` sebagai epoch **detik** (bukan milidetik) — supaya
   tipe kolom persis sama dengan DDL di `architecture.md` §4.
+- **2026-08-11 (M1):** Threshold stok menipis default global sementara
+  di-hardcode (`Product.defaultLowStockThreshold = 5`); nilai ini baru bisa
+  diubah pengguna lewat layar Pengaturan di Milestone 5. Threshold
+  per-produk sudah berfungsi penuh. Detail di `docs/laporan-m1.md` §3.
+- **2026-08-11 (M1):** Foto produk ditunda sesuai instruksi tugas — tidak
+  ada dependency `image_picker` ditambahkan; form hanya menampilkan kotak
+  info "belum didukung", `imagePath` selalu `null`.
+- **2026-08-11 (M1):** `test/app_test.dart` diperbarui memakai
+  `tester.pump(Duration.zero)` (bukan `tester.pump()` tanpa argumen) setelah
+  mengganti root widget di akhir tiap test, untuk meng-*flush* `Timer`
+  internal Drift (`QueryStream` cancel) sebelum test berakhir — tanpa ini,
+  test navigasi tab gagal dengan `A Timer is still pending...` sejak tab
+  Produk memakai provider berbasis stream. Detail di `docs/laporan-m1.md`
+  §3 poin 7.
