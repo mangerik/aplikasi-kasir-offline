@@ -29,6 +29,21 @@ void main() {
     );
   }
 
+  // Milestone 1 menambah provider berbasis stream Drift (productListProvider
+  // dkk) di tab Produk. Drift menjadwalkan Timer(Duration.zero) internal saat
+  // sebuah QueryStream di-cancel (lihat paket drift, stream_queries.dart) —
+  // di widget test ini perlu di-"flush" secara eksplisit (bukan cuma
+  // pumpAndSettle, yang hanya menunggu *frame* terjadwal, bukan Timer polos)
+  // sebelum test berakhir, agar tidak kena assertion internal flutter_test
+  // "A Timer is still pending even after the widget tree was disposed."
+  Future<void> disposeApp(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    // `pump()` tanpa argumen HANYA flush microtasks — Timer (walau
+    // Duration.zero) baru diproses saat fake clock benar-benar di-"elapse",
+    // makanya durasi eksplisit (bukan null) wajib di sini.
+    await tester.pump(Duration.zero);
+  }
+
   testWidgets(
     'menampilkan 5 tab navigasi bawah berlabel Bahasa Indonesia sesuai plan.md',
     (tester) async {
@@ -41,6 +56,8 @@ void main() {
           .toList();
 
       expect(labels, ['Kasir', 'Produk', 'Riwayat', 'Laporan', 'Pengaturan']);
+
+      await disposeApp(tester);
     },
   );
 
@@ -50,6 +67,8 @@ void main() {
 
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 0);
+
+    await disposeApp(tester);
   });
 
   testWidgets('tap tab Produk berpindah selectedIndex ke 1', (tester) async {
@@ -61,6 +80,8 @@ void main() {
 
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 1);
+
+    await disposeApp(tester);
   });
 
   testWidgets('tap tab Pengaturan berpindah selectedIndex ke 4', (tester) async {
@@ -72,5 +93,7 @@ void main() {
 
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 4);
+
+    await disposeApp(tester);
   });
 }
