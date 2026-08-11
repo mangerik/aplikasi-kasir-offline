@@ -30,6 +30,15 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8/shrink aktif (plan.md Milestone 6 poin 6) — perkecil ukuran APK
+            // (target < 40 MB per PRD §6). Keep rules tambahan di proguard-rules.pro
+            // untuk library yang pakai reflection (sqlite3 FFI, dsb).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

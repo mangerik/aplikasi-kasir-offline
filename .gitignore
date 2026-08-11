@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Output build Gradle proyek Android native (bukan `/build/` Flutter di root
+# — muncul saat menjalankan `flutter build apk`/`appbundle`, mis. laporan
+# lint/R8 di android/build/reports).
+/android/build/
+/android/app/build/

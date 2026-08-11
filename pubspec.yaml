@@ -63,8 +63,18 @@ dev_dependencies:
   drift_dev: ^2.34.5
   build_runner: ^2.15.1
   path_provider_platform_interface: ^2.1.3
-  flutter_launcher_icons: ^0.9.3
-  flutter_native_splash: ^2.2.16
+  # flutter_launcher_icons & flutter_native_splash SENGAJA TIDAK dipertahankan
+  # sebagai dev_dependency permanen (plan.md Milestone 6 poin 4) — keduanya
+  # cuma alat code-gen sekali pakai (ikon & splash sudah digenerate & di-
+  # commit ke android/app/src/main/res + assets/), dan modul Android bawaan
+  # package `flutter_native_splash` tidak punya `namespace` (format lama,
+  # tidak kompatibel dengan Android Gradle Plugin proyek ini) yang membuat
+  # `flutter build apk --release` GAGAL total di tahap konfigurasi Gradle
+  # kalau dependency ini masih ada — walau tidak dipakai sama sekali di kode
+  # Dart manapun. Untuk regenerasi ulang ikon/splash di masa depan, tambah
+  # sementara lewat `flutter pub add --dev flutter_launcher_icons
+  # flutter_native_splash`, jalankan generator, lalu hapus lagi sebelum
+  # build release.
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
