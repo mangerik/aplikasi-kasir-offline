@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../../domain/entities/store_profile.dart';
+import '../../settings/providers/settings_providers.dart';
 
 /// Widget struk digital — dirender dalam kotak putih lebar tetap (mirip
 /// kertas struk kasir), dibungkus `RepaintBoundary` oleh pemanggil
 /// (`checkout_success_screen.dart`) supaya bisa di-capture jadi gambar
 /// untuk `share_plus` (plan.md Milestone 2 poin 7).
-class ReceiptWidget extends StatelessWidget {
+///
+/// Sejak Milestone 5, nama/alamat/no. HP toko (`storeProfileProvider`,
+/// diisi dari layar Pengaturan) tampil otomatis di kepala struk —
+/// fallback ke `'KASIR WARUNG'` tanpa alamat/telp bila profil belum diisi
+/// (perilaku identik dengan sebelum M5, tidak ada breaking change untuk
+/// struk lama).
+class ReceiptWidget extends ConsumerWidget {
   const ReceiptWidget({super.key, required this.sale});
 
   final SaleResult sale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(storeProfileProvider).value ?? const StoreProfile();
     const monoStyle = TextStyle(fontFamily: 'monospace', fontSize: 13, color: Colors.black);
     return Container(
       width: 360,
@@ -24,16 +34,20 @@ class ReceiptWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'KASIR WARUNG',
+          Text(
+            profile.displayName,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'monospace',
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
           ),
+          if (profile.hasAddress)
+            Text(profile.address!.trim(), textAlign: TextAlign.center, style: monoStyle),
+          if (profile.hasPhone)
+            Text(profile.phone!.trim(), textAlign: TextAlign.center, style: monoStyle),
           const SizedBox(height: 4),
           Text(
             'No. Struk: ${sale.invoiceNumber}',

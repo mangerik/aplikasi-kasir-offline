@@ -12,6 +12,7 @@ import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../pos/providers/sale_providers.dart';
 import '../../pos/widgets/receipt_widget.dart';
+import '../../settings/providers/settings_providers.dart';
 import '../providers/history_providers.dart';
 import '../utils/pin_gate.dart';
 import '../widgets/status_badge.dart';
@@ -62,7 +63,8 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
   Future<void> _shareAsText(SaleResult sale) async {
     setState(() => _sharing = true);
     try {
-      await ReceiptService.shareAsText(sale);
+      final profile = await ref.read(storeProfileProvider.future);
+      await ReceiptService.shareAsText(sale, profile: profile);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

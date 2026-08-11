@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/inventory/providers/stock_providers.dart';
+import '../../features/transactions/utils/pin_gate.dart';
 
 /// Kerangka navigasi utama: 5 tab bawah (Kasir · Produk · Riwayat · Laporan ·
 /// Pengaturan) yang tetap menjaga state tiap tab lewat
@@ -12,7 +13,16 @@ class MainShell extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  void _onDestinationSelected(int index) {
+  /// Index tab yang DILINDUNGI kunci PIN (plan.md Milestone 5 poin 6,
+  /// architecture.md §5.4: "Mengunci akses ke: Laporan, Pengaturan").
+  /// Kasir/Produk/Riwayat tetap terbuka tanpa PIN.
+  static const Set<int> _pinProtectedIndexes = {3, 4};
+
+  Future<void> _onDestinationSelected(BuildContext context, WidgetRef ref, int index) async {
+    if (_pinProtectedIndexes.contains(index)) {
+      final allowed = await checkPinGate(context, ref);
+      if (!allowed) return;
+    }
     navigationShell.goBranch(
       index,
       // Tap ulang tab yang sedang aktif -> kembali ke root tab tsb.
@@ -30,7 +40,7 @@ class MainShell extends ConsumerWidget {
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _onDestinationSelected,
+        onDestinationSelected: (index) => _onDestinationSelected(context, ref, index),
         destinations: [
           const NavigationDestination(
             icon: Icon(Icons.point_of_sale_outlined),

@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../domain/entities/sale_result.dart';
+import '../../domain/entities/store_profile.dart';
 
 /// Render & share struk digital (architecture.md §3, plan.md Milestone 2
 /// poin 7).
@@ -17,10 +18,15 @@ import '../../domain/entities/sale_result.dart';
 /// (baik untuk teks maupun gambar hasil `RepaintBoundary`).
 abstract final class ReceiptService {
   /// Share struk sebagai TEKS polos (mis. untuk WhatsApp tanpa gambar).
-  static Future<void> shareAsText(SaleResult sale) async {
+  ///
+  /// [profile] opsional (plan.md Milestone 5 poin 1) — dipakai sebagai
+  /// kepala struk (nama/alamat/telp toko); `null` (default, kompatibel
+  /// dengan pemanggilan sebelum M5) memakai fallback `'KASIR WARUNG'`
+  /// tanpa alamat/telp.
+  static Future<void> shareAsText(SaleResult sale, {StoreProfile? profile}) async {
     await SharePlus.instance.share(
       ShareParams(
-        text: formatReceiptText(sale),
+        text: formatReceiptText(sale, profile: profile),
         subject: 'Struk ${sale.invoiceNumber}',
       ),
     );
@@ -45,9 +51,12 @@ abstract final class ReceiptService {
 
   /// Format struk sebagai teks monospace sederhana — dipakai [shareAsText]
   /// dan bisa dipakai ulang untuk pratinjau di layar sukses transaksi.
-  static String formatReceiptText(SaleResult sale) {
-    final buffer = StringBuffer()
-      ..writeln('KASIR WARUNG')
+  static String formatReceiptText(SaleResult sale, {StoreProfile? profile}) {
+    final effectiveProfile = profile ?? const StoreProfile();
+    final buffer = StringBuffer()..writeln(effectiveProfile.displayName);
+    if (effectiveProfile.hasAddress) buffer.writeln(effectiveProfile.address!.trim());
+    if (effectiveProfile.hasPhone) buffer.writeln(effectiveProfile.phone!.trim());
+    buffer
       ..writeln('No. Struk: ${sale.invoiceNumber}')
       ..writeln(DateFormatter.formatDateTime(sale.createdAt))
       ..writeln('------------------------------');

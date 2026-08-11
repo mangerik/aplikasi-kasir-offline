@@ -3,27 +3,29 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../settings/providers/settings_providers.dart';
 import '../widgets/receipt_widget.dart';
 
 /// Layar sukses transaksi (plan.md Milestone 2 poin 7): ringkasan + struk
 /// digital (`ReceiptWidget`), share struk sebagai GAMBAR (capture
 /// `RepaintBoundary` lewat `ReceiptService.shareAsImage`) maupun TEKS.
-class CheckoutSuccessScreen extends StatefulWidget {
+class CheckoutSuccessScreen extends ConsumerStatefulWidget {
   const CheckoutSuccessScreen({super.key, required this.sale});
 
   final SaleResult sale;
 
   @override
-  State<CheckoutSuccessScreen> createState() => _CheckoutSuccessScreenState();
+  ConsumerState<CheckoutSuccessScreen> createState() => _CheckoutSuccessScreenState();
 }
 
-class _CheckoutSuccessScreenState extends State<CheckoutSuccessScreen> {
+class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
   final GlobalKey _receiptKey = GlobalKey();
   bool _sharing = false;
 
@@ -56,7 +58,8 @@ class _CheckoutSuccessScreenState extends State<CheckoutSuccessScreen> {
   Future<void> _shareAsText() async {
     setState(() => _sharing = true);
     try {
-      await ReceiptService.shareAsText(widget.sale);
+      final profile = await ref.read(storeProfileProvider.future);
+      await ReceiptService.shareAsText(widget.sale, profile: profile);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
