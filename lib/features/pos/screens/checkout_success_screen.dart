@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../settings/providers/settings_providers.dart';
@@ -48,7 +49,7 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: $e')));
+        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: ${AppErrorMessage.from(e)}')));
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -64,7 +65,7 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: $e')));
+        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: ${AppErrorMessage.from(e)}')));
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -168,7 +169,14 @@ class _SummaryRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyLarge),
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyLarge,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: AppSizes.spaceSm),
           Text(
             CurrencyFormatter.format(value),
             style: Theme.of(

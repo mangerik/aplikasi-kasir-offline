@@ -15,7 +15,14 @@ abstract final class AppColors {
 
   /// Status/semantik.
   static const Color success = Color(0xFF1B7A43);
-  static const Color warning = Color(0xFFB8860B);
+
+  /// Amber/kuning tua — dipakai sebagai warna TEKS (bukan cuma latar/ikon)
+  /// di beberapa tempat (mis. label "Stok menipis"), jadi harus tetap
+  /// kontras >= 4.5:1 di atas putih (WCAG AA teks normal, PRD §6). Nilai
+  /// sebelumnya (`0xFFB8860B`) hanya ±3.25:1 — dipergelap tanpa mengubah
+  /// arah warnanya (tetap terbaca sebagai "amber/peringatan") supaya lolos
+  /// ambang (±5.3:1) — plan.md Milestone 6 poin 2 (review kontras).
+  static const Color warning = Color(0xFF8A6508);
   static const Color danger = Color(0xFFC62828);
   static const Color info = Color(0xFF1565C0);
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../providers/cart_provider.dart';
 import '../providers/sale_providers.dart';
@@ -128,7 +129,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
       ref.read(cartProvider.notifier).clear();
       if (mounted) Navigator.of(context).pop(result);
     } catch (e) {
-      if (mounted) setState(() => _errorMessage = e.toString());
+      if (mounted) setState(() => _errorMessage = AppErrorMessage.from(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -393,12 +394,23 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: theme.textTheme.titleMedium),
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: color,
+        Flexible(
+          child: Text(
+            label,
+            style: theme.textTheme.titleMedium,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: AppSizes.spaceSm),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
         ),
       ],
