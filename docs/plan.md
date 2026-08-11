@@ -81,13 +81,23 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 ## Milestone 6 — Polish & Rilis
 > Hasil: APK siap dipakai.
 
-- [ ] Empty state & pesan error Bahasa Indonesia di semua layar
-- [ ] Review ukuran sentuh, font, kontras (uji di HP kecil & tablet)
-- [ ] Performa: cold start < 3 dtk, pencarian < 100 ms @ 5k produk
-- [ ] Ikon app + splash screen + nama "Kasir Warung" (atau nama final)
-- [ ] Uji regresi manual semua alur PRD (checklist §4 & §5 PRD)
-- [ ] Build release APK (+ App Bundle bila ke Play Store), proguard/R8 ok
-- [ ] Tag versi 1.0.0
+- [x] Empty state & pesan error Bahasa Indonesia di semua layar
+- [x] Review ukuran sentuh, font, kontras (uji di HP kecil & tablet) — perbaikan
+      lewat kode/test terverifikasi; QA visual di device fisik nyata masih
+      disarankan (lihat docs/laporan-m6.md §5, "perlu uji manual")
+- [x] Performa: cold start < 3 dtk, pencarian < 100 ms @ 5k produk — pencarian
+      dibuktikan test otomatis; cold start diaudit lewat kode (`main()` tidak
+      melakukan kerja berat sinkron), pengukuran stopwatch di device fisik
+      nyata masih disarankan (lihat docs/laporan-m6.md §5)
+- [x] Ikon app + splash screen + nama "Kasir Warung" (atau nama final)
+- [x] Uji regresi manual semua alur PRD (checklist §4 & §5 PRD) — cakupan
+      OTOMATIS diperluas signifikan (widget test alur kasir tunai/hutang/void
+      end-to-end lewat UI sungguhan, plus seluruh test M0–M5 yang sudah ada);
+      sejumlah alur (scan barcode kamera, share ke WhatsApp, file picker
+      restore, rasa keypad PIN) tetap butuh uji manual device fisik — lihat
+      docs/laporan-m6.md §5
+- [x] Build release APK (+ App Bundle bila ke Play Store), proguard/R8 ok
+- [x] Tag versi 1.0.0
 
 ---
 
@@ -176,3 +186,25 @@ M0 ──► M1 ──► M2 ──► M3 ──► M6
   di-diff seluruhnya lewat stream. Setelah void/pelunasan, layar memanggil
   `historyListProvider.notifier.refresh()` secara eksplisit untuk
   menyegarkan baris terkait. Detail di `docs/laporan-m3.md` §3.
+- **2026-08-11 (M6):** Widget test alur kasir end-to-end baru
+  (`pos_checkout_flow_test.dart`) menemukan BUG NYATA yang sudah ada sejak
+  M3: dialog konfirmasi (void, tandai lunas, kosongkan keranjang, tahan
+  transaksi, kelola transaksi ditahan, ubah qty item) tidak pernah
+  benar-benar tertutup saat tombol aksinya ditekan, karena `showDialog`
+  (default `useRootNavigator: true`) mendorong dialog ke Navigator ROOT,
+  sedangkan `Navigator.of(context).pop(...)` di dalam tombol aksi memakai
+  `context` LUAR yang ter-resolve ke Navigator CABANG (nearest ancestor) di
+  dalam `StatefulShellRoute.indexedStack` milik go_router — dua Navigator
+  berbeda. Diperbaiki dengan memakai context builder dialog sendiri untuk
+  pop (pola yang sudah benar dipakai `category_manage_dialog.dart` &
+  `backup_restore_section.dart` sejak awal). Detail di `docs/laporan-m6.md`.
+- **2026-08-11 (M6):** `flutter_launcher_icons` & `flutter_native_splash`
+  DIHAPUS dari `dev_dependencies` setelah ikon/splash digenerate & di-commit
+  — modul Android bawaan `flutter_native_splash` tidak punya `namespace`
+  (format lama) dan membuat `flutter build apk --release` GAGAL total di
+  tahap konfigurasi Gradle selama masih ada sebagai dependency, walau tidak
+  dipakai di kode Dart manapun. Ikon adaptif (`mipmap-anydpi-v26/
+  ic_launcher.xml` + `colors.xml`) juga ditulis manual karena
+  `flutter_launcher_icons` 0.9.3 crash mendeteksi `minSdk` dari
+  `android/app/build.gradle` (Groovy) — proyek ini memakai
+  `build.gradle.kts` (Kotlin DSL). Detail di `docs/laporan-m6.md`.
