@@ -51,6 +51,14 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
+  Future<Product?> getByBarcode(String barcode) async {
+    final row = await (_db.select(_db.products)
+          ..where((p) => p.barcode.equals(barcode) & p.isActive.equals(true)))
+        .getSingleOrNull();
+    return row == null ? null : _toEntity(row);
+  }
+
+  @override
   Future<int> createProduct({
     required String name,
     String? barcode,
