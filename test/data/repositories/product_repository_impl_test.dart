@@ -199,4 +199,57 @@ void main() {
       expect(product!.isLowStock, isFalse);
     });
   });
+
+  group('ProductRepositoryImpl — watchLowStock (agregasi SQL, plan.md Milestone 4)', () {
+    test('watchLowStockCount menghitung produk aktif dengan stok <= threshold-nya', () async {
+      await repo.createProduct(
+        name: 'Kerupuk',
+        sellPrice: 2000,
+        stock: 2,
+        lowStockThreshold: 3,
+      ); // menipis (threshold sendiri)
+      await repo.createProduct(name: 'Air Mineral', sellPrice: 4000, stock: 4); // menipis (default 5)
+      await repo.createProduct(name: 'Beras', sellPrice: 60000, stock: 100); // aman
+
+      final count = await repo.watchLowStockCount(defaultThreshold: 5).first;
+      expect(count, 2);
+    });
+
+    test('watchLowStockCount mengabaikan produk nonaktif', () async {
+      final id = await repo.createProduct(name: 'Kerupuk', sellPrice: 2000, stock: 1);
+      await repo.setActive(id, false);
+
+      final count = await repo.watchLowStockCount(defaultThreshold: 5).first;
+      expect(count, 0);
+    });
+
+    test('watchLowStock mengembalikan produk urut stok paling sedikit dulu', () async {
+      await repo.createProduct(name: 'B', sellPrice: 1000, stock: 3);
+      await repo.createProduct(name: 'A', sellPrice: 1000, stock: 1);
+      await repo.createProduct(name: 'C (aman)', sellPrice: 1000, stock: 999);
+
+      final result = await repo.watchLowStock(defaultThreshold: 5).first;
+      expect(result.map((p) => p.name), ['A', 'B']);
+    });
+
+    test('watchLowStockCount bersifat reaktif saat stok berubah', () async {
+      final id = await repo.createProduct(name: 'Kerupuk', sellPrice: 2000, stock: 100);
+      final stream = repo.watchLowStockCount(defaultThreshold: 5);
+      final emissions = <int>[];
+      final sub = stream.listen(emissions.add);
+
+      await Future<void>.delayed(Duration.zero);
+      await repo.updateProduct(
+        id: id,
+        name: 'Kerupuk',
+        sellPrice: 2000,
+        stock: 1,
+        unit: 'pcs',
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emissions, containsAllInOrder([0, 1]));
+      await sub.cancel();
+    });
+  });
 }
