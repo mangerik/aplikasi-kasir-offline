@@ -133,6 +133,23 @@ void main() {
       expect(byBarcode.first.name, 'Kopi Sachet');
     });
 
+    test('getByBarcode menemukan produk aktif dengan barcode PERSIS sama', () async {
+      await repo.createProduct(name: 'Teh Botol', sellPrice: 5000, barcode: '999888');
+
+      final found = await repo.getByBarcode('999888');
+      expect(found, isNotNull);
+      expect(found!.name, 'Teh Botol');
+
+      expect(await repo.getByBarcode('tidak-ada'), isNull);
+    });
+
+    test('getByBarcode tidak menemukan produk yang sudah dinonaktifkan', () async {
+      final id = await repo.createProduct(name: 'Teh Botol', sellPrice: 5000, barcode: '777666');
+      await repo.setActive(id, false);
+
+      expect(await repo.getByBarcode('777666'), isNull);
+    });
+
     test('watchAll filter berdasarkan kategori', () async {
       final catA = await categoryRepo.create('Minuman');
       final catB = await categoryRepo.create('Sembako');
