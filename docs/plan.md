@@ -10,15 +10,15 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 ## Milestone 0 — Inisialisasi Proyek
 > Hasil: proyek Flutter berjalan dengan fondasi arsitektur.
 
-- [ ] `flutter create` (org id disepakati, mis. `com.erik.kasir`), target Android API 26+
-- [ ] Setup struktur folder sesuai `architecture.md` (core/data/domain/features)
-- [ ] Tambah dependency: drift, drift_flutter, riverpod (flutter_riverpod), go_router, intl, path_provider, shared_preferences, excel, mobile_scanner, file_picker, share_plus
-- [ ] Setup tema dasar: warna, tipografi besar & kontras, tombol ≥ 48dp
-- [ ] Formatter Rupiah & tanggal Indonesia di `core/utils`
-- [ ] Setup go_router + shell navigasi bawah: **Kasir · Produk · Riwayat · Laporan · Pengaturan**
-- [ ] Setup lint (`flutter_lints`), CI opsional
-- [ ] Definisi seluruh tabel Drift + `AppDatabase` + migrasi v1 + WAL mode
-- [ ] Seed data contoh (mode debug) untuk pengembangan
+- [x] `flutter create` (org id disepakati, mis. `com.erik.kasir`), target Android API 26+
+- [x] Setup struktur folder sesuai `architecture.md` (core/data/domain/features)
+- [x] Tambah dependency: drift, drift_flutter, riverpod (flutter_riverpod), go_router, intl, path_provider, shared_preferences, excel, mobile_scanner, file_picker, share_plus
+- [x] Setup tema dasar: warna, tipografi besar & kontras, tombol ≥ 48dp
+- [x] Formatter Rupiah & tanggal Indonesia di `core/utils`
+- [x] Setup go_router + shell navigasi bawah: **Kasir · Produk · Riwayat · Laporan · Pengaturan**
+- [x] Setup lint (`flutter_lints`), CI opsional — lint aktif; CI dilewati (opsional, belum dibuat)
+- [x] Definisi seluruh tabel Drift + `AppDatabase` + migrasi v1 + WAL mode
+- [x] Seed data contoh (mode debug) untuk pengembangan
 
 ## Milestone 1 — Produk & Kategori
 > Hasil: kelola produk lengkap.
@@ -116,4 +116,15 @@ M0 ──► M1 ──► M2 ──► M3 ──► M6
 | Storage permission Android berbeda antar versi | Backup/export gagal | Pakai SAF (file_picker/share_plus) — tanpa permission storage legacy |
 
 ## Catatan Keputusan (diisi selama proyek)
-- _(kosong — tambahkan tanggal + keputusan di sini saat ada perubahan)_
+- **2026-08-11 (M0):** `file_picker` dikunci ke `^10.3.3` (bukan versi terbaru) dan
+  `share_plus` ke `^12.0.2` (bukan versi terbaru) karena versi terbaru kedua
+  package saling bentrok lewat dependency `win32` (relevan untuk target
+  Windows desktop, tidak berdampak ke Android). Kombinasi ini adalah versi
+  stabil terbaru yang saling kompatibel dan sudah diverifikasi bisa
+  `flutter build apk --debug` dengan sukses. Lihat detail di
+  `docs/laporan-m0.md`.
+- **2026-08-11 (M0):** Kolom waktu (`created_at`, dll.) di semua tabel Drift
+  didefinisikan sebagai `IntColumn` (epoch millis UTC) secara eksplisit,
+  bukan `DateTimeColumn` bawaan Drift, karena Drift secara default
+  menyimpan `DateTime` sebagai epoch **detik** (bukan milidetik) — supaya
+  tipe kolom persis sama dengan DDL di `architecture.md` §4.
