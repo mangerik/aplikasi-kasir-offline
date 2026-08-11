@@ -26,16 +26,16 @@ class CartPanel extends ConsumerWidget {
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Kosongkan Keranjang?'),
         content: const Text('Semua item di keranjang akan dihapus.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Kosongkan'),
           ),
         ],
@@ -52,7 +52,7 @@ class CartPanel extends ConsumerWidget {
     final labelController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Tahan Transaksi'),
         content: TextField(
           controller: labelController,
@@ -64,11 +64,11 @@ class CartPanel extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Tahan'),
           ),
         ],
@@ -142,8 +142,13 @@ class CartPanel extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Text('Keranjang', style: theme.textTheme.titleLarge),
-              const Spacer(),
+              Expanded(
+                child: Text(
+                  'Keranjang',
+                  style: theme.textTheme.titleLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               if (cart.isNotEmpty)
                 TextButton(
                   onPressed: () => _confirmClear(context, ref),

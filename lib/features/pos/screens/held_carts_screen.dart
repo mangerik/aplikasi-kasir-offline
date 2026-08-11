@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/held_cart.dart';
 import '../providers/cart_provider.dart';
 import '../providers/held_cart_providers.dart';
@@ -19,7 +20,7 @@ class HeldCartsScreen extends ConsumerWidget {
     if (currentCart.isNotEmpty) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: const Text('Ganti Keranjang Aktif?'),
           content: const Text(
             'Keranjang yang sedang berjalan berisi item dan akan digantikan oleh '
@@ -27,11 +28,11 @@ class HeldCartsScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Batal'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               child: const Text('Ganti'),
             ),
           ],
@@ -47,16 +48,16 @@ class HeldCartsScreen extends ConsumerWidget {
   Future<void> _delete(BuildContext context, WidgetRef ref, HeldCart heldCart) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Hapus Transaksi Ditahan?'),
         content: const Text('Transaksi yang ditahan ini akan dihapus permanen.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Hapus'),
           ),
         ],
@@ -137,7 +138,7 @@ class HeldCartsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Gagal memuat transaksi ditahan: $error')),
+        error: (error, stack) => Center(child: Text('Gagal memuat transaksi ditahan: ${AppErrorMessage.from(error)}')),
       ),
     );
   }

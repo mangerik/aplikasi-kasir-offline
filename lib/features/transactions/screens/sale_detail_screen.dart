@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../pos/providers/sale_providers.dart';
@@ -53,7 +54,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: $e')));
+        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: ${AppErrorMessage.from(e)}')));
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -69,7 +70,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: $e')));
+        ).showSnackBar(SnackBar(content: Text('Gagal membagikan struk: ${AppErrorMessage.from(e)}')));
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -79,7 +80,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
   Future<void> _markPaid(SaleResult sale) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Tandai Lunas?'),
         content: const Text(
           'Transaksi hutang ini akan ditandai sebagai sudah lunas. '
@@ -87,11 +88,11 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Tandai Lunas'),
           ),
         ],
@@ -111,7 +112,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       }
     } finally {
       if (mounted) setState(() => _processing = false);
@@ -121,7 +122,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
   Future<void> _voidSale(SaleResult sale) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Batalkan Transaksi?'),
         content: const Text(
           'Stok barang yang terjual akan dikembalikan. Transaksi tetap '
@@ -130,12 +131,12 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Tidak'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Batalkan'),
           ),
         ],
@@ -166,7 +167,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       }
     } finally {
       if (mounted) setState(() => _processing = false);
@@ -184,7 +185,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.spaceLg),
-            child: Text('Gagal memuat detail: $error', textAlign: TextAlign.center),
+            child: Text('Gagal memuat detail: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
           ),
         ),
       ),

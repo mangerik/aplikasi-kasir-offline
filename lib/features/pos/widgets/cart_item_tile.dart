@@ -30,7 +30,7 @@ class CartItemTile extends StatelessWidget {
     final controller = TextEditingController(text: _formatQty(item.qty));
     final newQty = await showDialog<double>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Ubah Qty'),
         content: TextField(
           controller: controller,
@@ -40,13 +40,13 @@ class CartItemTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Batal'),
           ),
           FilledButton(
             onPressed: () {
               final parsed = double.tryParse(controller.text.trim().replaceAll(',', '.'));
-              Navigator.of(context).pop(parsed);
+              Navigator.of(dialogContext).pop(parsed);
             },
             child: const Text('Simpan'),
           ),
@@ -133,16 +133,23 @@ class CartItemTile extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 onPressed: onIncrement,
               ),
-              const SizedBox(width: AppSizes.spaceSm),
-              TextButton.icon(
+              // Icon-only (bukan TextButton.icon berlabel "Diskon") supaya
+              // baris ini tidak overflow di layar HP sempit (<360dp) —
+              // masih >= 48dp (IconButton default) & tetap punya tooltip
+              // teks Indonesia untuk aksesibilitas (plan.md Milestone 6
+              // poin 2: review ukuran sentuh di HP kecil).
+              IconButton(
+                tooltip: 'Beri diskon item ini',
                 onPressed: () => _editDiscount(context),
-                icon: const Icon(Icons.percent, size: 18),
-                label: const Text('Diskon'),
+                icon: const Icon(Icons.percent),
               ),
-              const Spacer(),
-              Text(
-                CurrencyFormatter.format(item.lineTotal),
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  CurrencyFormatter.format(item.lineTotal),
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
