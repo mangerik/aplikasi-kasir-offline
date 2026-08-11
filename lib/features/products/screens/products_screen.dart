@@ -6,6 +6,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/router/app_router.dart';
 import '../../../domain/entities/category.dart';
+import '../../inventory/providers/stock_providers.dart';
+import '../../inventory/screens/low_stock_screen.dart';
 import '../providers/category_providers.dart';
 import '../providers/product_providers.dart';
 import '../widgets/category_manage_dialog.dart';
@@ -35,11 +37,23 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final productsAsync = ref.watch(productListProvider);
     final categoriesAsync = ref.watch(categoryListProvider);
     final filter = ref.watch(productFilterProvider);
+    final lowStockCount = ref.watch(lowStockCountProvider).value ?? 0;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Produk'),
         actions: [
+          IconButton(
+            tooltip: 'Stok menipis',
+            icon: Badge.count(
+              count: lowStockCount,
+              isLabelVisible: lowStockCount > 0,
+              child: const Icon(Icons.warning_amber_rounded),
+            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const LowStockScreen())),
+          ),
           IconButton(
             tooltip: 'Kelola kategori',
             icon: const Icon(Icons.category_outlined),

@@ -7,6 +7,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
+import '../../inventory/screens/stock_adjustment_screen.dart';
+import '../../inventory/screens/stock_movement_history_screen.dart';
 import '../providers/category_providers.dart';
 import '../providers/product_providers.dart';
 import '../utils/product_form_validator.dart';
@@ -107,6 +109,31 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
     return double.tryParse(trimmed.replaceAll(',', '.'));
+  }
+
+  /// Penyesuaian stok manual (plan.md Milestone 4 poin 1) — dipicu dari
+  /// layar detail/edit produk. Setelah berhasil, muat ulang produk supaya
+  /// angka stok yang tampil di form ini ikut ter-update.
+  Future<void> _openStockAdjustment() async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => StockAdjustmentScreen(product: _existing!)),
+    );
+    if (saved == true && mounted) {
+      setState(() => _loading = true);
+      await _loadExisting();
+    }
+  }
+
+  Future<void> _openStockHistory() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => StockMovementHistoryScreen(product: _existing!)),
+    );
+    // Riwayat stok punya tombol penyesuaian sendiri juga — muat ulang untuk
+    // berjaga-jaga angka stok berubah lewat jalur itu.
+    if (mounted) {
+      setState(() => _loading = true);
+      await _loadExisting();
+    }
   }
 
   Future<void> _scanBarcode() async {
@@ -327,6 +354,30 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       textInputAction: TextInputAction.done,
                       validator: ProductFormValidator.lowStockThreshold,
                     ),
+                    if (widget.isEdit && _existing != null) ...[
+                      const SizedBox(height: AppSizes.spaceMd),
+                      Text('Manajemen Stok', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: AppSizes.spaceSm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _openStockAdjustment,
+                              icon: const Icon(Icons.tune),
+                              label: const Text('Sesuaikan Stok'),
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.spaceSm),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _openStockHistory,
+                              icon: const Icon(Icons.history),
+                              label: const Text('Riwayat Stok'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: AppSizes.spaceMd),
                     Container(
                       padding: const EdgeInsets.all(AppSizes.spaceMd),
