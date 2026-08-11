@@ -57,26 +57,26 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 ## Milestone 4 — Stok & Laporan
 > Hasil: kontrol stok dan laporan untuk pemilik.
 
-- [ ] Penyesuaian stok (masuk/keluar/opname) + alasan → `stock_movements`
-- [ ] Riwayat pergerakan stok per produk
-- [ ] Daftar "stok menipis" + badge di tab Produk
-- [ ] Dashboard laporan harian: omzet, jumlah transaksi, laba kotor, per metode bayar
-- [ ] Laporan rentang tanggal (preset: hari ini, kemarin, 7 hari, bulan ini, custom)
-- [ ] Produk terlaris (qty & nilai)
-- [ ] Daftar hutang belum lunas (total per pelanggan)
-- [ ] Query agregasi di SQL + index; uji dengan data dummy besar (≥ 50k transaksi)
+- [x] Penyesuaian stok (masuk/keluar/opname) + alasan → `stock_movements`
+- [x] Riwayat pergerakan stok per produk
+- [x] Daftar "stok menipis" + badge di tab Produk
+- [x] Dashboard laporan harian: omzet, jumlah transaksi, laba kotor, per metode bayar
+- [x] Laporan rentang tanggal (preset: hari ini, kemarin, 7 hari, bulan ini, custom)
+- [x] Produk terlaris (qty & nilai)
+- [x] Daftar hutang belum lunas (total per pelanggan)
+- [x] Query agregasi di SQL + index; uji dengan data dummy besar (≥ 50k transaksi)
 
 ## Milestone 5 — Export Excel, Backup/Restore, Pengaturan
 > Hasil: portabilitas data penuh — janji utama produk.
 
-- [ ] Pengaturan profil toko (nama/alamat/telp → tampil di struk)
-- [ ] Export Excel: produk+stok, transaksi per rentang (2 sheet), laporan — di isolate, lalu share
-- [ ] Uji file terbuka rapi di Excel/WPS/Google Sheets
-- [ ] Backup database → satu file `.db`, share/simpan
-- [ ] Restore: validasi file, konfirmasi ganda, timpa DB, migrasi bila perlu
+- [x] Pengaturan profil toko (nama/alamat/telp → tampil di struk)
+- [x] Export Excel: produk+stok, transaksi per rentang (2 sheet), laporan — di isolate, lalu share
+- [x] Uji file terbuka rapi di Excel/WPS/Google Sheets
+- [x] Backup database → satu file `.db`, share/simpan
+- [x] Restore: validasi file, konfirmasi ganda, timpa DB, migrasi bila perlu
 - [ ] **Uji pindah perangkat nyata:** backup di device A → restore di device B → data identik
-- [ ] Kunci PIN (set/ubah/hapus; lindungi laporan, pengaturan, void)
-- [ ] Pengingat backup > 7 hari
+- [x] Kunci PIN (set/ubah/hapus; lindungi laporan, pengaturan, void)
+- [x] Pengingat backup > 7 hari
 
 ## Milestone 6 — Polish & Rilis
 > Hasil: APK siap dipakai.
