@@ -141,6 +141,36 @@ class ProductRepositoryImpl implements ProductRepository {
     );
   }
 
+  @override
+  Stream<int> watchLowStockCount({required double defaultThreshold}) {
+    final countExpr = _db.products.id.count();
+    final query = _db.selectOnly(_db.products)
+      ..addColumns([countExpr])
+      ..where(_lowStockCondition(defaultThreshold));
+    return query.watchSingle().map((row) => row.read(countExpr) ?? 0);
+  }
+
+  @override
+  Stream<List<Product>> watchLowStock({required double defaultThreshold}) {
+    final statement = _db.select(_db.products)
+      ..where((p) => _lowStockCondition(defaultThreshold))
+      ..orderBy([(p) => OrderingTerm(expression: p.stock)]);
+    return statement.watch().map((rows) => rows.map(_toEntity).toList());
+  }
+
+  /// Kondisi "aktif DAN stok menipis" via SQL murni (agregasi/perbandingan
+  /// di database, BUKAN Dart — plan.md Milestone 4 poin 8): `is_active = 1
+  /// AND stock <= COALESCE(low_stock_threshold, defaultThreshold)`, sama
+  /// persis dengan [Product.isLowStock].
+  Expression<bool> _lowStockCondition(double defaultThreshold) {
+    final effectiveThreshold = coalesce<double>([
+      _db.products.lowStockThreshold,
+      Variable.withReal(defaultThreshold),
+    ]);
+    return _db.products.isActive.equals(true) &
+        _db.products.stock.isSmallerOrEqual(effectiveThreshold);
+  }
+
   /// String kosong dianggap "tidak diisi" agar tidak memicu unique index
   /// (yang hanya berlaku untuk barcode yang benar-benar terisi).
   String? _normalizeBarcode(String? raw) {
