@@ -62,4 +62,21 @@ abstract class ProductRepository {
   /// Aktif/nonaktifkan produk. Produk nonaktif tersembunyi dari Kasir tapi
   /// tetap tampil di daftar Produk dengan penanda (plan.md Milestone 1 poin 6).
   Future<void> setActive(int id, bool isActive);
+
+  /// Stream reaktif JUMLAH produk aktif dengan stok menipis — agregasi SQL
+  /// `COUNT`, BUKAN dihitung di Dart (plan.md Milestone 4 poin 8), dipakai
+  /// badge di tab Produk (plan.md Milestone 4 poin 3).
+  ///
+  /// Produk dianggap menipis bila `stock <= (low_stock_threshold ??
+  /// [defaultThreshold])` — sama persis dengan `Product.isLowStock`, hanya
+  /// dihitung di SQL agar cepat tanpa memuat seluruh tabel produk.
+  /// [defaultThreshold] adalah fallback global dari `settings` (dibaca
+  /// pemanggil, bukan di sini — kontrak ini tidak bergantung pada
+  /// `SettingsRepository`).
+  Stream<int> watchLowStockCount({required double defaultThreshold});
+
+  /// Stream reaktif daftar produk aktif dengan stok menipis, urut stok
+  /// paling sedikit dulu — dipakai layar "Stok Menipis" (plan.md Milestone
+  /// 4 poin 3). Lihat [watchLowStockCount] untuk arti [defaultThreshold].
+  Stream<List<Product>> watchLowStock({required double defaultThreshold});
 }
