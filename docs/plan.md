@@ -47,12 +47,12 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 ## Milestone 3 — Pembayaran non-tunai, hutang, riwayat, void
 > Hasil: semua jenis transaksi + riwayat lengkap.
 
-- [ ] Metode non-tunai (dicatat jenisnya) & hutang/bon (wajib nama pelanggan)
-- [ ] Layar riwayat transaksi: filter tanggal/metode/status, infinite scroll
-- [ ] Detail transaksi + share ulang struk
-- [ ] Pelunasan hutang (ubah status, catat waktu lunas)
-- [ ] Void transaksi + pengembalian stok atomik + konfirmasi (dan PIN bila aktif)
-- [ ] Test: void mengembalikan stok tepat, pelunasan hutang
+- [x] Metode non-tunai (dicatat jenisnya) & hutang/bon (wajib nama pelanggan)
+- [x] Layar riwayat transaksi: filter tanggal/metode/status, infinite scroll
+- [x] Detail transaksi + share ulang struk
+- [x] Pelunasan hutang (ubah status, catat waktu lunas)
+- [x] Void transaksi + pengembalian stok atomik + konfirmasi (dan PIN bila aktif)
+- [x] Test: void mengembalikan stok tepat, pelunasan hutang
 
 ## Milestone 4 — Stok & Laporan
 > Hasil: kontrol stok dan laporan untuk pemilik.
@@ -156,3 +156,23 @@ M0 ──► M1 ──► M2 ──► M3 ──► M6
   memang mencakup ketiganya sejak M0, tapi UI kasir M2 baru membangun alur
   **tunai** (sesuai cakupan resmi milestone ini di §5.2 PRD via alur
   utama). UI pilih metode non-tunai/hutang menyusul di Milestone 3.
+- **2026-08-11 (M3):** Jenis pembayaran non-tunai (QRIS/Transfer Bank/
+  Kartu/Lainnya) disimpan ke kolom `sales.note` yang SUDAH ADA sejak M0
+  (bukan menambah kolom skema baru) — cukup untuk kebutuhan "hanya
+  dicatat" di PRD §3.1.A, dan laporan per metode bayar (M4) tetap
+  mengelompokkan lewat `payment_method` (`cash`/`noncash`/`debt`), bukan
+  jenis non-tunainya. Detail di `docs/laporan-m3.md` §3.
+- **2026-08-11 (M3):** Hook PIN sebelum void (plan.md poin 5) diimplementasi
+  minimal: `SettingsRepository.getValue('pin_hash')` — kalau kosong (kondisi
+  normal M3, karena layar set-PIN M5 belum ada) langsung lolos TANPA dialog;
+  kalau terisi baru minta verifikasi PIN. Package `crypto` (SHA-256) sudah
+  ditambahkan lebih awal dari M5 supaya hasher (`PinHasher`) konsisten
+  dipakai layar set-PIN M5 nanti tanpa migrasi ulang nilai `pin_hash`.
+  Detail di `docs/laporan-m3.md` §3.
+- **2026-08-11 (M3):** Riwayat transaksi memakai pagination `LIMIT`/`OFFSET`
+  (Future-based, BUKAN `Stream`) lewat `AsyncNotifier` — beda dari pola
+  `watchAll` reaktif (M1/M2) karena daftar riwayat berpotensi sangat besar
+  (PRD §6: "minimal 100.000 transaksi") sehingga tidak realistis dimuat/
+  di-diff seluruhnya lewat stream. Setelah void/pelunasan, layar memanggil
+  `historyListProvider.notifier.refresh()` secara eksplisit untuk
+  menyegarkan baris terkait. Detail di `docs/laporan-m3.md` §3.
