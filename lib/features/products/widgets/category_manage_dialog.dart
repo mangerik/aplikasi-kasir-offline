@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../providers/category_providers.dart';
@@ -67,7 +68,7 @@ class CategoryManageDialog extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (error, stack) => Text('Gagal memuat kategori: $error'),
+                error: (error, stack) => Text('Gagal memuat kategori: ${AppErrorMessage.from(error)}'),
               ),
             ),
             const Divider(),
@@ -88,7 +89,7 @@ class CategoryManageDialog extends ConsumerWidget {
     try {
       await ref.read(categoryRepoProvider).create(name);
     } on NamaKategoriSudahAdaException catch (e) {
-      if (context.mounted) _showError(context, e.toString());
+      if (context.mounted) _showError(context, AppErrorMessage.from(e));
     }
   }
 
@@ -120,7 +121,7 @@ class CategoryManageDialog extends ConsumerWidget {
     try {
       await ref.read(categoryRepoProvider).rename(category.id, newName);
     } on NamaKategoriSudahAdaException catch (e) {
-      if (context.mounted) _showError(context, e.toString());
+      if (context.mounted) _showError(context, AppErrorMessage.from(e));
     }
   }
 
@@ -146,7 +147,7 @@ class CategoryManageDialog extends ConsumerWidget {
     try {
       await ref.read(categoryRepoProvider).delete(category.id);
     } on KategoriMasihDipakaiException catch (e) {
-      if (context.mounted) _showError(context, e.toString());
+      if (context.mounted) _showError(context, AppErrorMessage.from(e));
     }
   }
 

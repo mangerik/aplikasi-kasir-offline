@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../data/services/excel_export_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../pos/providers/sale_providers.dart';
@@ -42,7 +43,7 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal export "$label": $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal export "$label": ${AppErrorMessage.from(e)}')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

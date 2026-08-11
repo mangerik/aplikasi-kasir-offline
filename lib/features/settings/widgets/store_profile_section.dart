@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/store_profile.dart';
 import '../providers/settings_providers.dart';
 import 'settings_card.dart';
@@ -25,7 +26,7 @@ class StoreProfileSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: AppSizes.spaceMd),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (e, _) => Text('Gagal memuat profil toko: $e'),
+          error: (e, _) => Text('Gagal memuat profil toko: ${AppErrorMessage.from(e)}'),
         ),
       ],
     );

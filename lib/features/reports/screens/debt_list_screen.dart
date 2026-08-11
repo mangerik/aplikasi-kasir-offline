@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/customer_debt.dart';
 import '../providers/report_providers.dart';
 import 'customer_debt_transactions_screen.dart';
@@ -53,7 +54,7 @@ class DebtListScreen extends ConsumerWidget {
           error: (error, stack) => Center(
             child: Padding(
               padding: const EdgeInsets.all(AppSizes.spaceLg),
-              child: Text('Gagal memuat daftar hutang: $error', textAlign: TextAlign.center),
+              child: Text('Gagal memuat daftar hutang: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
             ),
           ),
         ),

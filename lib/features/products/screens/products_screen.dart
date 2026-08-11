@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/entities/product.dart';
 import '../../inventory/providers/stock_providers.dart';
@@ -135,7 +136,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Gagal memuat produk: $error')),
+              error: (error, stack) => Center(child: Text('Gagal memuat produk: ${AppErrorMessage.from(error)}')),
             ),
           ),
         ],

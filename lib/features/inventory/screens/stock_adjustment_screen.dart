@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../providers/stock_providers.dart';
@@ -99,11 +100,11 @@ class _StockAdjustmentScreenState extends ConsumerState<StockAdjustmentScreen> {
           .showSnackBar(const SnackBar(content: Text('Penyesuaian stok berhasil disimpan.')));
       Navigator.of(context).pop(true);
     } on JumlahPenyesuaianTidakValidException catch (e) {
-      _showError(e.toString());
+      _showError(AppErrorMessage.from(e));
     } on AlasanPenyesuaianWajibException catch (e) {
-      _showError(e.toString());
+      _showError(AppErrorMessage.from(e));
     } on ProdukTidakDitemukanException catch (e) {
-      _showError(e.toString());
+      _showError(AppErrorMessage.from(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

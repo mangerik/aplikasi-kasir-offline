@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../transactions/screens/sale_detail_screen.dart';
 import '../../transactions/widgets/history_tile.dart';
 import '../providers/report_providers.dart';
@@ -53,7 +54,7 @@ class CustomerDebtTransactionsScreen extends ConsumerWidget {
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.spaceLg),
-            child: Text('Gagal memuat transaksi: $error', textAlign: TextAlign.center),
+            child: Text('Gagal memuat transaksi: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
           ),
         ),
       ),

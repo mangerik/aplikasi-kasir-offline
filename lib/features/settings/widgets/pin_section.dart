@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../providers/settings_providers.dart';
 import '../screens/pin_entry_screen.dart';
@@ -47,7 +48,7 @@ class PinSection extends ConsumerWidget {
       }
     } on PinTidakValidException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       }
     }
   }
@@ -81,7 +82,7 @@ class PinSection extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       }
     }
   }
@@ -130,7 +131,7 @@ class PinSection extends ConsumerWidget {
             ],
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Gagal memuat status PIN: $e'),
+          error: (e, _) => Text('Gagal memuat status PIN: ${AppErrorMessage.from(e)}'),
         ),
       ],
     );

@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/repositories/report_repository.dart';
 import '../providers/report_providers.dart';
 import '../widgets/summary_card.dart';
@@ -129,7 +130,7 @@ class ReportsScreen extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(vertical: AppSizes.spaceXl),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (error, stack) => Text('Gagal memuat ringkasan: $error'),
+              error: (error, stack) => Text('Gagal memuat ringkasan: ${AppErrorMessage.from(error)}'),
             ),
             const SizedBox(height: AppSizes.spaceLg),
             Row(
@@ -173,7 +174,7 @@ class ReportsScreen extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(vertical: AppSizes.spaceLg),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (error, stack) => Text('Gagal memuat produk terlaris: $error'),
+              error: (error, stack) => Text('Gagal memuat produk terlaris: ${AppErrorMessage.from(error)}'),
             ),
             const SizedBox(height: AppSizes.spaceXl),
           ],

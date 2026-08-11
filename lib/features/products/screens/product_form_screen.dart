@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../../inventory/providers/stock_providers.dart';
@@ -155,7 +156,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         final newId = await ref.read(categoryRepoProvider).create(name);
         setState(() => _categoryId = newId);
       } on NamaKategoriSudahAdaException catch (e) {
-        if (mounted) _showError(e.toString());
+        if (mounted) _showError(AppErrorMessage.from(e));
       }
       return;
     }
@@ -211,7 +212,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       );
       context.pop();
     } on BarcodeSudahDipakaiException catch (e) {
-      if (mounted) _showError(e.toString());
+      if (mounted) _showError(AppErrorMessage.from(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -292,7 +293,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                         );
                       },
                       loading: () => const LinearProgressIndicator(),
-                      error: (error, stack) => Text('Gagal memuat kategori: $error'),
+                      error: (error, stack) => Text('Gagal memuat kategori: ${AppErrorMessage.from(error)}'),
                     ),
                     const SizedBox(height: AppSizes.spaceMd),
                     TextFormField(

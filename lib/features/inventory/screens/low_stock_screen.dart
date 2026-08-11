@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/product.dart';
 import '../providers/stock_providers.dart';
 import 'stock_adjustment_screen.dart';
@@ -48,7 +49,7 @@ class LowStockScreen extends ConsumerWidget {
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.spaceLg),
-            child: Text('Gagal memuat daftar stok menipis: $error', textAlign: TextAlign.center),
+            child: Text('Gagal memuat daftar stok menipis: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
           ),
         ),
       ),

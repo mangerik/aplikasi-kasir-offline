@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../domain/entities/product.dart';
 import '../providers/stock_providers.dart';
 import '../widgets/stock_movement_tile.dart';
@@ -92,7 +93,7 @@ class _StockMovementHistoryScreenState extends ConsumerState<StockMovementHistor
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.spaceLg),
-            child: Text('Gagal memuat riwayat stok: $error', textAlign: TextAlign.center),
+            child: Text('Gagal memuat riwayat stok: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../data/db/database_provider.dart';
 import '../../../data/services/backup_service.dart';
 import '../providers/settings_providers.dart';
@@ -47,7 +48,7 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
       ).showSnackBar(const SnackBar(content: Text('Backup berhasil dibuat.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal backup: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal backup: ${AppErrorMessage.from(e)}')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -68,7 +69,7 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       return;
     }
     if (!mounted) return;
@@ -115,7 +116,7 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal restore: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal restore: ${AppErrorMessage.from(e)}')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

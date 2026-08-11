@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../providers/history_providers.dart';
 import '../widgets/history_filter_sheet.dart';
 import '../widgets/history_tile.dart';
@@ -110,7 +111,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           error: (error, stack) => Center(
             child: Padding(
               padding: const EdgeInsets.all(AppSizes.spaceLg),
-              child: Text('Gagal memuat riwayat: $error', textAlign: TextAlign.center),
+              child: Text('Gagal memuat riwayat: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
             ),
           ),
         ),

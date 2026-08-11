@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/error_message.dart';
 import '../providers/settings_providers.dart';
 import 'settings_card.dart';
 
@@ -24,7 +25,7 @@ class LowStockDefaultSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: AppSizes.spaceMd),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (e, _) => Text('Gagal memuat threshold: $e'),
+          error: (e, _) => Text('Gagal memuat threshold: ${AppErrorMessage.from(e)}'),
         ),
       ],
     );
