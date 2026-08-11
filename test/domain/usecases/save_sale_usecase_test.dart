@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasir_warung/domain/entities/cart_item.dart';
+import 'package:kasir_warung/domain/entities/sale.dart';
 import 'package:kasir_warung/domain/entities/sale_result.dart';
 import 'package:kasir_warung/domain/repositories/repository_exceptions.dart';
 import 'package:kasir_warung/domain/repositories/sale_repository.dart';
@@ -47,8 +48,28 @@ class _FakeSaleRepository implements SaleRepository {
       note: note,
       createdAt: DateTime(2026, 8, 11),
       items: const [],
+      status: paymentMethod == 'debt' ? 'debt_unpaid' : 'completed',
     );
   }
+
+  @override
+  Future<List<Sale>> getHistory({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? paymentMethod,
+    String? status,
+    required int limit,
+    required int offset,
+  }) async => const [];
+
+  @override
+  Future<SaleResult> getDetail(int saleId) => throw UnimplementedError();
+
+  @override
+  Future<void> markDebtPaid(int saleId) => throw UnimplementedError();
+
+  @override
+  Future<void> voidSale(int saleId) => throw UnimplementedError();
 }
 
 CartItem _item({int sellPrice = 5000, double qty = 1, int discount = 0}) {
