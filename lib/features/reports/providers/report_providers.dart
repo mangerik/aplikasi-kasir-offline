@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/db/database_provider.dart';
 import '../../../data/repositories/report_repository_impl.dart';
 import '../../../domain/entities/daily_summary.dart';
+import '../../../domain/entities/sales_series.dart';
 import '../../../domain/entities/top_product.dart';
 import '../../../domain/repositories/report_repository.dart';
 
@@ -73,6 +74,32 @@ class ReportDateRange {
       start: _startOfDay(start),
       end: _endOfDay(end),
       preset: ReportRangePreset.custom,
+    );
+  }
+
+  /// Panjang rentang dalam hari kalender (inklusif).
+  int get dayCount => SeriesBucket.dayCount(start, end);
+
+  /// Ukuran ember grafik tren untuk rentang ini (PRD v1.1 §9.3.A).
+  SeriesBucket get bucket => SeriesBucket.forRange(start, end);
+
+  /// Rentang **periode sebelumnya** yang sama panjang, tepat menempel di
+  /// depan rentang ini (PRD §9.3.A: "+12% dari 7 hari sebelumnya",
+  /// AC-9.7).
+  ///
+  /// Dihitung dari tanggal, bukan `subtract(Duration)`, supaya pergantian
+  /// bulan & tahun diurus kalender: 7 hari sebelum 3 Maret adalah 24
+  /// Februari, bukan 604.800.000 milidetik yang mungkin meleset satu jam.
+  ReportDateRange get previousPeriod {
+    final days = dayCount;
+    final prevStart = DateTime(start.year, start.month, start.day - days);
+    final prevEnd = _endOfDay(
+      DateTime(start.year, start.month, start.day - 1),
+    );
+    return ReportDateRange(
+      start: prevStart,
+      end: prevEnd,
+      preset: preset,
     );
   }
 
@@ -161,6 +188,74 @@ final FutureProvider<List<TopProduct>> topProductsProvider = FutureProvider<List
         start: range.start,
         end: range.end,
         sortBy: sortBy,
+        userId: ref.watch(reportUserFilterProvider),
+      );
+});
+
+// =====================================================================
+// M14 — Grafik penjualan (PRD v1.1 §9).
+//
+// Seluruh provider di bawah ini `ref.watch` [reportDateRangeProvider] &
+// [reportUserFilterProvider] yang SAMA dengan kartu ringkasan — itulah
+// yang menjamin K-9.3 (tidak ada pemilih rentang kedua) dan AC-9.14
+// (filter kasir memengaruhi grafik konsisten dengan kartu ringkasan)
+// tanpa satu baris kode sinkronisasi pun.
+// =====================================================================
+
+/// Metrik yang digambar grafik tren: omzet atau laba kotor (PRD §9.3.A).
+enum TrendMetric { omzet, profit }
+
+/// Peralih Omzet ↔ Laba pada grafik tren.
+///
+/// Datanya untuk KEDUA metrik ikut dalam satu hasil query
+/// ([SalesPoint.omzet] & [SalesPoint.grossProfit]), sehingga mengubah
+/// peralih ini hanya menggambar ulang — tanpa query ulang dan tanpa
+/// memuat ulang layar (AC-9.6).
+final NotifierProvider<TrendMetricNotifier, TrendMetric> trendMetricProvider =
+    NotifierProvider<TrendMetricNotifier, TrendMetric>(TrendMetricNotifier.new);
+
+class TrendMetricNotifier extends Notifier<TrendMetric> {
+  @override
+  TrendMetric build() => TrendMetric.omzet;
+
+  void set(TrendMetric metric) => state = metric;
+}
+
+/// Deret batang grafik tren untuk rentang & filter kasir aktif.
+final FutureProvider<List<SalesPoint>> salesSeriesProvider =
+    FutureProvider<List<SalesPoint>>((ref) {
+  final range = ref.watch(reportDateRangeProvider);
+  return ref.watch(reportRepoProvider).getSalesSeries(
+        start: range.start,
+        end: range.end,
+        bucket: range.bucket,
+        userId: ref.watch(reportUserFilterProvider),
+      );
+});
+
+/// Distribusi jam ramai (0–23) untuk rentang & filter kasir aktif.
+final FutureProvider<List<HourlyPoint>> hourlyDistributionProvider =
+    FutureProvider<List<HourlyPoint>>((ref) {
+  final range = ref.watch(reportDateRangeProvider);
+  return ref.watch(reportRepoProvider).getHourlyDistribution(
+        start: range.start,
+        end: range.end,
+        userId: ref.watch(reportUserFilterProvider),
+      );
+});
+
+/// Ringkasan **periode sebelumnya** yang sama panjang — dipakai kalimat
+/// perbandingan "+12% dari 7 hari sebelumnya" (AC-9.7).
+///
+/// Sengaja memakai `getSummary` yang sudah ada, bukan query baru: angka
+/// pembandingnya wajib dihitung dengan aturan yang sama persis dengan
+/// angka yang dibandingkan, kalau tidak persentasenya berbohong.
+final FutureProvider<DailySummary> previousPeriodSummaryProvider =
+    FutureProvider<DailySummary>((ref) {
+  final previous = ref.watch(reportDateRangeProvider).previousPeriod;
+  return ref.watch(reportRepoProvider).getSummary(
+        start: previous.start,
+        end: previous.end,
         userId: ref.watch(reportUserFilterProvider),
       );
 });

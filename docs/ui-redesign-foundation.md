@@ -411,7 +411,45 @@ AppBanner(
 ```
 Untuk pesan sekilas pakai `SnackBar` (sudah bertema gelap mengambang).
 
-### 5.10 `AppDecorations` — kalau benar-benar butuh `BoxDecoration`
+### 5.11 `AppBarChart` / `AppHorizontalBarChart` / `AppStackedBar` — grafik
+
+Ditambahkan M14 (PRD v1.1 §9). **Nol dependency grafik** (K-9.1) — batangnya
+`Flex` + `FractionallySizedBox`, bukan `fl_chart`.
+
+```dart
+// Batang vertikal: tren penjualan, jam ramai.
+AppBarChart(
+  entries: [AppBarChartEntry(label: '17', value: 1240000, valueText: 'Rp1.240.000')],
+  selectedIndex: selected,                 // terkendali dari pemanggil
+  onSelected: (i) => setState(() => selected = i),
+  highlightIndex: busiest,                 // satu titik fokus per grafik
+)
+
+// Batang horizontal berlabel: produk terlaris.
+AppHorizontalBarChart(entries: [...])
+
+// Batang bertumpuk + legenda berlabel TEKS: komposisi metode bayar.
+AppStackedBar(segments: [AppStackedBarSegment(label: 'Tunai', value: 750000,
+    valueText: 'Rp750.000', color: context.palette.tunai)])
+```
+
+Aturan pemakaian:
+
+- **Judul kartu kecil, angka besar.** Nilai total periode tampil dengan
+  `AppMoneyText(size: AppMoneySize.lg)` **di atas** grafik; grafiknya
+  pendukung, bukan bintangnya.
+- **Bungkus dengan `AppCard(elevated: true)`** dan beri `SectionHeader` di
+  atasnya.
+- **Jangan pernah menampilkan grafik kosong.** Rentang tanpa data →
+  `EmptyState`, bukan batang nol semua tanpa penjelasan.
+- **Nilai persis wajib bisa dicapai** — lewat tap batang (`onSelected`) atau
+  teks di sebelah bar. Tinggi batang saja bukan angka.
+- **Tanpa pie/donut** (K-9.2): mata manusia buruk membandingkan sudut, dan
+  potongan 4% tak terbaca di layar 5 inci.
+- Tinggi area gambar **tetap** (`AppBarChart.plotHeight` 160dp) supaya tata
+  letak tidak melompat saat data berubah.
+
+### 5.12 `AppDecorations` — kalau benar-benar butuh `BoxDecoration`
 
 ```dart
 AppDecorations.card()                       // permukaan kartu standar
@@ -538,6 +576,7 @@ konten terakhir akan tertutup.
 | `lib/core/widgets/empty_state.dart` | `EmptyState` |
 | `lib/core/widgets/app_state_views.dart` | `AppLoadingView`, `AppErrorView`, `AppBanner` |
 | `lib/core/widgets/app_data_row.dart` | `AppKeyValueRow`, `AppMoneyText` |
+| `lib/core/widgets/app_bar_chart.dart` | `AppBarChart`, `AppHorizontalBarChart`, `AppStackedBar`, `AppBarChartMetrics` (M14) |
 | `lib/core/widgets/main_shell.dart` | Dock navigasi kustom |
 | `assets/fonts/PlusJakartaSans-*.ttf` | Font bundled (5 bobot) |
 

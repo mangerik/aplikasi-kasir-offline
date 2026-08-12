@@ -51,4 +51,39 @@ void main() {
       expect(CurrencyFormatter.parse('abc'), 0);
     });
   });
+
+  /// Format ringkas label sumbu Y grafik (M14, PRD v1.1 §9.6).
+  ///
+  /// Ini satu-satunya tempat aplikasi menampilkan uang secara TIDAK persis,
+  /// jadi aturannya harus terkunci: singkatan Bahasa Indonesia, koma
+  /// desimal, dan tidak boleh ada bentuk aneh seperti "Rp1000rb".
+  group('CurrencyFormatter.formatCompact', () {
+    test('di bawah seribu ditampilkan utuh', () {
+      expect(CurrencyFormatter.formatCompact(0), 'Rp0');
+      expect(CurrencyFormatter.formatCompact(999), 'Rp999');
+    });
+
+    test('ribuan memakai singkatan "rb" dengan koma desimal', () {
+      expect(CurrencyFormatter.formatCompact(1000), 'Rp1rb');
+      expect(CurrencyFormatter.formatCompact(1500), 'Rp1,5rb');
+      expect(CurrencyFormatter.formatCompact(45000), 'Rp45rb');
+      expect(CurrencyFormatter.formatCompact(450500), 'Rp451rb');
+    });
+
+    test('jutaan & miliaran', () {
+      expect(CurrencyFormatter.formatCompact(1240000), 'Rp1,2jt');
+      expect(CurrencyFormatter.formatCompact(12000000), 'Rp12jt');
+      expect(CurrencyFormatter.formatCompact(3400000000), 'Rp3,4m');
+    });
+
+    test('nilai tepat di bawah batas satuan dinaikkan, bukan jadi "1000rb"',
+        () {
+      expect(CurrencyFormatter.formatCompact(999999), 'Rp1jt');
+      expect(CurrencyFormatter.formatCompact(999999999), 'Rp1m');
+    });
+
+    test('nilai negatif tetap terbaca sebagai negatif', () {
+      expect(CurrencyFormatter.formatCompact(-1500000), '-Rp1,5jt');
+    });
+  });
 }

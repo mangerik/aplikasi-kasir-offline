@@ -1,6 +1,7 @@
 import '../entities/customer_debt.dart';
 import '../entities/daily_summary.dart';
 import '../entities/sale.dart';
+import '../entities/sales_series.dart';
 import '../entities/top_product.dart';
 
 /// Urutan pengurutan "produk terlaris" (plan.md Milestone 4 poin 6).
@@ -46,4 +47,33 @@ abstract class ReportRepository {
   /// dipakai layar "tap nama pelanggan -> daftar transaksinya" (plan.md
   /// Milestone 4 poin 7).
   Future<List<Sale>> getDebtTransactions(String customerName);
+
+  /// Deret omzet/laba/jumlah transaksi per ember waktu untuk grafik tren
+  /// (PRD v1.1 §9.5, M14).
+  ///
+  /// Hasilnya **lengkap & terurut naik**: setiap ember antara [start] dan
+  /// [end] hadir, termasuk yang nol (AC-9.11). Pengelompokan memakai zona
+  /// waktu **perangkat** (`'unixepoch','localtime'` di SQL) sehingga
+  /// transaksi pukul 23.30 masuk ke hari itu, bukan hari berikutnya
+  /// (AC-9.4). Transaksi `voided` dikecualikan (AC-9.3).
+  ///
+  /// [userId] memfilter per kasir (AC-9.14); `null` berarti seluruh kasir.
+  Future<List<SalesPoint>> getSalesSeries({
+    required DateTime start,
+    required DateTime end,
+    required SeriesBucket bucket,
+    int? userId,
+  });
+
+  /// Distribusi omzet & jumlah transaksi per **jam 0–23**, diagregasi atas
+  /// SELURUH rentang [start]..[end] (PRD v1.1 §9.3.B).
+  ///
+  /// Selalu mengembalikan 24 baris terurut jam 0 → 23; jam tanpa transaksi
+  /// bernilai nol. Sama seperti [getSalesSeries]: agregasi di SQL, zona
+  /// waktu perangkat, transaksi `voided` dikecualikan.
+  Future<List<HourlyPoint>> getHourlyDistribution({
+    required DateTime start,
+    required DateTime end,
+    int? userId,
+  });
 }

@@ -23,6 +23,12 @@ abstract final class DateFormatter {
   static final DateFormat _dayDate = DateFormat('EEEE, d MMMM yyyy', _locale);
   static final DateFormat _invoiceDay = DateFormat('yyyyMMdd');
 
+  // --- Label sumbu grafik (M14, PRD v1.1 §9.6). Sengaja SANGAT pendek:
+  // label sumbu X berbagi ruang dengan 24–62 label lain di layar 5 inci.
+  static final DateFormat _dayMonth = DateFormat('d/M', _locale);
+  static final DateFormat _monthShort = DateFormat('MMM yy', _locale);
+  static final DateFormat _monthFull = DateFormat('MMMM yyyy', _locale);
+
   /// Contoh: `11 Agustus 2026`.
   static String formatDate(DateTime date) => _fullDate.format(date.toLocal());
 
@@ -37,6 +43,16 @@ abstract final class DateFormatter {
 
   /// Contoh: `Selasa, 11 Agustus 2026`.
   static String formatDayDate(DateTime date) => _dayDate.format(date.toLocal());
+
+  /// Label sumbu X grafik harian, mis. `11/8`.
+  static String formatDayMonth(DateTime date) => _dayMonth.format(date.toLocal());
+
+  /// Label sumbu X grafik bulanan, mis. `Agu 26`. Tahunnya ikut karena
+  /// rentang > 62 hari bisa melompati pergantian tahun.
+  static String formatMonthShort(DateTime date) => _monthShort.format(date.toLocal());
+
+  /// Judul ember bulanan pada kartu detail, mis. `Agustus 2026`.
+  static String formatMonthFull(DateTime date) => _monthFull.format(date.toLocal());
 
   /// Bagian tanggal (`yyyyMMdd`) untuk penomoran invoice harian, mis. `20260811`.
   static String formatInvoiceDay(DateTime date) => _invoiceDay.format(date.toLocal());

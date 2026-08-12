@@ -6,13 +6,12 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/daily_summary.dart';
-import '../../../domain/entities/top_product.dart';
 import '../../../domain/repositories/report_repository.dart';
 import '../../transactions/widgets/status_badge.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../providers/report_providers.dart';
+import '../widgets/sales_charts.dart';
 import '../widgets/summary_card.dart';
-import '../widgets/top_product_tile.dart';
 import '../../customers/providers/customer_providers.dart';
 import '../../customers/screens/customers_screen.dart';
 
@@ -54,6 +53,11 @@ class ReportsScreen extends ConsumerWidget {
           ref.invalidate(dailySummaryProvider);
           ref.invalidate(topProductsProvider);
           ref.invalidate(customerDebtOverviewProvider);
+          // M14: grafik ikut disegarkan — kalau tidak, tarik-untuk-muat-ulang
+          // menghasilkan kartu ringkasan baru di atas grafik lama.
+          ref.invalidate(salesSeriesProvider);
+          ref.invalidate(hourlyDistributionProvider);
+          ref.invalidate(previousPeriodSummaryProvider);
           await ref.read(dailySummaryProvider.future);
         },
         child: ListView(
@@ -103,6 +107,11 @@ class ReportsScreen extends ConsumerWidget {
             // di layar ini).
             const _CustomersShortcut(),
 
+            // --- Grafik (M14, PRD v1.1 §9.3): tren, jam ramai, komposisi
+            // pembayaran. Menempel di bawah kartu ringkasan dan mengikuti
+            // pemilih rentang yang sama (K-9.3).
+            const SalesChartsSection(),
+
             const SizedBox(height: AppSizes.spaceXl),
 
             // --- Produk terlaris.
@@ -132,7 +141,7 @@ class ReportsScreen extends ConsumerWidget {
                         'barang yang paling laku.',
                   );
                 }
-                return _TopProductList(products: products, sortBy: sortBy);
+                return TopProductsChart(products: products, sortBy: sortBy);
               },
               loading: () => const AppLoadingView(compact: true),
               error: (error, stack) => AppErrorView(
@@ -421,34 +430,13 @@ class _CustomersShortcut extends ConsumerWidget {
   }
 }
 
-/// Daftar produk terlaris dengan bar proporsi terhadap peringkat 1.
-class _TopProductList extends StatelessWidget {
-  const _TopProductList({required this.products, required this.sortBy});
-
-  final List<TopProduct> products;
-  final TopProductSort sortBy;
-
-  @override
-  Widget build(BuildContext context) {
-    double metric(TopProduct p) =>
-        sortBy == TopProductSort.qty ? p.qtySold : p.totalValue.toDouble();
-    final top = metric(products.first);
-
-    return Column(
-      children: [
-        for (var i = 0; i < products.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSizes.spaceSm),
-            child: TopProductTile(
-              rank: i + 1,
-              product: products[i],
-              share: top > 0 ? metric(products[i]) / top : 0,
-            ),
-          ),
-      ],
-    );
-  }
-}
+// CATATAN M14: `_TopProductList` (deretan `TopProductTile` berperingkat)
+// DIGANTI `TopProductsChart` — batang horizontal 5 teratas dari data
+// `getTopProducts` yang sama, tanpa query baru (PRD v1.1 §9.3.D). Isinya
+// identik (nama, jumlah terjual, nilai); yang berubah hanya penyajiannya
+// menjadi satu keluarga dengan tiga grafik di atasnya, dan panjangnya
+// dibatasi 5 baris supaya kartu ini tetap "sorotan", bukan daftar kedua
+// setelah daftar Riwayat.
 
 /// Pemilih rentang tanggal laporan (plan.md Milestone 4 poin 5).
 class _PresetSelector extends ConsumerWidget {

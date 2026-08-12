@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/repositories/report_repository_impl.dart';
+import 'package:kasir_warung/domain/entities/sales_series.dart';
 
 /// Uji performa agregasi laporan pada data dummy BESAR (plan.md Milestone 4
 /// poin 8: "uji dengan data dummy besar (>=50.000 transaksi) ... pastikan
@@ -126,5 +127,93 @@ void main() {
       );
     },
     timeout: const Timeout(Duration(minutes: 3)),
+  );
+
+  // ---------------------------------------------------------------------
+  // M14 — AC-9.5: grafik tren pada 100.000 transaksi selesai < 300 ms.
+  //
+  // Ambangnya JAUH lebih ketat daripada uji M4 di atas (<1 detik) karena
+  // grafik ini digambar di layar yang sudah menampilkan kartu ringkasan:
+  // pengguna sudah melihat konten, dan grafik yang menyusul setengah detik
+  // kemudian terasa seperti aplikasi menggantung, bukan seperti memuat.
+  // ---------------------------------------------------------------------
+  test(
+    'getSalesSeries & getHourlyDistribution < 300 ms pada 100.000 transaksi '
+    '(AC-9.5)',
+    () async {
+      const totalSales = 100000;
+      // Sebar rata sepanjang ~1 tahun supaya ember harian/bulanan benar-benar
+      // banyak, bukan menumpuk di satu hari.
+      final baseMillis = DateTime(2025, 1, 1).millisecondsSinceEpoch;
+      const stepMillis = 5 * 60 * 1000; // 5 menit per transaksi.
+
+      final salesRows = List<SalesCompanion>.generate(totalSales, (i) {
+        final status = i % 10 == 0 ? 'voided' : 'completed';
+        return SalesCompanion.insert(
+          invoiceNumber: 'SERIES-$i',
+          subtotal: 10000,
+          total: 10000 + (i % 7) * 500,
+          paymentMethod: i % 3 == 0 ? 'cash' : (i % 3 == 1 ? 'noncash' : 'debt'),
+          status: status,
+          createdAt: baseMillis + i * stepMillis,
+        );
+      });
+      await db.batch((batch) => batch.insertAll(db.sales, salesRows));
+
+      final itemRows = List<SaleItemsCompanion>.generate(
+        totalSales,
+        (i) => SaleItemsCompanion.insert(
+          saleId: i + 1,
+          productName: 'Produk ${i % 300}',
+          unit: 'pcs',
+          qty: 1,
+          sellPrice: 10000,
+          costPrice: const Value(6000),
+          lineTotal: 10000,
+        ),
+      );
+      await db.batch((batch) => batch.insertAll(db.saleItems, itemRows));
+
+      final start = DateTime.fromMillisecondsSinceEpoch(baseMillis);
+      final end = DateTime.fromMillisecondsSinceEpoch(
+        baseMillis + totalSales * stepMillis,
+      );
+
+      // Pemanasan: query pertama ikut menanggung biaya menyiapkan statement
+      // & memanaskan page cache SQLite, dan itu bukan yang dialami pengguna
+      // saat berpindah rentang tanggal.
+      await repo.getSalesSeries(start: start, end: end, bucket: SeriesBucket.day);
+
+      final dayStopwatch = Stopwatch()..start();
+      final daily = await repo.getSalesSeries(
+        start: start,
+        end: end,
+        bucket: SeriesBucket.day,
+      );
+      dayStopwatch.stop();
+
+      final hourStopwatch = Stopwatch()..start();
+      final hourly = await repo.getHourlyDistribution(start: start, end: end);
+      hourStopwatch.stop();
+
+      // Sanity check: query benar-benar memproses data.
+      expect(daily.length, greaterThan(300));
+      expect(daily.fold<int>(0, (sum, p) => sum + p.transactionCount),
+          greaterThan(80000));
+      expect(hourly, hasLength(24));
+
+      expect(
+        dayStopwatch.elapsedMilliseconds,
+        lessThan(300),
+        reason: 'AC-9.5: agregasi deret di SQL (index idx_sales_status_created), '
+            'bukan penjumlahan baris di Dart',
+      );
+      expect(
+        hourStopwatch.elapsedMilliseconds,
+        lessThan(300),
+        reason: 'AC-9.5: distribusi jam ramai juga wajib di SQL',
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }

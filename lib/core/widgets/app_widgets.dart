@@ -19,6 +19,7 @@ export '../constants/app_sizes.dart';
 export '../constants/app_theme.dart' show AppDecorations;
 export '../constants/app_typography.dart'
     show AppTextStyles, AppTextStyleSet, AppTextStylesContextX, AppTypography;
+export 'app_bar_chart.dart';
 export 'app_card.dart';
 export 'app_data_row.dart';
 export 'app_pill.dart';

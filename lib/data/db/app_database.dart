@@ -31,6 +31,11 @@ part 'app_database.g.dart';
 /// - **3** — v1.2 Tier 2 / M13 (PRD v1.1 §8.5): `users`, `sales.user_id`/
 ///   `user_name`/`voided_by_user_id`, `stock_movements.user_id`, 2 index
 ///   baru, plus backfill PIN global lama menjadi akun **Pemilik**.
+///
+/// **M14 (grafik penjualan) sengaja TIDAK menaikkan angka ini** (PRD v1.1
+/// §10, tahap "Tier 2c"): tidak ada tabel/kolom baru, hanya satu index
+/// (`idx_sales_status_created`) yang dibuat idempoten di `beforeOpen` —
+/// lihat [AppDatabase._createSeriesIndexes] untuk alasan lengkapnya.
 const int kAppSchemaVersion = 3;
 
 /// Database aplikasi (SQLite via Drift). Lihat architecture.md §4.
@@ -73,6 +78,7 @@ class AppDatabase extends _$AppDatabase {
           await _createIndexes();
           await _createCustomerIndexes();
           await _createUserIndexes();
+          await _createSeriesIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           // AC-10.5: seluruh langkah migrasi berjalan dalam SATU transaksi —
@@ -90,8 +96,43 @@ class AppDatabase extends _$AppDatabase {
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          // M14 (PRD v1.1 §9.5): index grafik dibuat di sini, BUKAN lewat
+          // kenaikan `schemaVersion` — lihat [_createSeriesIndexes].
+          await _createSeriesIndexes();
         },
       );
+
+  /// Index penunjang **grafik penjualan** (PRD v1.1 §9.5, M14).
+  ///
+  /// ```sql
+  /// CREATE INDEX IF NOT EXISTS idx_sales_status_created ON sales(status, created_at)
+  /// ```
+  ///
+  /// Query grafik selalu memfilter `status` **dan** rentang `created_at`
+  /// sekaligus; dua index terpisah (`idx_sales_status` + `idx_sales_created_at`)
+  /// memaksa SQLite memilih salah satu lalu menyaring sisanya baris demi
+  /// baris.
+  ///
+  /// **Keputusan K-9.6 — dibuat di `beforeOpen`, `schemaVersion` TETAP 3.**
+  /// PRD §10 menetapkan tahap "Tier 2c §9 Grafik" tidak menaikkan versi
+  /// skema, dan plan M14 memintanya lewat "migrasi idempoten". Konsekuensi
+  /// teknisnya: `onUpgrade` hanya berjalan saat `from < to`, sehingga
+  /// database yang sudah berada di versi 3 (setiap pengguna yang memasang
+  /// M13) TIDAK akan pernah menjalankannya — index-nya tidak akan pernah
+  /// lahir. `beforeOpen` adalah satu-satunya jalur yang menjangkau
+  /// database lama maupun baru tanpa menyentuh `user_version`, dan
+  /// `CREATE INDEX IF NOT EXISTS` sudah idempoten sehingga pemanggilan di
+  /// setiap pembukaan koneksi adalah no-op setelah yang pertama.
+  ///
+  /// Menaikkan `schemaVersion` demi index ini justru berbahaya: ia akan
+  /// membuat backup v1.2 ditolak oleh aplikasi v1.1 (AC-10.2) padahal
+  /// isinya identik — index bukan bagian dari bentuk data.
+  Future<void> _createSeriesIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_sales_status_created '
+      'ON sales(status, created_at)',
+    );
+  }
 
   /// Migrasi 1 → 2 (PRD v1.1 §7.3.E & §7.5): pelanggan menjadi entitas
   /// nyata, dan seluruh nama pelanggan lama dipindahkan ke tabel
