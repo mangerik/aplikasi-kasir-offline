@@ -7,6 +7,7 @@ import 'package:kasir_warung/app.dart';
 import 'package:kasir_warung/core/utils/date_formatter.dart';
 import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/db/database_provider.dart';
+import 'package:kasir_warung/features/customers/widgets/customer_picker_sheet.dart';
 import 'package:kasir_warung/features/transactions/widgets/history_tile.dart';
 
 /// Widget test end-to-end Milestone 6 — Tugas B poin 5: regresi otomatis
@@ -176,15 +177,24 @@ void main() {
       final buttonFinder = find.widgetWithText(FilledButton, 'Selesaikan Pembayaran');
       expect(tester.widget<FilledButton>(buttonFinder).onPressed, isNull);
 
-      // Cari field "Nama pelanggan *" secara spesifik (BUKAN
-      // `find.byType(TextField).first`, yang salah menargetkan kolom
-      // pencarian produk di `ProductGrid` — widget itu masih ter-mount di
-      // belakang sheet keranjang/pembayaran, hanya tersembunyi visual).
-      final customerNameField = find.byWidgetPredicate(
-        (widget) => widget is TextField && widget.decoration?.labelText == 'Nama pelanggan *',
+      // M12 (PRD v1.1 §7.3.B): field teks bebas "Nama pelanggan" diganti
+      // PEMILIH pelanggan. Aturan wajibnya tidak berubah (AC-7.4), hanya
+      // cara mengisinya — di sini kasir mengetik nama baru lalu memakai
+      // baris "Buat pelanggan baru".
+      await tester.tap(find.text('Pilih Pelanggan *'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CustomerPickerSheet), findsOneWidget);
+
+      final pickerSearchField = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == 'Ketik nama atau no. HP...',
       );
-      await tester.enterText(customerNameField, 'Budi Santoso');
-      await tester.pump();
+      await tester.enterText(pickerSearchField, 'Budi Santoso');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Buat pelanggan baru'));
+      await tester.pumpAndSettle();
+
       expect(tester.widget<FilledButton>(buttonFinder).onPressed, isNotNull);
 
       await tester.tap(buttonFinder);
@@ -196,8 +206,15 @@ void main() {
       expect(sales, hasLength(1));
       expect(sales.single.paymentMethod, 'debt');
       expect(sales.single.status, 'debt_unpaid');
+      // Snapshot nama tetap ditulis (K-7.1) DAN transaksi kini tertaut ke
+      // baris `customers` yang sungguhan.
       expect(sales.single.customerName, 'Budi Santoso');
+      expect(sales.single.customerId, isNotNull);
       expect(sales.single.paidAmount, 0);
+
+      final customers = await db.select(db.customers).get();
+      expect(customers, hasLength(1));
+      expect(customers.single.name, 'Budi Santoso');
 
       await disposeApp(tester);
     },

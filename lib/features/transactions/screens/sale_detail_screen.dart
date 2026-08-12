@@ -11,6 +11,7 @@ import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../customers/screens/customer_detail_screen.dart';
 import '../../pos/providers/sale_providers.dart';
 import '../../pos/widgets/print_receipt_button.dart';
 import '../../pos/widgets/receipt_widget.dart';
@@ -424,24 +425,100 @@ class _HeaderCard extends StatelessWidget {
               ),
               if (sale.customerName != null && sale.customerName!.trim().isNotEmpty) ...[
                 const SizedBox(width: AppSizes.spaceMs),
-                Icon(
-                  Icons.person_outline,
-                  size: AppSizes.iconSm,
-                  color: context.palette.inkSecondary,
-                ),
-                const SizedBox(width: AppSizes.spaceXs),
+                // Nama yang tampil di sini adalah SNAPSHOT saat transaksi
+                // terjadi (K-7.1) — sengaja tidak ikut berubah walau
+                // pelanggannya di-rename. Yang menjadi tautan ke profil
+                // adalah `customer_id`-nya, bukan teksnya.
                 Flexible(
-                  child: Text(
-                    sale.customerName!.trim(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall,
+                  child: _CustomerLink(
+                    name: sale.customerName!.trim(),
+                    customerId: sale.customerId,
                   ),
                 ),
               ],
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Nama pelanggan pada detail transaksi. Bila transaksi tertaut ke
+/// pelanggan (`sales.customer_id`), namanya menjadi **tautan** ke profil
+/// pelanggan (PRD v1.1 §7.6) — dari struk ke riwayat belanja orangnya
+/// hanya satu tap. Transaksi lama tanpa tautan tetap tampil sebagai teks
+/// biasa.
+class _CustomerLink extends StatelessWidget {
+  const _CustomerLink({required this.name, required this.customerId});
+
+  final String name;
+  final int? customerId;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (customerId == null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.person_outline,
+            size: AppSizes.iconSm,
+            color: context.palette.inkSecondary,
+          ),
+          const SizedBox(width: AppSizes.spaceXs),
+          Flexible(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CustomerDetailScreen(customerId: customerId!),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spaceXs,
+          vertical: AppSizes.spaceXs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: AppSizes.iconSm,
+              color: context.palette.primary,
+            ),
+            const SizedBox(width: AppSizes.spaceXs),
+            Flexible(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: context.palette.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.spaceXs),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: AppSizes.iconSm,
+              color: context.palette.primary,
+            ),
+          ],
+        ),
       ),
     );
   }

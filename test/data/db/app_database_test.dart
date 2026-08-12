@@ -15,8 +15,9 @@ void main() {
   });
 
   group('AppDatabase — skema', () {
-    test('schemaVersion adalah 1', () {
-      expect(db.schemaVersion, 1);
+    test('schemaVersion adalah 2 (M12 — pelanggan & poin)', () {
+      expect(db.schemaVersion, 2);
+      expect(db.schemaVersion, kAppSchemaVersion);
     });
 
     test('bisa insert kategori & produk', () async {

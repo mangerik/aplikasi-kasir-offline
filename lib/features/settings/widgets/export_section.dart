@@ -5,6 +5,7 @@ import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/excel_export_service.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../customers/providers/customer_providers.dart';
 import '../../pos/providers/sale_providers.dart';
 import '../../products/providers/category_providers.dart';
 import '../../products/providers/product_providers.dart';
@@ -107,6 +108,22 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
     });
   }
 
+  /// Export "Pelanggan & Poin" (AC-7.16). Tidak butuh rentang tanggal:
+  /// hutang & saldo poin adalah keadaan SEKARANG, bukan periode.
+  Future<void> _exportCustomers() async {
+    await _run('Pelanggan & Poin', () async {
+      final repo = ref.read(customerRepoProvider);
+      final customers = await repo.getAllForExport();
+      final totalSpent = await repo.getTotalSpentByCustomer();
+      final points = await ref.read(pointsSettingsProvider.future);
+      return ExcelExportService.exportCustomers(
+        customers: customers,
+        totalSpentByCustomer: totalSpent,
+        pointsEnabled: points.enabled,
+      );
+    });
+  }
+
   Future<void> _exportReport() async {
     final range = await _pickRange();
     if (range == null || !mounted) return;
@@ -163,6 +180,14 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
           title: 'Laporan Penjualan',
           description: 'Ringkasan omzet & laba per rentang tanggal.',
           onTap: _busy ? null : _exportReport,
+        ),
+        const SizedBox(height: AppSizes.spaceSm),
+        _ExportTile(
+          icon: Icons.people_outline_rounded,
+          tone: AppTone.accent,
+          title: 'Pelanggan & Poin',
+          description: 'Nama, no. HP, total belanja, sisa hutang, saldo poin.',
+          onTap: _busy ? null : _exportCustomers,
         ),
         const Divider(height: AppSizes.spaceLg),
         Text('ARAH SEBALIKNYA', style: context.textStyles.eyebrow),

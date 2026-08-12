@@ -145,8 +145,21 @@ class ReceiptWidget extends ConsumerWidget {
           const _ReceiptDivider(),
           const SizedBox(height: AppSizes.spaceXs + 2),
           _AmountRow(label: 'Subtotal', value: sale.subtotal, style: _body),
-          if (sale.discount > 0)
-            _AmountRow(label: 'Diskon transaksi', value: -sale.discount, style: _body),
+          // Penukaran poin disimpan sebagai diskon transaksi (K-7.6) tapi
+          // ditampilkan terpisah supaya pembeli melihat poinnya terpakai
+          // (AC-7.9). Program poin mati → `pointsRedeemed` selalu 0.
+          if (sale.discount - sale.pointsRedeemedValue > 0)
+            _AmountRow(
+              label: 'Diskon transaksi',
+              value: -(sale.discount - sale.pointsRedeemedValue),
+              style: _body,
+            ),
+          if (sale.pointsRedeemed > 0)
+            _AmountRow(
+              label: 'Tukar poin (${sale.pointsRedeemed})',
+              value: -sale.pointsRedeemedValue,
+              style: _body,
+            ),
           const SizedBox(height: AppSizes.spaceXs),
           _AmountRow(label: 'TOTAL', value: sale.total, style: _total),
           const SizedBox(height: AppSizes.spaceXs),
@@ -159,6 +172,20 @@ class ReceiptWidget extends ConsumerWidget {
           ] else ...[
             Text('Non-tunai', style: _body),
           ],
+          if (sale.pointsEarned > 0)
+            _AmountRow(
+              label: 'Poin didapat',
+              value: sale.pointsEarned,
+              style: _body,
+              currency: false,
+            ),
+          if (sale.pointsBalanceAfter > 0)
+            _AmountRow(
+              label: 'Saldo poin',
+              value: sale.pointsBalanceAfter,
+              style: _body,
+              currency: false,
+            ),
           const SizedBox(height: AppSizes.spaceMs),
           const _ReceiptDivider(),
           const SizedBox(height: AppSizes.spaceMs),
@@ -183,11 +210,16 @@ class _AmountRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.style,
+    this.currency = true,
   });
 
   final String label;
   final int value;
   final TextStyle style;
+
+  /// `false` untuk angka yang BUKAN rupiah (mis. jumlah poin) — supaya
+  /// "3" tidak pernah tercetak sebagai "Rp3".
+  final bool currency;
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +228,10 @@ class _AmountRow extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Expanded(child: Text(label, style: style)),
-        Text(CurrencyFormatter.format(value), style: style),
+        Text(
+          currency ? CurrencyFormatter.format(value) : '$value',
+          style: style,
+        ),
       ],
     );
   }

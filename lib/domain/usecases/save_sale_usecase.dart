@@ -1,4 +1,5 @@
 import '../entities/cart_item.dart';
+import '../entities/points_settings.dart';
 import '../entities/sale_result.dart';
 import '../repositories/repository_exceptions.dart';
 import '../repositories/sale_repository.dart';
@@ -22,12 +23,20 @@ class SaveSaleUsecase {
   /// Menyimpan transaksi. Melempar [KeranjangKosongException],
   /// [UangTidakCukupException], atau [NamaPelangganWajibException] bila
   /// validasi gagal — TIDAK menyentuh database sama sekali di kasus itu.
+  /// [transactionDiscount] adalah diskon MANUAL yang diketik kasir.
+  /// Potongan hasil penukaran poin ([pointsRedeemed]) dijumlahkan ke
+  /// dalamnya di sini, karena penukaran poin memang diwujudkan sebagai
+  /// diskon transaksi biasa (K-7.6) — dengan begitu laporan, laba kotor,
+  /// dan struk yang sudah ada bekerja tanpa perubahan konsep.
   Future<SaleResult> call({
     required List<CartItem> items,
     required int transactionDiscount,
     required String paymentMethod,
     required int paidAmount,
     String? customerName,
+    int? customerId,
+    int pointsRedeemed = 0,
+    PointsSettings points = const PointsSettings(),
     String? note,
   }) async {
     if (items.isEmpty) {
@@ -35,7 +44,19 @@ class SaveSaleUsecase {
     }
 
     final itemsSubtotal = items.fold<int>(0, (sum, item) => sum + item.lineTotal);
-    final clampedDiscount = transactionDiscount.clamp(0, itemsSubtotal).toInt();
+    final manualDiscount = transactionDiscount.clamp(0, itemsSubtotal).toInt();
+
+    // Penukaran poin hanya sah bila programnya menyala DAN ada pelanggan
+    // yang dipilih — tanpa pelanggan tidak ada saldo yang bisa dikurangi.
+    final effectiveRedeem =
+        (points.enabled && customerId != null && pointsRedeemed > 0)
+            ? pointsRedeemed
+            : 0;
+    final redeemValue = points
+        .rupiahFor(effectiveRedeem)
+        .clamp(0, itemsSubtotal - manualDiscount)
+        .toInt();
+    final clampedDiscount = manualDiscount + redeemValue;
     final total = itemsSubtotal - clampedDiscount;
 
     if (paymentMethod == 'cash' && paidAmount < total) {
@@ -58,6 +79,9 @@ class SaveSaleUsecase {
       customerName: (trimmedCustomerName == null || trimmedCustomerName.isEmpty)
           ? null
           : trimmedCustomerName,
+      customerId: customerId,
+      pointsRedeemed: effectiveRedeem,
+      points: points,
       note: (trimmedNote == null || trimmedNote.isEmpty) ? null : trimmedNote,
     );
   }

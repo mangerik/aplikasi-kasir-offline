@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasir_warung/domain/entities/points_settings.dart';
 import 'package:kasir_warung/domain/entities/cart_item.dart';
 import 'package:kasir_warung/domain/entities/sale.dart';
 import 'package:kasir_warung/domain/entities/sale_result.dart';
@@ -24,6 +25,9 @@ class _FakeSaleRepository implements SaleRepository {
     required String paymentMethod,
     required int paidAmount,
     String? customerName,
+    int? customerId,
+    int pointsRedeemed = 0,
+    PointsSettings points = const PointsSettings(),
     String? note,
   }) async {
     lastItems = items;

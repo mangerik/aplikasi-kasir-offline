@@ -206,10 +206,27 @@ class EscPosReceiptBuilder {
     // --- Ringkasan uang ---
     lines.add(_separator());
     lines.add(EscPosLine(_row('Subtotal', CurrencyFormatter.formatNumber(sale.subtotal))));
-    if (sale.discount > 0) {
+    // Penukaran poin adalah diskon transaksi (K-7.6), tapi di struk ia
+    // dipisah supaya pembeli melihat poinnya benar-benar terpakai
+    // (AC-7.9). Bila nilai rupiahnya tidak bisa dipisah dari diskon
+    // manual, barisnya tetap muncul sebagai keterangan tanpa nominal —
+    // angka totalnya tetap konsisten.
+    final redeemValue = sale.pointsRedeemedValue;
+    final manualDiscount = sale.discount - redeemValue;
+    if (manualDiscount > 0) {
       lines.add(
         EscPosLine(
-          _row('Diskon transaksi', '-${CurrencyFormatter.formatNumber(sale.discount)}'),
+          _row('Diskon transaksi', '-${CurrencyFormatter.formatNumber(manualDiscount)}'),
+        ),
+      );
+    }
+    if (sale.pointsRedeemed > 0) {
+      lines.add(
+        EscPosLine(
+          _row(
+            'Tukar poin (${sale.pointsRedeemed})',
+            redeemValue > 0 ? '-${CurrencyFormatter.formatNumber(redeemValue)}' : '-',
+          ),
         ),
       );
     }
@@ -235,6 +252,15 @@ class EscPosReceiptBuilder {
         lines.add(EscPosLine(_row('Pembayaran', 'HUTANG')));
       default:
         lines.add(EscPosLine(_row('Pembayaran', 'NON-TUNAI')));
+    }
+
+    // Program poin mati → `pointsEarned`/`pointsBalanceAfter` selalu 0,
+    // sehingga tidak ada satu pun baris poin yang tercetak (AC-7.6).
+    if (sale.pointsEarned > 0) {
+      lines.add(EscPosLine(_row('Poin didapat', '+${sale.pointsEarned}')));
+    }
+    if (sale.pointsBalanceAfter > 0) {
+      lines.add(EscPosLine(_row('Saldo poin', '${sale.pointsBalanceAfter}')));
     }
 
     // --- Penutup ---

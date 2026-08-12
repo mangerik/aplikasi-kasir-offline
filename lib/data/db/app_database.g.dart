@@ -1018,6 +1018,565 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   }
 }
 
+class $CustomersTable extends Customers
+    with TableInfo<$CustomersTable, Customer> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pointsMeta = const VerificationMeta('points');
+  @override
+  late final GeneratedColumn<int> points = GeneratedColumn<int>(
+    'points',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _mergedIntoIdMeta = const VerificationMeta(
+    'mergedIntoId',
+  );
+  @override
+  late final GeneratedColumn<int> mergedIntoId = GeneratedColumn<int>(
+    'merged_into_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    phone,
+    note,
+    points,
+    isActive,
+    mergedIntoId,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'customers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Customer> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('points')) {
+      context.handle(
+        _pointsMeta,
+        points.isAcceptableOrUnknown(data['points']!, _pointsMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('merged_into_id')) {
+      context.handle(
+        _mergedIntoIdMeta,
+        mergedIntoId.isAcceptableOrUnknown(
+          data['merged_into_id']!,
+          _mergedIntoIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Customer map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Customer(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      points: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}points'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      mergedIntoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}merged_into_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomersTable createAlias(String alias) {
+    return $CustomersTable(attachedDatabase, alias);
+  }
+}
+
+class Customer extends DataClass implements Insertable<Customer> {
+  final int id;
+  final String name;
+  final String? phone;
+  final String? note;
+
+  /// Saldo poin tercache; sumber kebenarannya `customer_point_entries`.
+  final int points;
+
+  /// Pelanggan tidak pernah dihapus keras — hanya dinonaktifkan, supaya
+  /// riwayat transaksinya tetap utuh.
+  final bool isActive;
+
+  /// Terisi bila pelanggan ini sudah DIGABUNG ke pelanggan lain (K-7.7):
+  /// satu arah dan tidak bisa dibatalkan.
+  final int? mergedIntoId;
+
+  /// Epoch millis UTC.
+  final int createdAt;
+
+  /// Epoch millis UTC.
+  final int updatedAt;
+  const Customer({
+    required this.id,
+    required this.name,
+    this.phone,
+    this.note,
+    required this.points,
+    required this.isActive,
+    this.mergedIntoId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['points'] = Variable<int>(points);
+    map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || mergedIntoId != null) {
+      map['merged_into_id'] = Variable<int>(mergedIntoId);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  CustomersCompanion toCompanion(bool nullToAbsent) {
+    return CustomersCompanion(
+      id: Value(id),
+      name: Value(name),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      points: Value(points),
+      isActive: Value(isActive),
+      mergedIntoId: mergedIntoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mergedIntoId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Customer.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Customer(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      note: serializer.fromJson<String?>(json['note']),
+      points: serializer.fromJson<int>(json['points']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      mergedIntoId: serializer.fromJson<int?>(json['mergedIntoId']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'phone': serializer.toJson<String?>(phone),
+      'note': serializer.toJson<String?>(note),
+      'points': serializer.toJson<int>(points),
+      'isActive': serializer.toJson<bool>(isActive),
+      'mergedIntoId': serializer.toJson<int?>(mergedIntoId),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  Customer copyWith({
+    int? id,
+    String? name,
+    Value<String?> phone = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    int? points,
+    bool? isActive,
+    Value<int?> mergedIntoId = const Value.absent(),
+    int? createdAt,
+    int? updatedAt,
+  }) => Customer(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    phone: phone.present ? phone.value : this.phone,
+    note: note.present ? note.value : this.note,
+    points: points ?? this.points,
+    isActive: isActive ?? this.isActive,
+    mergedIntoId: mergedIntoId.present ? mergedIntoId.value : this.mergedIntoId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Customer copyWithCompanion(CustomersCompanion data) {
+    return Customer(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      note: data.note.present ? data.note.value : this.note,
+      points: data.points.present ? data.points.value : this.points,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      mergedIntoId: data.mergedIntoId.present
+          ? data.mergedIntoId.value
+          : this.mergedIntoId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Customer(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('phone: $phone, ')
+          ..write('note: $note, ')
+          ..write('points: $points, ')
+          ..write('isActive: $isActive, ')
+          ..write('mergedIntoId: $mergedIntoId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    phone,
+    note,
+    points,
+    isActive,
+    mergedIntoId,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Customer &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.phone == this.phone &&
+          other.note == this.note &&
+          other.points == this.points &&
+          other.isActive == this.isActive &&
+          other.mergedIntoId == this.mergedIntoId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CustomersCompanion extends UpdateCompanion<Customer> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> phone;
+  final Value<String?> note;
+  final Value<int> points;
+  final Value<bool> isActive;
+  final Value<int?> mergedIntoId;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  const CustomersCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.note = const Value.absent(),
+    this.points = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.mergedIntoId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  CustomersCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.phone = const Value.absent(),
+    this.note = const Value.absent(),
+    this.points = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.mergedIntoId = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+  }) : name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Customer> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? phone,
+    Expression<String>? note,
+    Expression<int>? points,
+    Expression<bool>? isActive,
+    Expression<int>? mergedIntoId,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (phone != null) 'phone': phone,
+      if (note != null) 'note': note,
+      if (points != null) 'points': points,
+      if (isActive != null) 'is_active': isActive,
+      if (mergedIntoId != null) 'merged_into_id': mergedIntoId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  CustomersCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String?>? phone,
+    Value<String?>? note,
+    Value<int>? points,
+    Value<bool>? isActive,
+    Value<int?>? mergedIntoId,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+  }) {
+    return CustomersCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      note: note ?? this.note,
+      points: points ?? this.points,
+      isActive: isActive ?? this.isActive,
+      mergedIntoId: mergedIntoId ?? this.mergedIntoId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (points.present) {
+      map['points'] = Variable<int>(points.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (mergedIntoId.present) {
+      map['merged_into_id'] = Variable<int>(mergedIntoId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomersCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('phone: $phone, ')
+          ..write('note: $note, ')
+          ..write('points: $points, ')
+          ..write('isActive: $isActive, ')
+          ..write('mergedIntoId: $mergedIntoId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -1126,6 +1685,20 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<int> customerId = GeneratedColumn<int>(
+    'customer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES customers (id)',
+    ),
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -1188,6 +1761,7 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     paidAmount,
     changeAmount,
     customerName,
+    customerId,
     status,
     note,
     createdAt,
@@ -1277,6 +1851,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         ),
       );
     }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -1359,6 +1939,10 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         DriftSqlType.string,
         data['${effectivePrefix}customer_name'],
       ),
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}customer_id'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1402,8 +1986,16 @@ class Sale extends DataClass implements Insertable<Sale> {
   final int paidAmount;
   final int changeAmount;
 
-  /// Wajib jika hutang.
+  /// Wajib jika hutang. **SNAPSHOT HISTORIS** (K-7.1) — tidak pernah
+  /// dihapus dan tidak pernah ikut berubah saat pelanggan di-*rename*,
+  /// persis seperti `sale_items.product_name`. Untuk identitas pelanggan
+  /// yang hidup, pakai [customerId].
   final String? customerName;
+
+  /// Tautan ke pelanggan (PRD v1.1 §7.5, `schemaVersion` 2). `null` untuk
+  /// transaksi tanpa pelanggan — alur kasir tanpa nama tetap nol tap
+  /// tambahan (AC-7.5).
+  final int? customerId;
   final String status;
   final String? note;
 
@@ -1425,6 +2017,7 @@ class Sale extends DataClass implements Insertable<Sale> {
     required this.paidAmount,
     required this.changeAmount,
     this.customerName,
+    this.customerId,
     required this.status,
     this.note,
     required this.createdAt,
@@ -1444,6 +2037,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     map['change_amount'] = Variable<int>(changeAmount);
     if (!nullToAbsent || customerName != null) {
       map['customer_name'] = Variable<String>(customerName);
+    }
+    if (!nullToAbsent || customerId != null) {
+      map['customer_id'] = Variable<int>(customerId);
     }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || note != null) {
@@ -1472,6 +2068,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       customerName: customerName == null && nullToAbsent
           ? const Value.absent()
           : Value(customerName),
+      customerId: customerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerId),
       status: Value(status),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       createdAt: Value(createdAt),
@@ -1499,6 +2098,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       paidAmount: serializer.fromJson<int>(json['paidAmount']),
       changeAmount: serializer.fromJson<int>(json['changeAmount']),
       customerName: serializer.fromJson<String?>(json['customerName']),
+      customerId: serializer.fromJson<int?>(json['customerId']),
       status: serializer.fromJson<String>(json['status']),
       note: serializer.fromJson<String?>(json['note']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -1519,6 +2119,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       'paidAmount': serializer.toJson<int>(paidAmount),
       'changeAmount': serializer.toJson<int>(changeAmount),
       'customerName': serializer.toJson<String?>(customerName),
+      'customerId': serializer.toJson<int?>(customerId),
       'status': serializer.toJson<String>(status),
       'note': serializer.toJson<String?>(note),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -1537,6 +2138,7 @@ class Sale extends DataClass implements Insertable<Sale> {
     int? paidAmount,
     int? changeAmount,
     Value<String?> customerName = const Value.absent(),
+    Value<int?> customerId = const Value.absent(),
     String? status,
     Value<String?> note = const Value.absent(),
     int? createdAt,
@@ -1552,6 +2154,7 @@ class Sale extends DataClass implements Insertable<Sale> {
     paidAmount: paidAmount ?? this.paidAmount,
     changeAmount: changeAmount ?? this.changeAmount,
     customerName: customerName.present ? customerName.value : this.customerName,
+    customerId: customerId.present ? customerId.value : this.customerId,
     status: status ?? this.status,
     note: note.present ? note.value : this.note,
     createdAt: createdAt ?? this.createdAt,
@@ -1579,6 +2182,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       customerName: data.customerName.present
           ? data.customerName.value
           : this.customerName,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
       status: data.status.present ? data.status.value : this.status,
       note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1601,6 +2207,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('paidAmount: $paidAmount, ')
           ..write('changeAmount: $changeAmount, ')
           ..write('customerName: $customerName, ')
+          ..write('customerId: $customerId, ')
           ..write('status: $status, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
@@ -1621,6 +2228,7 @@ class Sale extends DataClass implements Insertable<Sale> {
     paidAmount,
     changeAmount,
     customerName,
+    customerId,
     status,
     note,
     createdAt,
@@ -1640,6 +2248,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.paidAmount == this.paidAmount &&
           other.changeAmount == this.changeAmount &&
           other.customerName == this.customerName &&
+          other.customerId == this.customerId &&
           other.status == this.status &&
           other.note == this.note &&
           other.createdAt == this.createdAt &&
@@ -1657,6 +2266,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<int> paidAmount;
   final Value<int> changeAmount;
   final Value<String?> customerName;
+  final Value<int?> customerId;
   final Value<String> status;
   final Value<String?> note;
   final Value<int> createdAt;
@@ -1672,6 +2282,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.paidAmount = const Value.absent(),
     this.changeAmount = const Value.absent(),
     this.customerName = const Value.absent(),
+    this.customerId = const Value.absent(),
     this.status = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1688,6 +2299,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.paidAmount = const Value.absent(),
     this.changeAmount = const Value.absent(),
     this.customerName = const Value.absent(),
+    this.customerId = const Value.absent(),
     required String status,
     this.note = const Value.absent(),
     required int createdAt,
@@ -1709,6 +2321,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<int>? paidAmount,
     Expression<int>? changeAmount,
     Expression<String>? customerName,
+    Expression<int>? customerId,
     Expression<String>? status,
     Expression<String>? note,
     Expression<int>? createdAt,
@@ -1725,6 +2338,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (paidAmount != null) 'paid_amount': paidAmount,
       if (changeAmount != null) 'change_amount': changeAmount,
       if (customerName != null) 'customer_name': customerName,
+      if (customerId != null) 'customer_id': customerId,
       if (status != null) 'status': status,
       if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
@@ -1743,6 +2357,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Value<int>? paidAmount,
     Value<int>? changeAmount,
     Value<String?>? customerName,
+    Value<int?>? customerId,
     Value<String>? status,
     Value<String?>? note,
     Value<int>? createdAt,
@@ -1759,6 +2374,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       paidAmount: paidAmount ?? this.paidAmount,
       changeAmount: changeAmount ?? this.changeAmount,
       customerName: customerName ?? this.customerName,
+      customerId: customerId ?? this.customerId,
       status: status ?? this.status,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
@@ -1797,6 +2413,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     if (customerName.present) {
       map['customer_name'] = Variable<String>(customerName.value);
     }
+    if (customerId.present) {
+      map['customer_id'] = Variable<int>(customerId.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -1827,6 +2446,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('paidAmount: $paidAmount, ')
           ..write('changeAmount: $changeAmount, ')
           ..write('customerName: $customerName, ')
+          ..write('customerId: $customerId, ')
           ..write('status: $status, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
@@ -3475,16 +4095,530 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $CustomerPointEntriesTable extends CustomerPointEntries
+    with TableInfo<$CustomerPointEntriesTable, CustomerPointEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomerPointEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<int> customerId = GeneratedColumn<int>(
+    'customer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES customers (id)',
+    ),
+  );
+  static const VerificationMeta _saleIdMeta = const VerificationMeta('saleId');
+  @override
+  late final GeneratedColumn<int> saleId = GeneratedColumn<int>(
+    'sale_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES sales (id)',
+    ),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pointsMeta = const VerificationMeta('points');
+  @override
+  late final GeneratedColumn<int> points = GeneratedColumn<int>(
+    'points',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _balanceAfterMeta = const VerificationMeta(
+    'balanceAfter',
+  );
+  @override
+  late final GeneratedColumn<int> balanceAfter = GeneratedColumn<int>(
+    'balance_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    customerId,
+    saleId,
+    type,
+    points,
+    balanceAfter,
+    note,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'customer_point_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomerPointEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_customerIdMeta);
+    }
+    if (data.containsKey('sale_id')) {
+      context.handle(
+        _saleIdMeta,
+        saleId.isAcceptableOrUnknown(data['sale_id']!, _saleIdMeta),
+      );
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('points')) {
+      context.handle(
+        _pointsMeta,
+        points.isAcceptableOrUnknown(data['points']!, _pointsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pointsMeta);
+    }
+    if (data.containsKey('balance_after')) {
+      context.handle(
+        _balanceAfterMeta,
+        balanceAfter.isAcceptableOrUnknown(
+          data['balance_after']!,
+          _balanceAfterMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_balanceAfterMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomerPointEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomerPointEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}customer_id'],
+      )!,
+      saleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sale_id'],
+      ),
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      points: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}points'],
+      )!,
+      balanceAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}balance_after'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomerPointEntriesTable createAlias(String alias) {
+    return $CustomerPointEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class CustomerPointEntry extends DataClass
+    implements Insertable<CustomerPointEntry> {
+  final int id;
+  final int customerId;
+  final int? saleId;
+  final String type;
+  final int points;
+  final int balanceAfter;
+  final String? note;
+
+  /// Epoch millis UTC.
+  final int createdAt;
+  const CustomerPointEntry({
+    required this.id,
+    required this.customerId,
+    this.saleId,
+    required this.type,
+    required this.points,
+    required this.balanceAfter,
+    this.note,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['customer_id'] = Variable<int>(customerId);
+    if (!nullToAbsent || saleId != null) {
+      map['sale_id'] = Variable<int>(saleId);
+    }
+    map['type'] = Variable<String>(type);
+    map['points'] = Variable<int>(points);
+    map['balance_after'] = Variable<int>(balanceAfter);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  CustomerPointEntriesCompanion toCompanion(bool nullToAbsent) {
+    return CustomerPointEntriesCompanion(
+      id: Value(id),
+      customerId: Value(customerId),
+      saleId: saleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saleId),
+      type: Value(type),
+      points: Value(points),
+      balanceAfter: Value(balanceAfter),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory CustomerPointEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomerPointEntry(
+      id: serializer.fromJson<int>(json['id']),
+      customerId: serializer.fromJson<int>(json['customerId']),
+      saleId: serializer.fromJson<int?>(json['saleId']),
+      type: serializer.fromJson<String>(json['type']),
+      points: serializer.fromJson<int>(json['points']),
+      balanceAfter: serializer.fromJson<int>(json['balanceAfter']),
+      note: serializer.fromJson<String?>(json['note']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'customerId': serializer.toJson<int>(customerId),
+      'saleId': serializer.toJson<int?>(saleId),
+      'type': serializer.toJson<String>(type),
+      'points': serializer.toJson<int>(points),
+      'balanceAfter': serializer.toJson<int>(balanceAfter),
+      'note': serializer.toJson<String?>(note),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  CustomerPointEntry copyWith({
+    int? id,
+    int? customerId,
+    Value<int?> saleId = const Value.absent(),
+    String? type,
+    int? points,
+    int? balanceAfter,
+    Value<String?> note = const Value.absent(),
+    int? createdAt,
+  }) => CustomerPointEntry(
+    id: id ?? this.id,
+    customerId: customerId ?? this.customerId,
+    saleId: saleId.present ? saleId.value : this.saleId,
+    type: type ?? this.type,
+    points: points ?? this.points,
+    balanceAfter: balanceAfter ?? this.balanceAfter,
+    note: note.present ? note.value : this.note,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  CustomerPointEntry copyWithCompanion(CustomerPointEntriesCompanion data) {
+    return CustomerPointEntry(
+      id: data.id.present ? data.id.value : this.id,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      saleId: data.saleId.present ? data.saleId.value : this.saleId,
+      type: data.type.present ? data.type.value : this.type,
+      points: data.points.present ? data.points.value : this.points,
+      balanceAfter: data.balanceAfter.present
+          ? data.balanceAfter.value
+          : this.balanceAfter,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerPointEntry(')
+          ..write('id: $id, ')
+          ..write('customerId: $customerId, ')
+          ..write('saleId: $saleId, ')
+          ..write('type: $type, ')
+          ..write('points: $points, ')
+          ..write('balanceAfter: $balanceAfter, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    customerId,
+    saleId,
+    type,
+    points,
+    balanceAfter,
+    note,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomerPointEntry &&
+          other.id == this.id &&
+          other.customerId == this.customerId &&
+          other.saleId == this.saleId &&
+          other.type == this.type &&
+          other.points == this.points &&
+          other.balanceAfter == this.balanceAfter &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt);
+}
+
+class CustomerPointEntriesCompanion
+    extends UpdateCompanion<CustomerPointEntry> {
+  final Value<int> id;
+  final Value<int> customerId;
+  final Value<int?> saleId;
+  final Value<String> type;
+  final Value<int> points;
+  final Value<int> balanceAfter;
+  final Value<String?> note;
+  final Value<int> createdAt;
+  const CustomerPointEntriesCompanion({
+    this.id = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.saleId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.points = const Value.absent(),
+    this.balanceAfter = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  CustomerPointEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required int customerId,
+    this.saleId = const Value.absent(),
+    required String type,
+    required int points,
+    required int balanceAfter,
+    this.note = const Value.absent(),
+    required int createdAt,
+  }) : customerId = Value(customerId),
+       type = Value(type),
+       points = Value(points),
+       balanceAfter = Value(balanceAfter),
+       createdAt = Value(createdAt);
+  static Insertable<CustomerPointEntry> custom({
+    Expression<int>? id,
+    Expression<int>? customerId,
+    Expression<int>? saleId,
+    Expression<String>? type,
+    Expression<int>? points,
+    Expression<int>? balanceAfter,
+    Expression<String>? note,
+    Expression<int>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (customerId != null) 'customer_id': customerId,
+      if (saleId != null) 'sale_id': saleId,
+      if (type != null) 'type': type,
+      if (points != null) 'points': points,
+      if (balanceAfter != null) 'balance_after': balanceAfter,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  CustomerPointEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? customerId,
+    Value<int?>? saleId,
+    Value<String>? type,
+    Value<int>? points,
+    Value<int>? balanceAfter,
+    Value<String?>? note,
+    Value<int>? createdAt,
+  }) {
+    return CustomerPointEntriesCompanion(
+      id: id ?? this.id,
+      customerId: customerId ?? this.customerId,
+      saleId: saleId ?? this.saleId,
+      type: type ?? this.type,
+      points: points ?? this.points,
+      balanceAfter: balanceAfter ?? this.balanceAfter,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<int>(customerId.value);
+    }
+    if (saleId.present) {
+      map['sale_id'] = Variable<int>(saleId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (points.present) {
+      map['points'] = Variable<int>(points.value);
+    }
+    if (balanceAfter.present) {
+      map['balance_after'] = Variable<int>(balanceAfter.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerPointEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('customerId: $customerId, ')
+          ..write('saleId: $saleId, ')
+          ..write('type: $type, ')
+          ..write('points: $points, ')
+          ..write('balanceAfter: $balanceAfter, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $ProductsTable products = $ProductsTable(this);
+  late final $CustomersTable customers = $CustomersTable(this);
   late final $SalesTable sales = $SalesTable(this);
   late final $SaleItemsTable saleItems = $SaleItemsTable(this);
   late final $StockMovementsTable stockMovements = $StockMovementsTable(this);
   late final $HeldCartsTable heldCarts = $HeldCartsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $CustomerPointEntriesTable customerPointEntries =
+      $CustomerPointEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3492,11 +4626,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     categories,
     products,
+    customers,
     sales,
     saleItems,
     stockMovements,
     heldCarts,
     settings,
+    customerPointEntries,
   ];
 }
 
@@ -4415,6 +5551,486 @@ typedef $$ProductsTableProcessedTableManager =
         bool stockMovementsRefs,
       })
     >;
+typedef $$CustomersTableCreateCompanionBuilder =
+    CustomersCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String?> phone,
+      Value<String?> note,
+      Value<int> points,
+      Value<bool> isActive,
+      Value<int?> mergedIntoId,
+      required int createdAt,
+      required int updatedAt,
+    });
+typedef $$CustomersTableUpdateCompanionBuilder =
+    CustomersCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String?> phone,
+      Value<String?> note,
+      Value<int> points,
+      Value<bool> isActive,
+      Value<int?> mergedIntoId,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+    });
+
+final class $$CustomersTableReferences
+    extends BaseReferences<_$AppDatabase, $CustomersTable, Customer> {
+  $$CustomersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SalesTable, List<Sale>> _salesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.sales,
+    aliasName: 'customers__id__sales__customer_id',
+  );
+
+  $$SalesTableProcessedTableManager get salesRefs {
+    final manager = $$SalesTableTableManager(
+      $_db,
+      $_db.sales,
+    ).filter((f) => f.customerId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_salesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $CustomerPointEntriesTable,
+    List<CustomerPointEntry>
+  >
+  _customerPointEntriesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.customerPointEntries,
+        aliasName: 'customers__id__customer_point_entries__customer_id',
+      );
+
+  $$CustomerPointEntriesTableProcessedTableManager
+  get customerPointEntriesRefs {
+    final manager = $$CustomerPointEntriesTableTableManager(
+      $_db,
+      $_db.customerPointEntries,
+    ).filter((f) => f.customerId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _customerPointEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CustomersTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomersTable> {
+  $$CustomersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get points => $composableBuilder(
+    column: $table.points,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mergedIntoId => $composableBuilder(
+    column: $table.mergedIntoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> salesRefs(
+    Expression<bool> Function($$SalesTableFilterComposer f) f,
+  ) {
+    final $$SalesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sales,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesTableFilterComposer(
+            $db: $db,
+            $table: $db.sales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> customerPointEntriesRefs(
+    Expression<bool> Function($$CustomerPointEntriesTableFilterComposer f) f,
+  ) {
+    final $$CustomerPointEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.customerPointEntries,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomerPointEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.customerPointEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CustomersTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomersTable> {
+  $$CustomersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get points => $composableBuilder(
+    column: $table.points,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mergedIntoId => $composableBuilder(
+    column: $table.mergedIntoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomersTable> {
+  $$CustomersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<int> get points =>
+      $composableBuilder(column: $table.points, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get mergedIntoId => $composableBuilder(
+    column: $table.mergedIntoId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> salesRefs<T extends Object>(
+    Expression<T> Function($$SalesTableAnnotationComposer a) f,
+  ) {
+    final $$SalesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sales,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> customerPointEntriesRefs<T extends Object>(
+    Expression<T> Function($$CustomerPointEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$CustomerPointEntriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.customerPointEntries,
+          getReferencedColumn: (t) => t.customerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CustomerPointEntriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.customerPointEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$CustomersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomersTable,
+          Customer,
+          $$CustomersTableFilterComposer,
+          $$CustomersTableOrderingComposer,
+          $$CustomersTableAnnotationComposer,
+          $$CustomersTableCreateCompanionBuilder,
+          $$CustomersTableUpdateCompanionBuilder,
+          (Customer, $$CustomersTableReferences),
+          Customer,
+          PrefetchHooks Function({
+            bool salesRefs,
+            bool customerPointEntriesRefs,
+          })
+        > {
+  $$CustomersTableTableManager(_$AppDatabase db, $CustomersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> points = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int?> mergedIntoId = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+              }) => CustomersCompanion(
+                id: id,
+                name: name,
+                phone: phone,
+                note: note,
+                points: points,
+                isActive: isActive,
+                mergedIntoId: mergedIntoId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String?> phone = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> points = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int?> mergedIntoId = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+              }) => CustomersCompanion.insert(
+                id: id,
+                name: name,
+                phone: phone,
+                note: note,
+                points: points,
+                isActive: isActive,
+                mergedIntoId: mergedIntoId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CustomersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({salesRefs = false, customerPointEntriesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (salesRefs) db.sales,
+                    if (customerPointEntriesRefs) db.customerPointEntries,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (salesRefs)
+                        await $_getPrefetchedData<
+                          Customer,
+                          $CustomersTable,
+                          Sale
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CustomersTableReferences
+                              ._salesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CustomersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).salesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.customerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (customerPointEntriesRefs)
+                        await $_getPrefetchedData<
+                          Customer,
+                          $CustomersTable,
+                          CustomerPointEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CustomersTableReferences
+                              ._customerPointEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CustomersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).customerPointEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.customerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$CustomersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomersTable,
+      Customer,
+      $$CustomersTableFilterComposer,
+      $$CustomersTableOrderingComposer,
+      $$CustomersTableAnnotationComposer,
+      $$CustomersTableCreateCompanionBuilder,
+      $$CustomersTableUpdateCompanionBuilder,
+      (Customer, $$CustomersTableReferences),
+      Customer,
+      PrefetchHooks Function({bool salesRefs, bool customerPointEntriesRefs})
+    >;
 typedef $$SalesTableCreateCompanionBuilder =
     SalesCompanion Function({
       Value<int> id,
@@ -4426,6 +6042,7 @@ typedef $$SalesTableCreateCompanionBuilder =
       Value<int> paidAmount,
       Value<int> changeAmount,
       Value<String?> customerName,
+      Value<int?> customerId,
       required String status,
       Value<String?> note,
       required int createdAt,
@@ -4443,6 +6060,7 @@ typedef $$SalesTableUpdateCompanionBuilder =
       Value<int> paidAmount,
       Value<int> changeAmount,
       Value<String?> customerName,
+      Value<int?> customerId,
       Value<String> status,
       Value<String?> note,
       Value<int> createdAt,
@@ -4453,6 +6071,23 @@ typedef $$SalesTableUpdateCompanionBuilder =
 final class $$SalesTableReferences
     extends BaseReferences<_$AppDatabase, $SalesTable, Sale> {
   $$SalesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CustomersTable _customerIdTable(_$AppDatabase db) =>
+      db.customers.createAlias('sales__customer_id__customers__id');
+
+  $$CustomersTableProcessedTableManager? get customerId {
+    final $_column = $_itemColumn<int>('customer_id');
+    if ($_column == null) return null;
+    final manager = $$CustomersTableTableManager(
+      $_db,
+      $_db.customers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$SaleItemsTable, List<SaleItem>>
   _saleItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -4485,6 +6120,31 @@ final class $$SalesTableReferences
     ).filter((f) => f.referenceSaleId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_stockMovementsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $CustomerPointEntriesTable,
+    List<CustomerPointEntry>
+  >
+  _customerPointEntriesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.customerPointEntries,
+        aliasName: 'sales__id__customer_point_entries__sale_id',
+      );
+
+  $$CustomerPointEntriesTableProcessedTableManager
+  get customerPointEntriesRefs {
+    final manager = $$CustomerPointEntriesTableTableManager(
+      $_db,
+      $_db.customerPointEntries,
+    ).filter((f) => f.saleId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _customerPointEntriesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4569,6 +6229,29 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  $$CustomersTableFilterComposer get customerId {
+    final $$CustomersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableFilterComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<bool> saleItemsRefs(
     Expression<bool> Function($$SaleItemsTableFilterComposer f) f,
   ) {
@@ -4610,6 +6293,31 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
           }) => $$StockMovementsTableFilterComposer(
             $db: $db,
             $table: $db.stockMovements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> customerPointEntriesRefs(
+    Expression<bool> Function($$CustomerPointEntriesTableFilterComposer f) f,
+  ) {
+    final $$CustomerPointEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.customerPointEntries,
+      getReferencedColumn: (t) => t.saleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomerPointEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.customerPointEntries,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4698,6 +6406,29 @@ class $$SalesTableOrderingComposer
     column: $table.debtPaidAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$CustomersTableOrderingComposer get customerId {
+    final $$CustomersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableOrderingComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$SalesTableAnnotationComposer
@@ -4763,6 +6494,29 @@ class $$SalesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  $$CustomersTableAnnotationComposer get customerId {
+    final $$CustomersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> saleItemsRefs<T extends Object>(
     Expression<T> Function($$SaleItemsTableAnnotationComposer a) f,
   ) {
@@ -4812,6 +6566,32 @@ class $$SalesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> customerPointEntriesRefs<T extends Object>(
+    Expression<T> Function($$CustomerPointEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$CustomerPointEntriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.customerPointEntries,
+          getReferencedColumn: (t) => t.saleId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CustomerPointEntriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.customerPointEntries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$SalesTableTableManager
@@ -4827,7 +6607,12 @@ class $$SalesTableTableManager
           $$SalesTableUpdateCompanionBuilder,
           (Sale, $$SalesTableReferences),
           Sale,
-          PrefetchHooks Function({bool saleItemsRefs, bool stockMovementsRefs})
+          PrefetchHooks Function({
+            bool customerId,
+            bool saleItemsRefs,
+            bool stockMovementsRefs,
+            bool customerPointEntriesRefs,
+          })
         > {
   $$SalesTableTableManager(_$AppDatabase db, $SalesTable table)
     : super(
@@ -4851,6 +6636,7 @@ class $$SalesTableTableManager
                 Value<int> paidAmount = const Value.absent(),
                 Value<int> changeAmount = const Value.absent(),
                 Value<String?> customerName = const Value.absent(),
+                Value<int?> customerId = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -4866,6 +6652,7 @@ class $$SalesTableTableManager
                 paidAmount: paidAmount,
                 changeAmount: changeAmount,
                 customerName: customerName,
+                customerId: customerId,
                 status: status,
                 note: note,
                 createdAt: createdAt,
@@ -4883,6 +6670,7 @@ class $$SalesTableTableManager
                 Value<int> paidAmount = const Value.absent(),
                 Value<int> changeAmount = const Value.absent(),
                 Value<String?> customerName = const Value.absent(),
+                Value<int?> customerId = const Value.absent(),
                 required String status,
                 Value<String?> note = const Value.absent(),
                 required int createdAt,
@@ -4898,6 +6686,7 @@ class $$SalesTableTableManager
                 paidAmount: paidAmount,
                 changeAmount: changeAmount,
                 customerName: customerName,
+                customerId: customerId,
                 status: status,
                 note: note,
                 createdAt: createdAt,
@@ -4911,14 +6700,51 @@ class $$SalesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({saleItemsRefs = false, stockMovementsRefs = false}) {
+              ({
+                customerId = false,
+                saleItemsRefs = false,
+                stockMovementsRefs = false,
+                customerPointEntriesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (saleItemsRefs) db.saleItems,
                     if (stockMovementsRefs) db.stockMovements,
+                    if (customerPointEntriesRefs) db.customerPointEntries,
                   ],
-                  addJoins: null,
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (customerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.customerId,
+                                    referencedTable: $$SalesTableReferences
+                                        ._customerIdTable(db),
+                                    referencedColumn: $$SalesTableReferences
+                                        ._customerIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (saleItemsRefs)
@@ -4959,6 +6785,27 @@ class $$SalesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (customerPointEntriesRefs)
+                        await $_getPrefetchedData<
+                          Sale,
+                          $SalesTable,
+                          CustomerPointEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SalesTableReferences
+                              ._customerPointEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SalesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).customerPointEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.saleId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4979,7 +6826,12 @@ typedef $$SalesTableProcessedTableManager =
       $$SalesTableUpdateCompanionBuilder,
       (Sale, $$SalesTableReferences),
       Sale,
-      PrefetchHooks Function({bool saleItemsRefs, bool stockMovementsRefs})
+      PrefetchHooks Function({
+        bool customerId,
+        bool saleItemsRefs,
+        bool stockMovementsRefs,
+        bool customerPointEntriesRefs,
+      })
     >;
 typedef $$SaleItemsTableCreateCompanionBuilder =
     SaleItemsCompanion Function({
@@ -6244,6 +8096,483 @@ typedef $$SettingsTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$CustomerPointEntriesTableCreateCompanionBuilder =
+    CustomerPointEntriesCompanion Function({
+      Value<int> id,
+      required int customerId,
+      Value<int?> saleId,
+      required String type,
+      required int points,
+      required int balanceAfter,
+      Value<String?> note,
+      required int createdAt,
+    });
+typedef $$CustomerPointEntriesTableUpdateCompanionBuilder =
+    CustomerPointEntriesCompanion Function({
+      Value<int> id,
+      Value<int> customerId,
+      Value<int?> saleId,
+      Value<String> type,
+      Value<int> points,
+      Value<int> balanceAfter,
+      Value<String?> note,
+      Value<int> createdAt,
+    });
+
+final class $$CustomerPointEntriesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $CustomerPointEntriesTable,
+          CustomerPointEntry
+        > {
+  $$CustomerPointEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CustomersTable _customerIdTable(_$AppDatabase db) => db.customers
+      .createAlias('customer_point_entries__customer_id__customers__id');
+
+  $$CustomersTableProcessedTableManager get customerId {
+    final $_column = $_itemColumn<int>('customer_id')!;
+
+    final manager = $$CustomersTableTableManager(
+      $_db,
+      $_db.customers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SalesTable _saleIdTable(_$AppDatabase db) =>
+      db.sales.createAlias('customer_point_entries__sale_id__sales__id');
+
+  $$SalesTableProcessedTableManager? get saleId {
+    final $_column = $_itemColumn<int>('sale_id');
+    if ($_column == null) return null;
+    final manager = $$SalesTableTableManager(
+      $_db,
+      $_db.sales,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_saleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CustomerPointEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomerPointEntriesTable> {
+  $$CustomerPointEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get points => $composableBuilder(
+    column: $table.points,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get balanceAfter => $composableBuilder(
+    column: $table.balanceAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CustomersTableFilterComposer get customerId {
+    final $$CustomersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableFilterComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SalesTableFilterComposer get saleId {
+    final $$SalesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.saleId,
+      referencedTable: $db.sales,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesTableFilterComposer(
+            $db: $db,
+            $table: $db.sales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CustomerPointEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomerPointEntriesTable> {
+  $$CustomerPointEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get points => $composableBuilder(
+    column: $table.points,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get balanceAfter => $composableBuilder(
+    column: $table.balanceAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CustomersTableOrderingComposer get customerId {
+    final $$CustomersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableOrderingComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SalesTableOrderingComposer get saleId {
+    final $$SalesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.saleId,
+      referencedTable: $db.sales,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesTableOrderingComposer(
+            $db: $db,
+            $table: $db.sales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CustomerPointEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomerPointEntriesTable> {
+  $$CustomerPointEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get points =>
+      $composableBuilder(column: $table.points, builder: (column) => column);
+
+  GeneratedColumn<int> get balanceAfter => $composableBuilder(
+    column: $table.balanceAfter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$CustomersTableAnnotationComposer get customerId {
+    final $$CustomersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SalesTableAnnotationComposer get saleId {
+    final $$SalesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.saleId,
+      referencedTable: $db.sales,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CustomerPointEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomerPointEntriesTable,
+          CustomerPointEntry,
+          $$CustomerPointEntriesTableFilterComposer,
+          $$CustomerPointEntriesTableOrderingComposer,
+          $$CustomerPointEntriesTableAnnotationComposer,
+          $$CustomerPointEntriesTableCreateCompanionBuilder,
+          $$CustomerPointEntriesTableUpdateCompanionBuilder,
+          (CustomerPointEntry, $$CustomerPointEntriesTableReferences),
+          CustomerPointEntry,
+          PrefetchHooks Function({bool customerId, bool saleId})
+        > {
+  $$CustomerPointEntriesTableTableManager(
+    _$AppDatabase db,
+    $CustomerPointEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomerPointEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomerPointEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CustomerPointEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> customerId = const Value.absent(),
+                Value<int?> saleId = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<int> points = const Value.absent(),
+                Value<int> balanceAfter = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+              }) => CustomerPointEntriesCompanion(
+                id: id,
+                customerId: customerId,
+                saleId: saleId,
+                type: type,
+                points: points,
+                balanceAfter: balanceAfter,
+                note: note,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int customerId,
+                Value<int?> saleId = const Value.absent(),
+                required String type,
+                required int points,
+                required int balanceAfter,
+                Value<String?> note = const Value.absent(),
+                required int createdAt,
+              }) => CustomerPointEntriesCompanion.insert(
+                id: id,
+                customerId: customerId,
+                saleId: saleId,
+                type: type,
+                points: points,
+                balanceAfter: balanceAfter,
+                note: note,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CustomerPointEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({customerId = false, saleId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (customerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.customerId,
+                                referencedTable:
+                                    $$CustomerPointEntriesTableReferences
+                                        ._customerIdTable(db),
+                                referencedColumn:
+                                    $$CustomerPointEntriesTableReferences
+                                        ._customerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (saleId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.saleId,
+                                referencedTable:
+                                    $$CustomerPointEntriesTableReferences
+                                        ._saleIdTable(db),
+                                referencedColumn:
+                                    $$CustomerPointEntriesTableReferences
+                                        ._saleIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CustomerPointEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomerPointEntriesTable,
+      CustomerPointEntry,
+      $$CustomerPointEntriesTableFilterComposer,
+      $$CustomerPointEntriesTableOrderingComposer,
+      $$CustomerPointEntriesTableAnnotationComposer,
+      $$CustomerPointEntriesTableCreateCompanionBuilder,
+      $$CustomerPointEntriesTableUpdateCompanionBuilder,
+      (CustomerPointEntry, $$CustomerPointEntriesTableReferences),
+      CustomerPointEntry,
+      PrefetchHooks Function({bool customerId, bool saleId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6252,6 +8581,8 @@ class $AppDatabaseManager {
       $$CategoriesTableTableManager(_db, _db.categories);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
+  $$CustomersTableTableManager get customers =>
+      $$CustomersTableTableManager(_db, _db.customers);
   $$SalesTableTableManager get sales =>
       $$SalesTableTableManager(_db, _db.sales);
   $$SaleItemsTableTableManager get saleItems =>
@@ -6262,4 +8593,6 @@ class $AppDatabaseManager {
       $$HeldCartsTableTableManager(_db, _db.heldCarts);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$CustomerPointEntriesTableTableManager get customerPointEntries =>
+      $$CustomerPointEntriesTableTableManager(_db, _db.customerPointEntries);
 }

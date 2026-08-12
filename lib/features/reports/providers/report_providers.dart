@@ -2,9 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/database_provider.dart';
 import '../../../data/repositories/report_repository_impl.dart';
-import '../../../domain/entities/customer_debt.dart';
 import '../../../domain/entities/daily_summary.dart';
-import '../../../domain/entities/sale.dart';
 import '../../../domain/entities/top_product.dart';
 import '../../../domain/repositories/report_repository.dart';
 
@@ -144,17 +142,11 @@ final FutureProvider<List<TopProduct>> topProductsProvider = FutureProvider<List
       .getTopProducts(start: range.start, end: range.end, sortBy: sortBy);
 });
 
-/// Daftar hutang belum lunas per pelanggan (plan.md Milestone 4 poin 7) —
-/// SEMUA rentang waktu, tidak terpengaruh filter tanggal dashboard.
-final FutureProvider<List<CustomerDebt>> unpaidDebtsProvider = FutureProvider<List<CustomerDebt>>(
-  (ref) {
-    return ref.watch(reportRepoProvider).getUnpaidDebts();
-  },
-);
-
-/// Daftar transaksi hutang belum lunas milik satu pelanggan — dipakai
-/// layar "tap nama pelanggan -> daftar transaksinya".
-final AutoDisposeFutureProviderFamily<List<Sale>, String> customerDebtTransactionsProvider =
-    FutureProvider.autoDispose.family<List<Sale>, String>((ref, customerName) {
-  return ref.watch(reportRepoProvider).getDebtTransactions(customerName);
-});
+// CATATAN M12: `unpaidDebtsProvider` & `customerDebtTransactionsProvider`
+// DIHAPUS. Sejak `schemaVersion` 2 hutang dikelompokkan per **pelanggan**
+// (`sales.customer_id`), bukan per teks `sales.customer_name` — lihat
+// `features/customers/providers/customer_providers.dart`. Pengelompokan
+// per nama yang lama tetap ada di `ReportRepository` (dipakai laporan &
+// export yang membaca snapshot nama historis), tapi tidak lagi punya
+// konsumen UI: dua nama berbeda ejaan akan tampil sebagai dua penghutang,
+// dan itulah persis masalah yang PRD §7.1 minta diselesaikan.

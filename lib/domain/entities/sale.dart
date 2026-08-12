@@ -15,6 +15,7 @@ class Sale {
     required this.paidAmount,
     required this.changeAmount,
     this.customerName,
+    this.customerId,
     required this.status,
     this.note,
     required this.createdAt,
@@ -36,8 +37,13 @@ class Sale {
   final int paidAmount;
   final int changeAmount;
 
-  /// Terisi jika [paymentMethod] `'debt'`.
+  /// Terisi jika [paymentMethod] `'debt'`. **Snapshot historis** (K-7.1)
+  /// — tidak ikut berubah saat pelanggan di-*rename*.
   final String? customerName;
+
+  /// Tautan ke pelanggan (`customers.id`), sejak `schemaVersion` 2 —
+  /// `null` untuk transaksi tanpa pelanggan (PRD v1.1 §7.5).
+  final int? customerId;
 
   /// `'completed'` | `'debt_unpaid'` | `'voided'`.
   final String status;

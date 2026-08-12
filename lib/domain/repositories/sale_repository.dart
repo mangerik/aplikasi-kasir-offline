@@ -1,4 +1,5 @@
 import '../entities/cart_item.dart';
+import '../entities/points_settings.dart';
 import '../entities/sale.dart';
 import '../entities/sale_result.dart';
 
@@ -17,12 +18,25 @@ abstract class SaleRepository {
   /// [items] tidak boleh kosong dan [paidAmount] tunai wajib cukup —
   /// validasi tersebut ada di `SaveSaleUsecase` (domain), BUKAN di sini;
   /// implementasi repo boleh mengasumsikan input sudah tervalidasi.
+  ///
+  /// Sejak `schemaVersion` 2 (PRD v1.1 §7) penyimpanan ini SEKALIGUS
+  /// menulis buku besar poin di dalam transaksi yang sama:
+  /// - [customerId] menautkan transaksi ke pelanggan ([customerName] tetap
+  ///   ditulis sebagai snapshot historis, K-7.1);
+  /// - [pointsRedeemed] menghasilkan entri `redeem` (nilainya sudah
+  ///   termasuk di dalam [transactionDiscount], K-7.6);
+  /// - [points] menentukan berapa poin yang didapat dari total akhir
+  ///   (entri `earn`, AC-7.7 & AC-7.10). Program mati → tidak ada entri
+  ///   poin sama sekali (AC-7.6).
   Future<SaleResult> saveSale({
     required List<CartItem> items,
     required int transactionDiscount,
     required String paymentMethod,
     required int paidAmount,
     String? customerName,
+    int? customerId,
+    int pointsRedeemed = 0,
+    PointsSettings points = const PointsSettings(),
     String? note,
   });
 
@@ -64,6 +78,11 @@ abstract class SaleRepository {
   /// `stock_movements(type='void_return')` — SEMUA dalam SATU
   /// `db.transaction()`. Item bebas (`productId == null`) TIDAK menyentuh
   /// stok. Transaksi tidak pernah dihapus, hanya ditandai.
+  ///
+  /// Sejak `schemaVersion` 2: poin yang sempat diberikan transaksi ini
+  /// DITARIK kembali dan poin yang sempat ditukar DIKEMBALIKAN, keduanya
+  /// sebagai entri `void_return` terpisah di dalam transaksi DB yang sama
+  /// (PRD v1.1 §7.3.C, AC-7.8). Saldo tidak pernah negatif.
   ///
   /// Validasi bahwa [saleId] belum pernah di-void ada di `VoidSaleUsecase`
   /// (domain), BUKAN di sini.

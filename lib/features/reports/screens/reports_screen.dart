@@ -12,7 +12,8 @@ import '../../transactions/widgets/status_badge.dart';
 import '../providers/report_providers.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/top_product_tile.dart';
-import 'debt_list_screen.dart';
+import '../../customers/providers/customer_providers.dart';
+import '../../customers/screens/customers_screen.dart';
 
 /// Dashboard Laporan (plan.md Milestone 4 poin 4-7): ringkasan omzet/
 /// transaksi/laba kotor per metode bayar untuk rentang tanggal terpilih,
@@ -40,9 +41,9 @@ class ReportsScreen extends ConsumerWidget {
         title: const Text('Laporan'),
         actions: [
           IconButton(
-            tooltip: 'Daftar hutang belum lunas',
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            onPressed: () => _openDebtList(context),
+            tooltip: 'Daftar pelanggan',
+            icon: const Icon(Icons.people_outline_rounded),
+            onPressed: () => _openCustomers(context),
           ),
           const SizedBox(width: AppSizes.spaceXs),
         ],
@@ -51,7 +52,7 @@ class ReportsScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(dailySummaryProvider);
           ref.invalidate(topProductsProvider);
-          ref.invalidate(unpaidDebtsProvider);
+          ref.invalidate(customerDebtOverviewProvider);
           await ref.read(dailySummaryProvider.future);
         },
         child: ListView(
@@ -96,8 +97,9 @@ class ReportsScreen extends ConsumerWidget {
               ),
             ),
 
-            // --- Hutang berjalan (satu-satunya elemen beraksen di layar ini).
-            const _DebtShortcut(),
+            // --- Pelanggan & hutang berjalan (satu-satunya elemen beraksen
+            // di layar ini).
+            const _CustomersShortcut(),
 
             const SizedBox(height: AppSizes.spaceXl),
 
@@ -144,8 +146,12 @@ class ReportsScreen extends ConsumerWidget {
     );
   }
 
-  static void _openDebtList(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DebtListScreen()));
+  static void _openCustomers(BuildContext context, {bool onlyWithDebt = false}) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CustomersScreen(initialOnlyWithDebt: onlyWithDebt),
+      ),
+    );
   }
 }
 
@@ -289,33 +295,44 @@ class _PaymentMethodRow extends StatelessWidget {
   }
 }
 
-/// Pintasan hutang berjalan — hanya muncul kalau memang ada hutang.
-class _DebtShortcut extends ConsumerWidget {
-  const _DebtShortcut();
+/// Kartu **Pelanggan** (PRD v1.1 §7.6) — bekas kartu "Hutang Pelanggan".
+///
+/// Dua ringkasan dalam satu kartu: berapa yang perlu ditagih, dan berapa
+/// pelanggan yang tercatat. Keduanya menuju layar yang sama, hanya dengan
+/// filter awal yang berbeda — hutang bukan lagi layar terpisah, melainkan
+/// satu saringan di dalam daftar pelanggan.
+class _CustomersShortcut extends ConsumerWidget {
+  const _CustomersShortcut();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final debtsAsync = ref.watch(unpaidDebtsProvider);
+    final overviewAsync = ref.watch(customerDebtOverviewProvider);
 
-    return debtsAsync.maybeWhen(
-      data: (debts) {
-        if (debts.isEmpty) return const SizedBox.shrink();
-        final total = debts.fold<int>(0, (sum, debt) => sum + debt.totalDebt);
+    return overviewAsync.maybeWhen(
+      data: (overview) {
+        if (overview.customerCount == 0 && overview.totalDebt == 0) {
+          return const SizedBox.shrink();
+        }
+        final hasDebt = overview.totalDebt > 0;
 
         return Padding(
           padding: const EdgeInsets.only(top: AppSizes.spaceMd),
           child: AppCard(
-            color: context.palette.accent50,
-            borderColor: context.palette.accent100,
+            color: hasDebt ? context.palette.accent50 : context.palette.surface,
+            borderColor:
+                hasDebt ? context.palette.accent100 : context.palette.border,
             padding: const EdgeInsets.all(AppSizes.spaceMd),
-            onTap: () => Navigator.of(
+            onTap: () => ReportsScreen._openCustomers(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const DebtListScreen())),
+              onlyWithDebt: hasDebt,
+            ),
             child: Row(
               children: [
-                const AppIconBadge(
-                  icon: Icons.account_balance_wallet_outlined,
-                  tone: AppTone.accent,
+                AppIconBadge(
+                  icon: hasDebt
+                      ? Icons.account_balance_wallet_outlined
+                      : Icons.people_outline_rounded,
+                  tone: hasDebt ? AppTone.accent : AppTone.neutral,
                 ),
                 const SizedBox(width: AppSizes.spaceMs),
                 Expanded(
@@ -323,15 +340,21 @@ class _DebtShortcut extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('PERLU DITAGIH', style: context.textStyles.eyebrow),
+                      Text(
+                        hasDebt ? 'PERLU DITAGIH' : 'PELANGGAN',
+                        style: context.textStyles.eyebrow,
+                      ),
                       const SizedBox(height: AppSizes.spaceXs),
                       AppMoneyText(
-                        CurrencyFormatter.format(total),
-                        color: context.palette.accentText,
+                        CurrencyFormatter.format(overview.totalDebt),
+                        color: hasDebt
+                            ? context.palette.accentText
+                            : context.palette.ink,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${debts.length} pelanggan masih punya hutang',
+                        '${overview.debtorCount} dari ${overview.customerCount} '
+                        'pelanggan masih punya hutang',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -339,7 +362,9 @@ class _DebtShortcut extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: context.palette.accentText,
+                  color: hasDebt
+                      ? context.palette.accentText
+                      : context.palette.inkTertiary,
                 ),
               ],
             ),

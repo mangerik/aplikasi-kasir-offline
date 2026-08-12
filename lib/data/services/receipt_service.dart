@@ -76,8 +76,18 @@ abstract final class ReceiptService {
     buffer
       ..writeln('------------------------------')
       ..writeln('Subtotal: ${CurrencyFormatter.format(sale.subtotal)}');
-    if (sale.discount > 0) {
-      buffer.writeln('Diskon transaksi: -${CurrencyFormatter.format(sale.discount)}');
+    // Penukaran poin tersimpan sebagai diskon transaksi (K-7.6); di struk
+    // ia dipisah agar pembeli melihat poinnya benar-benar terpakai
+    // (AC-7.9).
+    final redeemValue = sale.pointsRedeemedValue;
+    final manualDiscount = sale.discount - redeemValue;
+    if (manualDiscount > 0) {
+      buffer.writeln('Diskon transaksi: -${CurrencyFormatter.format(manualDiscount)}');
+    }
+    if (sale.pointsRedeemed > 0) {
+      final nominal =
+          redeemValue > 0 ? ': -${CurrencyFormatter.format(redeemValue)}' : '';
+      buffer.writeln('Tukar poin (${sale.pointsRedeemed} poin)$nominal');
     }
     buffer.writeln('Total: ${CurrencyFormatter.format(sale.total)}');
 
@@ -89,6 +99,15 @@ abstract final class ReceiptService {
       buffer.writeln('Hutang atas nama: ${sale.customerName ?? '-'}');
     } else {
       buffer.writeln('Non-tunai');
+    }
+
+    // Program poin mati → kedua nilai ini selalu 0, jadi tidak ada satu
+    // pun baris poin yang ikut tercetak (AC-7.6).
+    if (sale.pointsEarned > 0) {
+      buffer.writeln('Poin didapat: +${sale.pointsEarned}');
+    }
+    if (sale.pointsBalanceAfter > 0) {
+      buffer.writeln('Saldo poin: ${sale.pointsBalanceAfter}');
     }
 
     buffer

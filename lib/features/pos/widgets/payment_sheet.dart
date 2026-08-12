@@ -7,8 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../domain/entities/customer.dart';
+import '../../../domain/entities/points_settings.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../customers/widgets/customer_picker_sheet.dart';
 import '../../license/providers/license_providers.dart';
+import '../../settings/providers/settings_providers.dart';
 import '../providers/cart_provider.dart';
 import '../providers/sale_providers.dart';
 
@@ -50,20 +54,49 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
 
   final _paidController = TextEditingController();
   final _noncashOtherController = TextEditingController();
-  final _customerNameController = TextEditingController();
   final _noteController = TextEditingController();
 
+  /// Pelanggan terpilih — `null` berarti transaksi tanpa pelanggan, dan
+  /// itulah keadaan default: alur kasir tunai tidak bertambah satu tap pun
+  /// dibanding v1.0 (AC-7.5).
+  CustomerListItem? _customer;
+
+  /// Poin yang ditukar pada transaksi ini (K-7.6).
+  int _pointsRedeemed = 0;
+
   bool _saving = false;
-  bool _customerNameTouched = false;
+  bool _customerTouched = false;
   String? _errorMessage;
 
   @override
   void dispose() {
     _paidController.dispose();
     _noncashOtherController.dispose();
-    _customerNameController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  PointsSettings get _points =>
+      ref.read(pointsSettingsProvider).valueOrNull ?? const PointsSettings();
+
+  Future<void> _pickCustomer() async {
+    final picked = await showCustomerPicker(context, points: _points);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _customer = picked;
+      _customerTouched = true;
+      // Saldo pelanggan berbeda → pilihan penukaran sebelumnya tidak
+      // otomatis berlaku lagi.
+      _pointsRedeemed = 0;
+      _errorMessage = null;
+    });
+  }
+
+  void _clearCustomer() {
+    setState(() {
+      _customer = null;
+      _pointsRedeemed = 0;
+    });
   }
 
   int get _paidAmount => CurrencyFormatter.parse(_paidController.text);
@@ -88,7 +121,9 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
       case 'cash':
         return _paidAmount >= total;
       case 'debt':
-        return _customerNameController.text.trim().isNotEmpty;
+        // Hutang WAJIB punya pelanggan — perilaku v1.0 dipertahankan,
+        // hanya cara memilihnya yang berubah (AC-7.4).
+        return _customer != null;
       case 'noncash':
       default:
         return true;
@@ -96,8 +131,8 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
   }
 
   Future<void> _confirm(int total) async {
-    if (_paymentMethod == 'debt' && _customerNameController.text.trim().isEmpty) {
-      setState(() => _customerNameTouched = true);
+    if (_paymentMethod == 'debt' && _customer == null) {
+      setState(() => _customerTouched = true);
       return;
     }
     if (!_isFormValid(total)) return;
@@ -106,12 +141,15 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     int paidAmount;
     String? customerName;
     String? note;
+    // Nama pelanggan tetap ditulis ke `sales.customer_name` sebagai
+    // SNAPSHOT historis untuk semua metode bayar (K-7.1) — mengganti nama
+    // pelanggan nanti tidak boleh mengubah struk yang sudah tercetak.
+    customerName = _customer?.name;
     switch (_paymentMethod) {
       case 'cash':
         paidAmount = _paidAmount;
       case 'debt':
         paidAmount = 0;
-        customerName = _customerNameController.text.trim();
         note = _noteController.text.trim().isEmpty ? null : _noteController.text.trim();
       case 'noncash':
       default:
@@ -135,6 +173,9 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
         paymentMethod: _paymentMethod,
         paidAmount: paidAmount,
         customerName: customerName,
+        customerId: _customer?.id,
+        pointsRedeemed: _pointsRedeemed,
+        points: _points,
         note: note,
       );
       ref.read(cartProvider.notifier).clear();
@@ -155,7 +196,11 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
-    final total = cart.total;
+    final points = ref.watch(pointsSettingsProvider).valueOrNull ?? const PointsSettings();
+    // Penukaran poin adalah diskon transaksi biasa (K-7.6), jadi ia
+    // mengurangi total yang harus dibayar persis seperti diskon lain.
+    final redeemValue = points.rupiahFor(_pointsRedeemed).clamp(0, cart.total).toInt();
+    final total = cart.total - redeemValue;
     final theme = Theme.of(context);
     final isValid = _isFormValid(total);
 
@@ -195,9 +240,25 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
                       '${cart.lineCount} item di keranjang',
                       style: theme.textTheme.bodySmall,
                     ),
+                    if (redeemValue > 0) ...[
+                      const SizedBox(height: AppSizes.spaceXs),
+                      Text(
+                        'Sudah dipotong $_pointsRedeemed poin '
+                        '(−${CurrencyFormatter.format(redeemValue)})',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: context.palette.accentText,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
+              const SizedBox(height: AppSizes.spaceLg),
+              _buildCustomerSelector(),
+              if (points.enabled && _customer != null) ...[
+                const SizedBox(height: AppSizes.spaceMd),
+                _buildPointsSection(points, cart.total),
+              ],
               const SizedBox(height: AppSizes.spaceLg),
               Text('Metode pembayaran', style: theme.textTheme.titleSmall),
               const SizedBox(height: AppSizes.spaceSm),
@@ -227,6 +288,163 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Pemilih pelanggan (PRD v1.1 §7.3.B).
+  ///
+  /// Bentuknya sengaja **satu baris**: tombol saat kosong, chip saat
+  /// terisi. Tidak ada field teks bebas lagi — teks bebas itulah yang
+  /// melahirkan "Bu Ani" / "bu ani" / "Bu Ani " sebagai tiga penghutang
+  /// berbeda di v1.0.
+  Widget _buildCustomerSelector() {
+    final theme = Theme.of(context);
+    final customer = _customer;
+    final isRequired = _paymentMethod == 'debt';
+    final showError = isRequired && customer == null && _customerTouched;
+
+    if (customer == null) {
+      return SizedBox(
+        height: AppSizes.minTouchTarget,
+        child: OutlinedButton.icon(
+          onPressed: _pickCustomer,
+          icon: const Icon(Icons.person_add_alt_1_outlined),
+          label: Text(
+            isRequired ? 'Pilih Pelanggan *' : 'Pilih Pelanggan (opsional)',
+          ),
+          style: showError
+              ? OutlinedButton.styleFrom(
+                  foregroundColor: context.palette.dangerText,
+                  side: BorderSide(color: context.palette.dangerBorder),
+                )
+              : null,
+        ),
+      );
+    }
+
+    return AppCard(
+      onTap: _pickCustomer,
+      color: context.palette.primary50,
+      borderColor: context.palette.primary100,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          const AppIconBadge(icon: Icons.person_outline_rounded, tone: AppTone.primary),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  customer.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium,
+                ),
+                if (customer.hasDebt) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Hutang berjalan ${CurrencyFormatter.format(customer.totalDebt)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: context.palette.accentText,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded),
+            tooltip: 'Lepas pelanggan',
+            onPressed: _clearCustomer,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Penukaran poin — muncul HANYA bila program poin menyala DAN pelanggan
+  /// sudah dipilih (AC-7.6).
+  ///
+  /// Pilihan disajikan sebagai chip, bukan field angka: kasir memilih
+  /// sambil berdiri, dan setiap keyboard yang muncul di alur pembayaran
+  /// adalah satu kesempatan lagi untuk salah ketik.
+  Widget _buildPointsSection(PointsSettings points, int cartTotal) {
+    final theme = Theme.of(context);
+    final customer = _customer!;
+    final maxRedeem = points.maxRedeemable(
+      balance: customer.points,
+      total: cartTotal,
+    );
+    final canRedeem = maxRedeem >= points.minRedeem;
+
+    final options = <int>{
+      points.minRedeem,
+      points.minRedeem * 2,
+      points.minRedeem * 5,
+      maxRedeem,
+    }.where((value) => value >= points.minRedeem && value <= maxRedeem).toList()
+      ..sort();
+
+    return AppCard(
+      color: context.palette.accent50,
+      borderColor: context.palette.accent100,
+      padding: const EdgeInsets.all(AppSizes.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const AppIconBadge(
+                icon: Icons.stars_rounded,
+                tone: AppTone.accent,
+                size: AppIconBadgeSize.sm,
+              ),
+              const SizedBox(width: AppSizes.spaceSm),
+              Expanded(child: Text('TUKAR POIN', style: context.textStyles.eyebrow)),
+              AppPill(
+                label: '${customer.points} poin',
+                tone: AppTone.accent,
+                dense: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spaceSm),
+          if (!canRedeem)
+            Text(
+              'Poin belum cukup ditukar — minimum ${points.minRedeem} poin '
+              '(1 poin = ${CurrencyFormatter.format(points.valuePerPoint)}).',
+              style: theme.textTheme.bodySmall,
+            )
+          else ...[
+            Text(
+              '1 poin = ${CurrencyFormatter.format(points.valuePerPoint)}',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: AppSizes.spaceSm),
+            Wrap(
+              spacing: AppSizes.spaceSm,
+              runSpacing: AppSizes.spaceSm,
+              children: [
+                ChoiceChip(
+                  label: const Text('Tidak menukar'),
+                  selected: _pointsRedeemed == 0,
+                  onSelected: (_) => setState(() => _pointsRedeemed = 0),
+                ),
+                for (final option in options)
+                  ChoiceChip(
+                    label: Text(
+                      '$option poin · −${CurrencyFormatter.format(points.rupiahFor(option))}',
+                    ),
+                    selected: _pointsRedeemed == option,
+                    onSelected: (_) => setState(() => _pointsRedeemed = option),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -388,22 +606,22 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
   }
 
   Widget _buildDebtForm() {
-    final showError = _customerNameTouched && _customerNameController.text.trim().isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _customerNameController,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: 'Nama pelanggan *',
-            prefixIcon: const Icon(Icons.person_outline_rounded),
-            errorText: showError ? 'Nama pelanggan wajib diisi' : null,
+        if (_customer == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSizes.spaceMd),
+            child: AppBanner(
+              tone: _customerTouched ? AppTone.danger : AppTone.warning,
+              icon: Icons.person_search_outlined,
+              title: 'Pelanggan wajib dipilih',
+              message: 'Hutang harus punya nama supaya bisa ditagih. Pakai '
+                  'tombol "Pilih Pelanggan" di atas.',
+              actionLabel: 'Pilih Pelanggan',
+              onAction: _pickCustomer,
+            ),
           ),
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: AppSizes.spaceMd),
         TextField(
           controller: _noteController,
           decoration: const InputDecoration(

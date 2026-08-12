@@ -1,12 +1,16 @@
 import 'package:drift/drift.dart';
 
+import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/customer_point_entry.dart';
+import '../../domain/entities/points_settings.dart';
 import '../../domain/entities/sale.dart';
 import '../../domain/entities/sale_result.dart';
 import '../../domain/repositories/repository_exceptions.dart';
 import '../../domain/repositories/sale_repository.dart';
 import '../db/app_database.dart' as db;
+import '../db/point_ledger.dart';
 
 /// Implementasi [SaleRepository] di atas Drift/SQLite.
 ///
@@ -29,6 +33,9 @@ class SaleRepositoryImpl implements SaleRepository {
     required String paymentMethod,
     required int paidAmount,
     String? customerName,
+    int? customerId,
+    int pointsRedeemed = 0,
+    PointsSettings points = const PointsSettings(),
     String? note,
   }) {
     final now = DateTime.now();
@@ -56,11 +63,66 @@ class SaleRepositoryImpl implements SaleRepository {
               paidAmount: Value(paidAmount),
               changeAmount: Value(changeAmount),
               customerName: Value(customerName),
+              customerId: Value(customerId),
               status: status,
               note: Value(note),
               createdAt: createdAtMillis,
             ),
           );
+
+      // ---- Buku besar poin (PRD v1.1 §7.3.C) --------------------------
+      // Ditulis DI DALAM transaksi yang sama dengan insert `sales` supaya
+      // saldo poin tidak pernah bisa melenceng dari transaksinya (K-7.2).
+      var earnedPoints = 0;
+      var balanceAfter = 0;
+      final redeemValue = points.rupiahFor(pointsRedeemed);
+      if (customerId != null) {
+        final customer = await (_db.select(
+          _db.customers,
+        )..where((c) => c.id.equals(customerId))).getSingleOrNull();
+        if (customer == null) throw const PelangganTidakDitemukanException();
+        balanceAfter = customer.points;
+
+        if (pointsRedeemed > 0) {
+          if (!points.enabled) {
+            throw const PoinTidakCukupException(diminta: 0, tersedia: 0);
+          }
+          if (pointsRedeemed > customer.points) {
+            throw PoinTidakCukupException(
+              diminta: pointsRedeemed,
+              tersedia: customer.points,
+            );
+          }
+          balanceAfter = await PointLedger.write(
+            _db,
+            customerId: customerId,
+            type: PointEntryType.redeem,
+            points: -pointsRedeemed,
+            saleId: saleId,
+            note: 'Ditukar jadi potongan '
+                '${CurrencyFormatter.format(redeemValue)} pada struk '
+                '$invoiceNumber.',
+            createdAtMillis: createdAtMillis,
+          );
+        }
+
+        // Dasar perolehan adalah TOTAL AKHIR — yang sudah bersih dari
+        // diskon manual DAN dari potongan penukaran poin, sehingga poin
+        // tidak pernah lahir dari poin (AC-7.10).
+        earnedPoints = points.pointsFor(total);
+        if (earnedPoints > 0) {
+          balanceAfter = await PointLedger.write(
+            _db,
+            customerId: customerId,
+            type: PointEntryType.earn,
+            points: earnedPoints,
+            saleId: saleId,
+            note: 'Belanja ${CurrencyFormatter.format(total)} pada struk '
+                '$invoiceNumber.',
+            createdAtMillis: createdAtMillis,
+          );
+        }
+      }
 
       final resultItems = <SaleResultItem>[];
       for (final item in items) {
@@ -125,10 +187,15 @@ class SaleRepositoryImpl implements SaleRepository {
         paidAmount: paidAmount,
         changeAmount: changeAmount,
         customerName: customerName,
+        customerId: customerId,
         note: note,
         createdAt: now,
         items: resultItems,
         status: status,
+        pointsRedeemed: pointsRedeemed,
+        pointsRedeemedValue: redeemValue,
+        pointsEarned: earnedPoints,
+        pointsBalanceAfter: balanceAfter,
       );
     });
   }
@@ -200,6 +267,19 @@ class SaleRepositoryImpl implements SaleRepository {
       _db.saleItems,
     )..where((i) => i.saleId.equals(saleId))).get();
 
+    // Poin transaksi ini dibaca dari buku besar, bukan disimpan ulang di
+    // `sales` — satu sumber kebenaran (K-7.2). Dipakai struk yang
+    // dibagikan/dicetak ulang dari layar Detail (AC-7.9).
+    final pointRow = await _db.customSelect(
+      'SELECT '
+      "COALESCE(SUM(CASE WHEN type = 'earn' THEN points ELSE 0 END), 0) AS earned, "
+      "COALESCE(SUM(CASE WHEN type = 'redeem' THEN -points ELSE 0 END), 0) AS redeemed "
+      'FROM customer_point_entries WHERE sale_id = ?1',
+      variables: [Variable.withInt(saleId)],
+      readsFrom: {_db.customerPointEntries},
+    ).getSingle();
+    final redeemedPoints = pointRow.read<int>('redeemed');
+
     return SaleResult(
       saleId: sale.id,
       invoiceNumber: sale.invoiceNumber,
@@ -210,6 +290,7 @@ class SaleRepositoryImpl implements SaleRepository {
       paidAmount: sale.paidAmount,
       changeAmount: sale.changeAmount,
       customerName: sale.customerName,
+      customerId: sale.customerId,
       note: sale.note,
       createdAt: DateFormatter.fromEpochMillis(sale.createdAt),
       items: itemRows
@@ -229,7 +310,21 @@ class SaleRepositoryImpl implements SaleRepository {
       status: sale.status,
       voidedAt: sale.voidedAt == null ? null : DateFormatter.fromEpochMillis(sale.voidedAt!),
       debtPaidAt: sale.debtPaidAt == null ? null : DateFormatter.fromEpochMillis(sale.debtPaidAt!),
+      pointsRedeemed: redeemedPoints,
+      pointsRedeemedValue: redeemedPoints * _redeemUnitValue(sale.discount, redeemedPoints),
+      pointsEarned: pointRow.read<int>('earned'),
     );
+  }
+
+  /// Nilai per poin pada transaksi lama tidak disimpan di `sales`; untuk
+  /// pratinjau struk cukup dibagi rata dari diskon transaksi bila memang
+  /// SELURUH diskon berasal dari penukaran poin. Bila tidak bisa dibagi
+  /// rata (ada diskon manual juga), nilainya dibiarkan 0 dan struk hanya
+  /// mencetak jumlah poinnya.
+  static int _redeemUnitValue(int discount, int redeemedPoints) {
+    if (redeemedPoints <= 0 || discount <= 0) return 0;
+    if (discount % redeemedPoints != 0) return 0;
+    return discount ~/ redeemedPoints;
   }
 
   @override
@@ -291,6 +386,52 @@ class SaleRepositoryImpl implements SaleRepository {
       await (_db.update(_db.sales)..where((s) => s.id.equals(saleId))).write(
         db.SalesCompanion(status: const Value('voided'), voidedAt: Value(now)),
       );
+
+      // ---- Poin ikut dibatalkan (PRD v1.1 §7.3.C, AC-7.8) -------------
+      // Dua entri buku besar TERPISAH di dalam transaksi void yang sama.
+      // Pengembalian poin yang sempat ditukar sengaja ditulis LEBIH DULU:
+      // saldo naik dulu sebelum poin earn ditarik, sehingga pematokan ke 0
+      // hanya terjadi kalau poinnya memang sudah terpakai di transaksi
+      // lain — bukan karena urutan penulisan.
+      final customerId = sale.customerId;
+      if (customerId != null) {
+        final row = await _db.customSelect(
+          'SELECT '
+          "COALESCE(SUM(CASE WHEN type = 'earn' THEN points ELSE 0 END), 0) AS earned, "
+          "COALESCE(SUM(CASE WHEN type = 'redeem' THEN -points ELSE 0 END), 0) AS redeemed "
+          'FROM customer_point_entries WHERE sale_id = ?1',
+          variables: [Variable.withInt(saleId)],
+          readsFrom: {_db.customerPointEntries},
+        ).getSingle();
+
+        final redeemed = row.read<int>('redeemed');
+        if (redeemed > 0) {
+          await PointLedger.write(
+            _db,
+            customerId: customerId,
+            type: PointEntryType.voidReturn,
+            points: redeemed,
+            saleId: saleId,
+            note: 'Struk ${sale.invoiceNumber} dibatalkan — $redeemed poin '
+                'yang sempat ditukar dikembalikan.',
+            createdAtMillis: now,
+          );
+        }
+
+        final earned = row.read<int>('earned');
+        if (earned > 0) {
+          await PointLedger.write(
+            _db,
+            customerId: customerId,
+            type: PointEntryType.voidReturn,
+            points: -earned,
+            saleId: saleId,
+            note: 'Struk ${sale.invoiceNumber} dibatalkan — $earned poin '
+                'ditarik kembali.',
+            createdAtMillis: now,
+          );
+        }
+      }
     });
   }
 
@@ -304,6 +445,7 @@ class SaleRepositoryImpl implements SaleRepository {
         paidAmount: row.paidAmount,
         changeAmount: row.changeAmount,
         customerName: row.customerName,
+        customerId: row.customerId,
         status: row.status,
         note: row.note,
         createdAt: DateFormatter.fromEpochMillis(row.createdAt),

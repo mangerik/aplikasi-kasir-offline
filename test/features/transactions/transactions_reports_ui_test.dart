@@ -9,7 +9,9 @@ import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/db/database_provider.dart';
 import 'package:kasir_warung/data/repositories/sale_repository_impl.dart';
 import 'package:kasir_warung/domain/entities/cart_item.dart';
-import 'package:kasir_warung/features/reports/screens/debt_list_screen.dart';
+import 'package:kasir_warung/data/repositories/customer_repository_impl.dart';
+import 'package:kasir_warung/features/customers/screens/customer_detail_screen.dart';
+import 'package:kasir_warung/features/customers/screens/customers_screen.dart';
 import 'package:kasir_warung/features/reports/screens/reports_screen.dart';
 import 'package:kasir_warung/features/transactions/screens/sale_detail_screen.dart';
 import 'package:kasir_warung/features/transactions/widgets/history_tile.dart';
@@ -64,6 +66,10 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final repo = SaleRepositoryImpl(db);
+      // M12: pelanggan kini entitas nyata — transaksi hutang menautkan
+      // `sales.customer_id`, bukan sekadar teks nama.
+      final pelanggan = await CustomerRepositoryImpl(db)
+          .create(name: 'Bu Sri Rahayu Wijayanti');
       final teh = await insertProduct('Teh Botol Sosro Kemasan', 5000);
       final gula = await insertProduct('Gula Pasir', 15000);
 
@@ -126,6 +132,7 @@ void main() {
         paymentMethod: 'debt',
         paidAmount: 0,
         customerName: 'Bu Sri Rahayu Wijayanti',
+        customerId: pelanggan.id,
       );
 
       await tester.pumpWidget(
@@ -194,16 +201,18 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('PERLU DITAGIH'), findsOneWidget);
 
-      // --- Daftar hutang -> transaksi hutang satu pelanggan.
+      // --- Daftar pelanggan (filter "Punya hutang") -> detail pelanggan.
+      // M12: layar daftar hutang terpisah diganti filter di dalam daftar
+      // pelanggan (PRD v1.1 §7.6).
       await tester.tap(find.text('PERLU DITAGIH'));
       await tester.pumpAndSettle();
-      expect(find.byType(DebtListScreen), findsOneWidget);
+      expect(find.byType(CustomersScreen), findsOneWidget);
       expect(find.text('TOTAL HUTANG BERJALAN'), findsOneWidget);
 
-      await tester.tap(find.text('Bu Sri Rahayu Wijayanti'));
+      await tester.tap(find.text('Bu Sri Rahayu Wijayanti').last);
       await tester.pumpAndSettle();
+      expect(find.byType(CustomerDetailScreen), findsOneWidget);
       expect(find.text('SISA HUTANG'), findsOneWidget);
-      expect(find.byType(HistoryTile), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pump(Duration.zero);

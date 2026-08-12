@@ -8,6 +8,7 @@ import '../widgets/backup_restore_section.dart';
 import '../widgets/export_section.dart';
 import '../widgets/low_stock_default_section.dart';
 import '../widgets/pin_section.dart';
+import '../widgets/points_section.dart';
 import '../widgets/printer_section.dart';
 import '../widgets/store_profile_section.dart';
 
@@ -79,10 +80,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: AppSizes.spaceXl),
             const SectionHeader(
               eyebrow: 'OPERASIONAL',
-              title: 'Aturan Stok',
-              subtitle: 'Kapan sebuah barang dianggap mulai menipis.',
+              title: 'Aturan Warung',
+              subtitle: 'Batas stok menipis dan hadiah untuk pelanggan setia.',
             ),
             const LowStockDefaultSection(),
+
+            const SizedBox(height: AppSizes.spaceMs),
+            const PointsSection(),
 
             const SizedBox(height: AppSizes.spaceXl),
             const SectionHeader(

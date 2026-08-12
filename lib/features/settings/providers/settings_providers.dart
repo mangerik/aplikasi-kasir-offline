@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/database_provider.dart';
 import '../../../data/repositories/settings_repository_impl.dart';
+import '../../../domain/entities/points_settings.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/entities/store_profile.dart';
 import '../../../domain/repositories/settings_repository.dart';
@@ -64,6 +65,37 @@ final Provider<VerifyPinUsecase> verifyPinUsecaseProvider = Provider<VerifyPinUs
 
 final Provider<RemovePinUsecase> removePinUsecaseProvider = Provider<RemovePinUsecase>((ref) {
   return RemovePinUsecase(ref.watch(settingsRepoProvider), ref.watch(verifyPinUsecaseProvider));
+});
+
+/// Aturan program poin (PRD v1.1 §7.3.C) — dibaca dari empat key
+/// `settings`. **Default mati**: bila `points_enabled` belum pernah
+/// diisi, seluruh UI poin tersembunyi (AC-7.6).
+///
+/// Sama seperti [storeProfileProvider], ini `FutureProvider` biasa karena
+/// nilainya hanya berubah lewat aksi eksplisit di layar Pengaturan —
+/// pemanggilnya melakukan `ref.invalidate(pointsSettingsProvider)`
+/// setelah simpan berhasil.
+final FutureProvider<PointsSettings> pointsSettingsProvider =
+    FutureProvider<PointsSettings>((ref) async {
+  final repo = ref.watch(settingsRepoProvider);
+  final results = await Future.wait([
+    repo.getValue(PointsSettings.keyEnabled),
+    repo.getValue(PointsSettings.keyRupiahPerPoint),
+    repo.getValue(PointsSettings.keyValuePerPoint),
+    repo.getValue(PointsSettings.keyMinRedeem),
+  ]);
+
+  int parse(String? raw, int fallback) {
+    final value = int.tryParse(raw ?? '');
+    return (value == null || value <= 0) ? fallback : value;
+  }
+
+  return PointsSettings(
+    enabled: results[0] == '1',
+    rupiahPerPoint: parse(results[1], PointsSettings.defaultRupiahPerPoint),
+    valuePerPoint: parse(results[2], PointsSettings.defaultValuePerPoint),
+    minRedeem: parse(results[3], PointsSettings.defaultMinRedeem),
+  );
 });
 
 /// Waktu backup terakhir (plan.md Milestone 5 poin 7, key

@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import 'customers_table.dart';
+
 /// Transaksi penjualan (header). Lihat architecture.md §4.
 ///
 /// `paymentMethod`: 'cash' | 'noncash' | 'debt'.
@@ -23,8 +25,17 @@ class Sales extends Table {
 
   IntColumn get changeAmount => integer().withDefault(const Constant(0))();
 
-  /// Wajib jika hutang.
+  /// Wajib jika hutang. **SNAPSHOT HISTORIS** (K-7.1) — tidak pernah
+  /// dihapus dan tidak pernah ikut berubah saat pelanggan di-*rename*,
+  /// persis seperti `sale_items.product_name`. Untuk identitas pelanggan
+  /// yang hidup, pakai [customerId].
   TextColumn get customerName => text().nullable()();
+
+  /// Tautan ke pelanggan (PRD v1.1 §7.5, `schemaVersion` 2). `null` untuk
+  /// transaksi tanpa pelanggan — alur kasir tanpa nama tetap nol tap
+  /// tambahan (AC-7.5).
+  IntColumn get customerId =>
+      integer().nullable().references(Customers, #id)();
 
   TextColumn get status => text()();
 

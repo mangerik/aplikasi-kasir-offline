@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../domain/entities/customer.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/sale_result.dart';
 
@@ -291,6 +292,64 @@ abstract final class ExcelExportService {
   }
 
   // ---------------------------------------------------------------------
+  // (d) Pelanggan & poin (PRD v1.1 AC-7.16)
+  // ---------------------------------------------------------------------
+
+  /// Export daftar pelanggan beserta sisa hutang & saldo poin.
+  ///
+  /// Kolomnya sengaja persis yang disebut AC-7.16 — nama, no. HP, total
+  /// belanja, sisa hutang, saldo poin — plus status aktif, supaya pemilik
+  /// bisa memakai file ini sebagai daftar tagihan di luar aplikasi.
+  static Future<String> exportCustomers({
+    required List<CustomerListItem> customers,
+    required Map<int, int> totalSpentByCustomer,
+    required bool pointsEnabled,
+  }) async {
+    final bytes = await compute(
+      _buildCustomersWorkbook,
+      _CustomersExportArgs(customers, totalSpentByCustomer, pointsEnabled),
+    );
+    return _saveFile(bytes, _fileName('pelanggan_poin'));
+  }
+
+  static List<int> _buildCustomersWorkbook(_CustomersExportArgs args) {
+    final excel = Excel.createExcel();
+    final sheet = excel['Pelanggan & Poin'];
+
+    sheet.appendRow([
+      TextCellValue('No'),
+      TextCellValue('Nama'),
+      TextCellValue('No. HP'),
+      TextCellValue('Total Belanja'),
+      TextCellValue('Sisa Hutang'),
+      TextCellValue('Saldo Poin'),
+      TextCellValue('Status'),
+    ]);
+    _boldRow(sheet, 0, 7);
+
+    for (var i = 0; i < args.customers.length; i++) {
+      final customer = args.customers[i];
+      sheet.appendRow([
+        IntCellValue(i + 1),
+        TextCellValue(customer.name),
+        TextCellValue(customer.phone ?? ''),
+        IntCellValue(args.totalSpentByCustomer[customer.id] ?? 0),
+        IntCellValue(customer.totalDebt),
+        // Program poin mati → kolomnya tetap ada demi bentuk file yang
+        // stabil, tapi isinya kosong supaya tidak menyiratkan saldo yang
+        // sebenarnya tidak dipakai (AC-7.6).
+        args.pointsEnabled
+            ? IntCellValue(customer.points)
+            : TextCellValue(''),
+        TextCellValue(customer.isActive ? 'Aktif' : 'Nonaktif'),
+      ]);
+    }
+
+    _removeDefaultSheet(excel, keep: 'Pelanggan & Poin');
+    return excel.encode()!;
+  }
+
+  // ---------------------------------------------------------------------
   // Helper bersama
   // ---------------------------------------------------------------------
 
@@ -407,4 +466,17 @@ class _ReportExportArgs {
   final List<SaleResult> sales;
   final DateTime startDate;
   final DateTime endDate;
+}
+
+/// Argumen export pelanggan & poin (dikirim ke isolate lewat `compute`).
+class _CustomersExportArgs {
+  const _CustomersExportArgs(
+    this.customers,
+    this.totalSpentByCustomer,
+    this.pointsEnabled,
+  );
+
+  final List<CustomerListItem> customers;
+  final Map<int, int> totalSpentByCustomer;
+  final bool pointsEnabled;
 }

@@ -77,6 +77,68 @@ class NamaPelangganWajibException implements Exception {
   String toString() => 'Nama pelanggan wajib diisi untuk transaksi hutang.';
 }
 
+/// Dilempar saat `customerId` yang diminta tidak ada di database (PRD
+/// v1.1 §7).
+class PelangganTidakDitemukanException implements Exception {
+  const PelangganTidakDitemukanException();
+
+  @override
+  String toString() => 'Pelanggan tidak ditemukan.';
+}
+
+/// Dilempar saat nama pelanggan yang diisi sudah dipakai pelanggan AKTIF
+/// lain (index unik parsial `idx_customers_name_nocase`, PRD §7.5).
+class NamaPelangganSudahAdaException implements Exception {
+  const NamaPelangganSudahAdaException(this.name);
+
+  final String name;
+
+  @override
+  String toString() =>
+      'Pelanggan "$name" sudah ada. Pilih pelanggan yang sudah terdaftar '
+      'atau pakai nama yang berbeda.';
+}
+
+/// Dilempar saat pelanggan yang masih punya hutang belum lunas hendak
+/// dinonaktifkan (AC-7.13).
+class PelangganMasihBerhutangException implements Exception {
+  const PelangganMasihBerhutangException(this.totalDebt);
+
+  final int totalDebt;
+
+  @override
+  String toString() =>
+      'Pelanggan ini masih punya hutang ${CurrencyFormatter.format(totalDebt)} '
+      'yang belum lunas. Lunasi atau batalkan transaksinya dulu sebelum '
+      'dinonaktifkan.';
+}
+
+/// Dilempar saat poin yang hendak ditukar melebihi saldo pelanggan, atau
+/// belum memenuhi minimum penukaran (PRD §7.3.C).
+class PoinTidakCukupException implements Exception {
+  const PoinTidakCukupException({required this.diminta, required this.tersedia});
+
+  final int diminta;
+  final int tersedia;
+
+  @override
+  String toString() =>
+      'Poin tidak cukup: ingin menukar $diminta poin, saldo tersedia '
+      '$tersedia poin.';
+}
+
+/// Dilempar saat penggabungan pelanggan diminta tanpa pelanggan sumber
+/// yang sah (mis. hanya satu pelanggan dipilih, atau target ikut menjadi
+/// sumber) — PRD §7.3.D.
+class GabungPelangganTidakValidException implements Exception {
+  const GabungPelangganTidakValidException(this.alasan);
+
+  final String alasan;
+
+  @override
+  String toString() => 'Penggabungan pelanggan tidak bisa dilakukan: $alasan';
+}
+
 /// Dilempar saat `saleId` yang diminta (detail/pelunasan/void) tidak ada
 /// di database (plan.md Milestone 3 poin 2 & 3).
 class TransaksiTidakDitemukanException implements Exception {

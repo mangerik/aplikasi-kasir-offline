@@ -14,12 +14,17 @@ class SaleResult {
     required this.paidAmount,
     required this.changeAmount,
     this.customerName,
+    this.customerId,
     this.note,
     required this.createdAt,
     required this.items,
     this.status = 'completed',
     this.voidedAt,
     this.debtPaidAt,
+    this.pointsRedeemed = 0,
+    this.pointsRedeemedValue = 0,
+    this.pointsEarned = 0,
+    this.pointsBalanceAfter = 0,
   });
 
   final int saleId;
@@ -42,8 +47,28 @@ class SaleResult {
   final int paidAmount;
   final int changeAmount;
 
-  /// Wajib terisi jika [paymentMethod] `'debt'`.
+  /// Wajib terisi jika [paymentMethod] `'debt'`. **Snapshot historis**
+  /// (K-7.1) — tidak ikut berubah saat pelanggan di-*rename*.
   final String? customerName;
+
+  /// Tautan ke pelanggan (`customers.id`), sejak `schemaVersion` 2 —
+  /// `null` untuk transaksi tanpa pelanggan (PRD v1.1 §7.5).
+  final int? customerId;
+
+  /// Jumlah poin yang DITUKAR pada transaksi ini (K-7.6) — 0 bila program
+  /// poin mati atau pelanggan tidak menukar poin. Dipakai struk untuk
+  /// mencetak baris "Tukar poin" (AC-7.9).
+  final int pointsRedeemed;
+
+  /// Nilai rupiah penukaran poin, sudah termasuk di dalam [discount].
+  final int pointsRedeemedValue;
+
+  /// Poin yang DIDAPAT dari transaksi ini (AC-7.7) — 0 bila program poin
+  /// mati atau transaksi tanpa pelanggan.
+  final int pointsEarned;
+
+  /// Saldo poin pelanggan SETELAH transaksi ini tersimpan.
+  final int pointsBalanceAfter;
   final String? note;
   final DateTime createdAt;
   final List<SaleResultItem> items;
