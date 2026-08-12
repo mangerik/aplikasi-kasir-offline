@@ -58,8 +58,13 @@ abstract final class ReceiptService {
     if (effectiveProfile.hasPhone) buffer.writeln(effectiveProfile.phone!.trim());
     buffer
       ..writeln('No. Struk: ${sale.invoiceNumber}')
-      ..writeln(DateFormatter.formatDateTime(sale.createdAt))
-      ..writeln('------------------------------');
+      ..writeln(DateFormatter.formatDateTime(sale.createdAt));
+    // Baris "Kasir" hanya muncul saat multi-user aktif (§8.3.D). Saat
+    // mati, struk tetap persis seperti v1.0 (AC-8.1).
+    if ((sale.userName ?? '').trim().isNotEmpty) {
+      buffer.writeln('Kasir: ${sale.userName!.trim()}');
+    }
+    buffer.writeln('------------------------------');
 
     for (final item in sale.items) {
       buffer.writeln(item.name);

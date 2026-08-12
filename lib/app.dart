@@ -8,6 +8,7 @@ import 'core/constants/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'data/db/database_provider.dart';
 import 'data/services/seed_data_service.dart';
+import 'features/auth/widgets/auto_lock_scope.dart';
 import 'features/license/providers/license_providers.dart';
 import 'features/settings/providers/theme_providers.dart';
 
@@ -80,7 +81,8 @@ class _KasirAppState extends ConsumerState<KasirApp>
       // gelap.
       builder: (context, child) {
         final palette = context.palette;
-        return AnnotatedRegion<SystemUiOverlayStyle>(
+        return AutoLockScope(
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: palette.isDark
@@ -94,7 +96,8 @@ class _KasirAppState extends ConsumerState<KasirApp>
                 ? Brightness.light
                 : Brightness.dark,
           ),
-          child: child ?? const SizedBox.shrink(),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       locale: const Locale('id', 'ID'),

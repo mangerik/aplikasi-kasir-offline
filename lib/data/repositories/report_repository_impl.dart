@@ -26,14 +26,23 @@ class ReportRepositoryImpl implements ReportRepository {
   static const String _debtUnpaid = 'debt_unpaid';
 
   @override
-  Future<DailySummary> getSummary({required DateTime start, required DateTime end}) async {
+  Future<DailySummary> getSummary({
+    required DateTime start,
+    required DateTime end,
+    int? userId,
+  }) async {
     final startMillis = DateFormatter.toEpochMillis(start);
     final endMillis = DateFormatter.toEpochMillis(end);
+    // Filter kasir (AC-8.9) ditempel sebagai klausa opsional supaya query
+    // tanpa filter tetap persis seperti sebelumnya — angka laporan lama
+    // tidak boleh bergeser sedikit pun karena fitur baru.
+    final userClause = userId == null ? '' : ' AND user_id = $userId';
+    final userClauseS = userId == null ? '' : ' AND s.user_id = $userId';
 
     final totalsRow = await _db.customSelect(
       'SELECT COUNT(*) AS cnt, COALESCE(SUM(total), 0) AS omzet '
       'FROM sales '
-      'WHERE status != ?1 AND created_at BETWEEN ?2 AND ?3',
+      'WHERE status != ?1 AND created_at BETWEEN ?2 AND ?3$userClause',
       variables: [
         Variable.withString(_voided),
         Variable.withInt(startMillis),
@@ -49,7 +58,7 @@ class ReportRepositoryImpl implements ReportRepository {
       '), 0) AS profit '
       'FROM sale_items si '
       'JOIN sales s ON s.id = si.sale_id '
-      'WHERE s.status != ?1 AND s.created_at BETWEEN ?2 AND ?3',
+      'WHERE s.status != ?1 AND s.created_at BETWEEN ?2 AND ?3$userClauseS',
       variables: [
         Variable.withString(_voided),
         Variable.withInt(startMillis),
@@ -61,7 +70,7 @@ class ReportRepositoryImpl implements ReportRepository {
     final methodRows = await _db.customSelect(
       'SELECT payment_method, COUNT(*) AS cnt, COALESCE(SUM(total), 0) AS total '
       'FROM sales '
-      'WHERE status != ?1 AND created_at BETWEEN ?2 AND ?3 '
+      'WHERE status != ?1 AND created_at BETWEEN ?2 AND ?3$userClause '
       'GROUP BY payment_method',
       variables: [
         Variable.withString(_voided),
@@ -95,17 +104,19 @@ class ReportRepositoryImpl implements ReportRepository {
     required DateTime end,
     int limit = 10,
     TopProductSort sortBy = TopProductSort.qty,
+    int? userId,
   }) async {
     final startMillis = DateFormatter.toEpochMillis(start);
     final endMillis = DateFormatter.toEpochMillis(end);
     final orderColumn = sortBy == TopProductSort.value ? 'total_value' : 'qty_sold';
+    final userClause = userId == null ? '' : ' AND s.user_id = $userId';
 
     final rows = await _db.customSelect(
       'SELECT si.product_id AS product_id, si.product_name AS product_name, '
       '  si.unit AS unit, SUM(si.qty) AS qty_sold, SUM(si.line_total) AS total_value '
       'FROM sale_items si '
       'JOIN sales s ON s.id = si.sale_id '
-      'WHERE s.status != ?1 AND s.created_at BETWEEN ?2 AND ?3 '
+      'WHERE s.status != ?1 AND s.created_at BETWEEN ?2 AND ?3$userClause '
       'GROUP BY si.product_id, si.product_name, si.unit '
       'ORDER BY $orderColumn DESC '
       'LIMIT ?4',

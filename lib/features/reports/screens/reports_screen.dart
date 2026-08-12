@@ -9,6 +9,7 @@ import '../../../domain/entities/daily_summary.dart';
 import '../../../domain/entities/top_product.dart';
 import '../../../domain/repositories/report_repository.dart';
 import '../../transactions/widgets/status_badge.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../providers/report_providers.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/top_product_tile.dart';
@@ -83,6 +84,7 @@ class ReportsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const _CashierFilter(),
             const SizedBox(height: AppSizes.spaceMd),
 
             // --- Angka utama.
@@ -152,6 +154,49 @@ class ReportsScreen extends ConsumerWidget {
         builder: (_) => CustomersScreen(initialOnlyWithDebt: onlyWithDebt),
       ),
     );
+  }
+}
+
+/// Filter "Kasir" untuk seluruh angka laporan (AC-8.9).
+///
+/// Hanya dirender saat multi-user menyala — dan hanya Pemilik yang bisa
+/// sampai ke layar ini (§8.3.C, dijaga `redirect` router). Filternya
+/// menempel pada pemilih rentang tanggal yang sudah ada, bukan menambah
+/// pemilih baru.
+class _CashierFilter extends ConsumerWidget {
+  const _CashierFilter();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(sessionProvider).multiUserEnabled) {
+      return const SizedBox.shrink();
+    }
+    final selected = ref.watch(reportUserFilterProvider);
+    return ref.watch(allUsersProvider).maybeWhen(
+          data: (users) => Padding(
+            padding: const EdgeInsets.only(top: AppSizes.spaceSm),
+            child: Wrap(
+              spacing: AppSizes.spaceSm,
+              runSpacing: AppSizes.spaceSm,
+              children: [
+                ChoiceChip(
+                  label: const Text('Semua kasir'),
+                  selected: selected == null,
+                  onSelected: (_) =>
+                      ref.read(reportUserFilterProvider.notifier).set(null),
+                ),
+                for (final user in users)
+                  ChoiceChip(
+                    label: Text(user.name),
+                    selected: selected == user.id,
+                    onSelected: (_) =>
+                        ref.read(reportUserFilterProvider.notifier).set(user.id),
+                  ),
+              ],
+            ),
+          ),
+          orElse: () => const SizedBox.shrink(),
+        );
   }
 }
 

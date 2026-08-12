@@ -10,6 +10,7 @@ import 'tables/sale_items_table.dart';
 import 'tables/sales_table.dart';
 import 'tables/settings_table.dart';
 import 'tables/stock_movements_table.dart';
+import 'tables/users_table.dart';
 
 part 'app_database.g.dart';
 
@@ -27,7 +28,10 @@ part 'app_database.g.dart';
 /// - **2** — v1.2 Tier 2 / M12 (PRD v1.1 §7.5): `customers`,
 ///   `customer_point_entries`, `sales.customer_id`, 3 index baru, plus
 ///   backfill pelanggan dari `sales.customer_name`.
-const int kAppSchemaVersion = 2;
+/// - **3** — v1.2 Tier 2 / M13 (PRD v1.1 §8.5): `users`, `sales.user_id`/
+///   `user_name`/`voided_by_user_id`, `stock_movements.user_id`, 2 index
+///   baru, plus backfill PIN global lama menjadi akun **Pemilik**.
+const int kAppSchemaVersion = 3;
 
 /// Database aplikasi (SQLite via Drift). Lihat architecture.md §4.
 ///
@@ -50,6 +54,7 @@ const int kAppSchemaVersion = 2;
     Settings,
     Customers,
     CustomerPointEntries,
+    Users,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -67,6 +72,7 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await _createIndexes();
           await _createCustomerIndexes();
+          await _createUserIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           // AC-10.5: seluruh langkah migrasi berjalan dalam SATU transaksi —
@@ -76,6 +82,9 @@ class AppDatabase extends _$AppDatabase {
           await transaction(() async {
             if (from < 2) {
               await _upgradeToV2(m);
+            }
+            if (from < 3) {
+              await _upgradeToV3(m);
             }
           });
         },
@@ -136,6 +145,77 @@ class AppDatabase extends _$AppDatabase {
         [customerId, entry.key],
       );
     }
+  }
+
+  /// Migrasi 2 → 3 (PRD v1.1 §8.5): akun pengguna menjadi entitas nyata,
+  /// dan setiap penjualan/pergerakan stok bisa menyebut **siapa**.
+  ///
+  /// Seluruhnya `CREATE TABLE` + `ADD COLUMN` + `CREATE INDEX` — di SQLite
+  /// `ALTER TABLE ADD COLUMN` bersifat O(1) (tidak menulis ulang tabel),
+  /// sehingga migrasi ini tetap ringan di database besar (PRD §8.7).
+  ///
+  /// **Backfill (AC-8.2):** PIN global lama (`settings.pin_hash`/`pin_salt`)
+  /// disalin apa adanya menjadi PIN akun **"Pemilik"** yang pertama. Yang
+  /// disalin adalah hash-nya, bukan PIN-nya — PIN teks polos memang tidak
+  /// pernah ada di database (AC-8.14). Key lama sengaja **dibiarkan utuh**
+  /// supaya mode single-user (multi-user mati) tetap berperilaku persis
+  /// seperti v1.0, dan mematikan multi-user nanti bisa mulus (§8.5).
+  ///
+  /// `settings.multi_user_enabled` sengaja TIDAK diisi di sini: multi-user
+  /// mati secara default (K-8.5, AC-8.1). Migrasi hanya menyiapkan akunnya,
+  /// pemilik yang memutuskan kapan menyalakannya.
+  Future<void> _upgradeToV3(Migrator m) async {
+    await m.createTable(users);
+    await m.addColumn(sales, sales.userId);
+    await m.addColumn(sales, sales.userName);
+    await m.addColumn(sales, sales.voidedByUserId);
+    await m.addColumn(stockMovements, stockMovements.userId);
+    await _createUserIndexes();
+
+    // Idempoten: kalau entah bagaimana sudah ada akun, jangan menambah
+    // "Pemilik" kedua yang membingungkan.
+    final existing = await customSelect(
+      'SELECT COUNT(*) AS c FROM users',
+    ).getSingle();
+    if (existing.read<int>('c') > 0) return;
+
+    final rows = await customSelect(
+      "SELECT key, value FROM settings WHERE key IN ('pin_hash', 'pin_salt')",
+    ).get();
+    final stored = {
+      for (final row in rows) row.read<String>('key'): row.read<String>('value'),
+    };
+    final pinHash = stored['pin_hash'];
+    if (pinHash == null || pinHash.isEmpty) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await into(users).insert(
+      UsersCompanion.insert(
+        name: 'Pemilik',
+        role: 'owner',
+        pinHash: pinHash,
+        pinSalt: stored['pin_salt'] ?? '',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+
+  /// Index pengguna & jejak kasir (PRD v1.1 §8.5). Dipanggil dari
+  /// `onCreate` MAUPUN migrasi 2 → 3 — semuanya `IF NOT EXISTS` supaya
+  /// idempoten.
+  ///
+  /// `idx_users_name_nocase` sengaja **parsial** (hanya pengguna aktif):
+  /// kasir yang sudah dinonaktifkan tidak boleh menghalangi pemilik
+  /// memakai nama yang sama lagi untuk karyawan baru.
+  Future<void> _createUserIndexes() async {
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_name_nocase '
+      'ON users(name COLLATE NOCASE) WHERE is_active = 1',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_sales_user ON sales(user_id, created_at)',
+    );
   }
 
   Future<void> _createIndexes() async {

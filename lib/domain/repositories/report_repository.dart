@@ -17,7 +17,14 @@ abstract class ReportRepository {
   /// Ringkasan penjualan untuk rentang [start]..[end] (inklusif): omzet,
   /// jumlah transaksi, laba kotor, per metode bayar. Transaksi berstatus
   /// `'voided'` DIKECUALIKAN (plan.md Milestone 4 poin 4).
-  Future<DailySummary> getSummary({required DateTime start, required DateTime end});
+  ///
+  /// [userId] memfilter per kasir (PRD v1.1 §8.3.D, AC-8.9); `null`
+  /// berarti seluruh kasir.
+  Future<DailySummary> getSummary({
+    required DateTime start,
+    required DateTime end,
+    int? userId,
+  });
 
   /// Produk terlaris pada rentang [start]..[end] (inklusif), diurutkan
   /// sesuai [sortBy] (qty terjual atau nilai penjualan), maksimal [limit]
@@ -27,6 +34,7 @@ abstract class ReportRepository {
     required DateTime end,
     int limit = 10,
     TopProductSort sortBy = TopProductSort.qty,
+    int? userId,
   });
 
   /// Total hutang belum lunas per pelanggan (SEMUA rentang waktu — hutang

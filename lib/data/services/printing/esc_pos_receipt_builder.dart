@@ -178,6 +178,12 @@ class EscPosReceiptBuilder {
     if (customer != null && customer.isNotEmpty) {
       lines.add(EscPosLine('Pelanggan: ${_clean(customer)}'));
     }
+    // Baris "Kasir" hanya ada saat multi-user aktif (PRD v1.1 §8.3.D);
+    // struk mode single-user tetap identik dengan v1.0 (AC-8.1).
+    final cashier = sale.userName?.trim();
+    if (cashier != null && cashier.isNotEmpty) {
+      lines.add(EscPosLine('Kasir: ${_clean(cashier)}'));
+    }
 
     // --- Item ---
     lines.add(_separator());

@@ -116,8 +116,26 @@ final NotifierProvider<ReportDateRangeNotifier, ReportDateRange> reportDateRange
 /// bayar) untuk rentang tanggal aktif (plan.md Milestone 4 poin 4).
 final FutureProvider<DailySummary> dailySummaryProvider = FutureProvider<DailySummary>((ref) {
   final range = ref.watch(reportDateRangeProvider);
-  return ref.watch(reportRepoProvider).getSummary(start: range.start, end: range.end);
+  return ref.watch(reportRepoProvider).getSummary(
+        start: range.start,
+        end: range.end,
+        userId: ref.watch(reportUserFilterProvider),
+      );
 });
+
+/// Filter "Kasir" di layar Laporan (AC-8.9) — `null` berarti seluruh
+/// kasir. Sengaja provider tersendiri (bukan bagian [ReportDateRange])
+/// supaya pemilih rentang tanggal yang sudah ada tidak berubah sama
+/// sekali.
+final NotifierProvider<ReportUserFilterNotifier, int?> reportUserFilterProvider =
+    NotifierProvider<ReportUserFilterNotifier, int?>(ReportUserFilterNotifier.new);
+
+class ReportUserFilterNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void set(int? userId) => state = userId;
+}
 
 /// Urutan produk terlaris aktif di layar Laporan (qty terjual atau nilai
 /// penjualan, plan.md Milestone 4 poin 6).
@@ -139,7 +157,12 @@ final FutureProvider<List<TopProduct>> topProductsProvider = FutureProvider<List
   final sortBy = ref.watch(topProductSortProvider);
   return ref
       .watch(reportRepoProvider)
-      .getTopProducts(start: range.start, end: range.end, sortBy: sortBy);
+      .getTopProducts(
+        start: range.start,
+        end: range.end,
+        sortBy: sortBy,
+        userId: ref.watch(reportUserFilterProvider),
+      );
 });
 
 // CATATAN M12: `unpaidDebtsProvider` & `customerDebtTransactionsProvider`

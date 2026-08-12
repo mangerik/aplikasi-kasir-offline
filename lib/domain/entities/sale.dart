@@ -21,6 +21,8 @@ class Sale {
     required this.createdAt,
     this.voidedAt,
     this.debtPaidAt,
+    this.userId,
+    this.userName,
   });
 
   final int id;
@@ -56,4 +58,12 @@ class Sale {
 
   /// Terisi jika hutang ini sudah dilunasi (plan.md Milestone 3 poin 4).
   final DateTime? debtPaidAt;
+
+  /// Kasir yang melayani (`users.id`), sejak `schemaVersion` 3 — `null`
+  /// untuk transaksi lama & mode single-user (PRD v1.1 §8.5).
+  final int? userId;
+
+  /// **Snapshot** nama kasir saat transaksi terjadi (K-8.6) — tidak ikut
+  /// berubah saat nama pengguna diganti (AC-8.7).
+  final String? userName;
 }

@@ -65,14 +65,18 @@ void main() {
     },
   );
 
-  test('membuka database v1 menaikkan user_version ke 2', () async {
-    final db = await openMigrated();
-    addTearDown(db.close);
+  test(
+    'membuka database v1 menaikkan user_version ke versi terbaru '
+    '(rantai 1 → 2 → 3 dalam satu jalur)',
+    () async {
+      final db = await openMigrated();
+      addTearDown(db.close);
 
-    final row = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), kAppSchemaVersion);
-    expect(kAppSchemaVersion, 2);
-  });
+      final row = await db.customSelect('PRAGMA user_version').getSingle();
+      expect(row.read<int>('user_version'), kAppSchemaVersion);
+      expect(kAppSchemaVersion, 3);
+    },
+  );
 
   test(
     'AC-7.1: "Bu Ani" / "bu ani" / "Bu Ani " menjadi SATU pelanggan '
@@ -241,7 +245,7 @@ void main() {
       expect(customers, isNotEmpty);
     });
 
-    test('backup dari aplikasi LEBIH BARU (user_version 3) ditolak', () async {
+    test('backup dari aplikasi LEBIH BARU (user_version 4) ditolak', () async {
       final futurePath = '${tempDir.path}/masa_depan.db';
       File(dbPath).copySync(futurePath);
       final raw = sqlite3lib.sqlite3.open(futurePath);
@@ -261,7 +265,7 @@ void main() {
       );
     });
 
-    test('backup ber-user_version SAMA (2) diterima', () async {
+    test('backup ber-user_version SAMA diterima', () async {
       final db = await openMigrated();
       await db.close();
 
@@ -270,7 +274,8 @@ void main() {
       await BackupService.validateBackupFile(samePath);
     });
 
-    test('backup v2 memuat seluruh tabel wajib yang divalidasi', () async {
+    test('backup versi terbaru memuat seluruh tabel wajib yang divalidasi',
+        () async {
       final db = await openMigrated();
       await db.close();
 
@@ -280,7 +285,10 @@ void main() {
           .select("SELECT name FROM sqlite_master WHERE type = 'table'")
           .map((row) => row['name'] as String)
           .toSet();
-      expect(tables, containsAll(['customers', 'customer_point_entries']));
+      expect(
+        tables,
+        containsAll(['customers', 'customer_point_entries', 'users']),
+      );
     });
   });
 }

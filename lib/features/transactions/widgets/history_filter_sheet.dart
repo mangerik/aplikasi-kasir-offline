@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../providers/history_providers.dart';
 import 'status_badge.dart';
 
@@ -33,6 +34,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
   DateTime? _endDate;
   String? _paymentMethod;
   String? _status;
+  int? _userId;
 
   @override
   void initState() {
@@ -42,10 +44,15 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
     _endDate = filter.endDate;
     _paymentMethod = filter.paymentMethod;
     _status = filter.status;
+    _userId = filter.userId;
   }
 
   bool get _hasSelection =>
-      _startDate != null || _endDate != null || _paymentMethod != null || _status != null;
+      _startDate != null ||
+      _endDate != null ||
+      _paymentMethod != null ||
+      _status != null ||
+      _userId != null;
 
   bool get _hasDateRange => _startDate != null && _endDate != null;
 
@@ -96,6 +103,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
           endDate: _endDate,
           paymentMethod: _paymentMethod,
           status: _status,
+          userId: _userId,
         );
     Navigator.of(context).pop();
   }
@@ -106,6 +114,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
       _endDate = null;
       _paymentMethod = null;
       _status = null;
+      _userId = null;
     });
   }
 
@@ -261,6 +270,36 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                       ),
                   ],
                 ),
+                // --- Siapa yang melayani (AC-8.9). Hanya dirender saat
+                // multi-user menyala; warung satu orang tidak perlu tahu
+                // fitur ini ada.
+                if (ref.watch(sessionProvider).multiUserEnabled) ...[
+                  const SizedBox(height: AppSizes.spaceLg),
+                  Text('KASIR', style: context.textStyles.eyebrow),
+                  const SizedBox(height: AppSizes.spaceSm),
+                  ref.watch(allUsersProvider).maybeWhen(
+                        data: (users) => Wrap(
+                          spacing: AppSizes.spaceSm,
+                          runSpacing: AppSizes.spaceSm,
+                          children: [
+                            _FilterChip(
+                              label: 'Semua',
+                              selected: _userId == null,
+                              onSelected: () => setState(() => _userId = null),
+                            ),
+                            for (final user in users)
+                              _FilterChip(
+                                label: user.name,
+                                icon: Icons.person_outline_rounded,
+                                selected: _userId == user.id,
+                                onSelected: () =>
+                                    setState(() => _userId = user.id),
+                              ),
+                          ],
+                        ),
+                        orElse: () => const AppLoadingView(compact: true),
+                      ),
+                ],
                 const SizedBox(height: AppSizes.spaceXl),
 
                 // --- Aksi (zona jempol).

@@ -38,6 +38,8 @@ abstract class SaleRepository {
     int pointsRedeemed = 0,
     PointsSettings points = const PointsSettings(),
     String? note,
+    int? userId,
+    String? userName,
   });
 
   /// Daftar riwayat transaksi, terbaru dulu, difilter & DIPAGINASI lewat
@@ -53,6 +55,7 @@ abstract class SaleRepository {
     DateTime? endDate,
     String? paymentMethod,
     String? status,
+    int? userId,
     required int limit,
     required int offset,
   });
@@ -84,7 +87,10 @@ abstract class SaleRepository {
   /// sebagai entri `void_return` terpisah di dalam transaksi DB yang sama
   /// (PRD v1.1 §7.3.C, AC-7.8). Saldo tidak pernah negatif.
   ///
+  /// Sejak `schemaVersion` 3: [voidedByUserId] dicatat di
+  /// `sales.voided_by_user_id` (PRD v1.1 §8.3.D).
+  ///
   /// Validasi bahwa [saleId] belum pernah di-void ada di `VoidSaleUsecase`
   /// (domain), BUKAN di sini.
-  Future<void> voidSale(int saleId);
+  Future<void> voidSale(int saleId, {int? voidedByUserId});
 }

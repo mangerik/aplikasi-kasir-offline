@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_providers.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../../settings/screens/pin_entry_screen.dart';
 
@@ -17,6 +18,11 @@ import '../../settings/screens/pin_entry_screen.dart';
 /// Mengembalikan `true` bila boleh lanjut (PIN nonaktif ATAU PIN benar),
 /// `false` bila dibatalkan (tombol kembali).
 Future<bool> checkPinGate(BuildContext context, WidgetRef ref) async {
+  // Multi-user aktif → PIN global v1.0 sudah digantikan oleh peran &
+  // gerbang masuk (PRD v1.1 §8). Menanyakan dua PIN berbeda untuk satu
+  // aksi hanya akan membuat kasir menghafal PIN pemilik.
+  if (ref.read(sessionProvider).multiUserEnabled) return true;
+
   final active = await ref.read(verifyPinUsecaseProvider).isPinActive();
   if (!active) return true;
   if (!context.mounted) return false;

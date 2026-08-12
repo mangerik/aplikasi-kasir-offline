@@ -2,12 +2,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/sale.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../../domain/entities/app_user.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../../pos/providers/sale_providers.dart';
 
 /// Filter aktif layar Riwayat (plan.md Milestone 3 poin 2): rentang
 /// tanggal, metode bayar, status. `null` pada tiap field berarti "semua".
 class HistoryFilter {
-  const HistoryFilter({this.startDate, this.endDate, this.paymentMethod, this.status});
+  const HistoryFilter({
+    this.startDate,
+    this.endDate,
+    this.paymentMethod,
+    this.status,
+    this.userId,
+  });
 
   final DateTime? startDate;
   final DateTime? endDate;
@@ -18,8 +26,15 @@ class HistoryFilter {
   /// `'completed'` | `'debt_unpaid'` | `'voided'` | `null` (semua).
   final String? status;
 
+  /// Filter "Kasir" (`users.id`) — AC-8.9. `null` berarti semua kasir.
+  final int? userId;
+
   bool get isActive =>
-      startDate != null || endDate != null || paymentMethod != null || status != null;
+      startDate != null ||
+      endDate != null ||
+      paymentMethod != null ||
+      status != null ||
+      userId != null;
 
   @override
   bool operator ==(Object other) =>
@@ -28,10 +43,12 @@ class HistoryFilter {
           other.startDate == startDate &&
           other.endDate == endDate &&
           other.paymentMethod == paymentMethod &&
-          other.status == status);
+          other.status == status &&
+          other.userId == userId);
 
   @override
-  int get hashCode => Object.hash(startDate, endDate, paymentMethod, status);
+  int get hashCode =>
+      Object.hash(startDate, endDate, paymentMethod, status, userId);
 }
 
 /// Notifier filter riwayat — TIDAK di-debounce (beda dari filter pencarian
@@ -48,12 +65,14 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
     DateTime? endDate,
     String? paymentMethod,
     String? status,
+    int? userId,
   }) {
     state = HistoryFilter(
       startDate: startDate,
       endDate: endDate,
       paymentMethod: paymentMethod,
       status: status,
+      userId: userId,
     );
   }
 
@@ -93,17 +112,34 @@ class HistoryListNotifier extends AsyncNotifier<HistoryState> {
   @override
   Future<HistoryState> build() async {
     final filter = ref.watch(historyFilterProvider);
+    // Ganti kasir → daftar dimuat ulang dengan batas peran yang baru.
+    ref.watch(currentRoleProvider);
     final items = await _fetch(filter, offset: 0);
     return HistoryState(items: items, hasMore: items.length == pageSize);
   }
 
   Future<List<Sale>> _fetch(HistoryFilter filter, {required int offset}) {
     final repo = ref.read(saleRepoProvider);
+    // Kasir hanya boleh melihat riwayat HARI INI (§8.3.C). Batas ini
+    // dipasang di sini — bukan di sheet filter — supaya tidak bisa
+    // dilonggarkan lewat jalur lain (mis. filter yang dibiarkan terbuka
+    // dari sesi pemilik sebelumnya).
+    final role = ref.read(currentRoleProvider);
+    var start = filter.startDate;
+    var end = filter.endDate;
+    if (!role.canSeeAllHistory) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final startOfTomorrow = today.add(const Duration(days: 1));
+      start = (start == null || start.isBefore(today)) ? today : start;
+      end = (end == null || end.isAfter(startOfTomorrow)) ? startOfTomorrow : end;
+    }
     return repo.getHistory(
-      startDate: filter.startDate,
-      endDate: filter.endDate,
+      startDate: start,
+      endDate: end,
       paymentMethod: filter.paymentMethod,
       status: filter.status,
+      userId: filter.userId,
       limit: pageSize,
       offset: offset,
     );

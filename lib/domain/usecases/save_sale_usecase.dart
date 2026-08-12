@@ -1,3 +1,4 @@
+import '../entities/app_user.dart';
 import '../entities/cart_item.dart';
 import '../entities/points_settings.dart';
 import '../entities/sale_result.dart';
@@ -16,9 +17,19 @@ import '../repositories/sale_repository.dart';
 /// (`data/repositories/sale_repository_impl.dart`), sesuai aturan
 /// arsitektur `features -> domain <- data` (architecture.md §3).
 class SaveSaleUsecase {
-  const SaveSaleUsecase(this._repository);
+  const SaveSaleUsecase(this._repository, {this.actor});
 
   final SaleRepository _repository;
+
+  /// Kasir yang sedang bertugas (PRD v1.1 §8.3.D). Sengaja disuntikkan
+  /// lewat konstruktor (provider yang mengisinya dari sesi aktif), bukan
+  /// lewat parameter [call]: dengan begitu TIDAK ADA satu pun jalur
+  /// penyimpanan transaksi yang bisa lupa mencatat siapa yang melayani —
+  /// jejak yang bolong sama saja dengan tidak ada jejak (AC-8.7).
+  ///
+  /// `null` saat multi-user mati — dan `sales.user_id` memang harus tetap
+  /// `NULL` dalam mode itu (AC-8.1).
+  final AppUser? actor;
 
   /// Menyimpan transaksi. Melempar [KeranjangKosongException],
   /// [UangTidakCukupException], atau [NamaPelangganWajibException] bila
@@ -83,6 +94,8 @@ class SaveSaleUsecase {
       pointsRedeemed: effectiveRedeem,
       points: points,
       note: (trimmedNote == null || trimmedNote.isEmpty) ? null : trimmedNote,
+      userId: actor?.id,
+      userName: actor?.name,
     );
   }
 }

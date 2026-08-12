@@ -15,8 +15,8 @@ void main() {
   });
 
   group('AppDatabase — skema', () {
-    test('schemaVersion adalah 2 (M12 — pelanggan & poin)', () {
-      expect(db.schemaVersion, 2);
+    test('schemaVersion adalah 3 (M13 — multi-user & PIN per kasir)', () {
+      expect(db.schemaVersion, 3);
       expect(db.schemaVersion, kAppSchemaVersion);
     });
 

@@ -29,6 +29,8 @@ class _FakeSaleRepository implements SaleRepository {
     int pointsRedeemed = 0,
     PointsSettings points = const PointsSettings(),
     String? note,
+    int? userId,
+    String? userName,
   }) async {
     lastItems = items;
     lastTransactionDiscount = transactionDiscount;
@@ -62,6 +64,7 @@ class _FakeSaleRepository implements SaleRepository {
     DateTime? endDate,
     String? paymentMethod,
     String? status,
+    int? userId,
     required int limit,
     required int offset,
   }) async => const [];
@@ -73,7 +76,7 @@ class _FakeSaleRepository implements SaleRepository {
   Future<void> markDebtPaid(int saleId) => throw UnimplementedError();
 
   @override
-  Future<void> voidSale(int saleId) => throw UnimplementedError();
+  Future<void> voidSale(int saleId, {int? voidedByUserId}) => throw UnimplementedError();
 }
 
 CartItem _item({int sellPrice = 5000, double qty = 1, int discount = 0}) {

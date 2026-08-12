@@ -28,6 +28,7 @@ abstract class StockRepository {
     required String type,
     required double amount,
     String? note,
+    int? userId,
   });
 
   /// Riwayat pergerakan stok SATU produk, terbaru dulu, dipaginasi lewat

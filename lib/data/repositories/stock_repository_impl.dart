@@ -23,6 +23,7 @@ class StockRepositoryImpl implements StockRepository {
     required String type,
     required double amount,
     String? note,
+    int? userId,
   }) {
     final now = DateFormatter.toEpochMillis(DateTime.now());
 
@@ -54,6 +55,7 @@ class StockRepositoryImpl implements StockRepository {
               stockAfter: newStock,
               note: Value(note),
               createdAt: now,
+              userId: Value(userId),
             ),
           );
     });

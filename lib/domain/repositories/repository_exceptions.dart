@@ -235,3 +235,65 @@ class AlasanPenyesuaianWajibException implements Exception {
   @override
   String toString() => 'Alasan penyesuaian stok wajib diisi.';
 }
+
+/// Dilempar saat nama pengguna yang diisi kosong (PRD v1.1 §8).
+class NamaPenggunaWajibException implements Exception {
+  const NamaPenggunaWajibException();
+
+  @override
+  String toString() => 'Nama pengguna wajib diisi.';
+}
+
+/// Dilempar saat nama pengguna sudah dipakai akun AKTIF lain
+/// (perbandingan case-insensitive, index `idx_users_name_nocase` §8.5).
+/// Nama harus unik justru karena layar Masuk memilih NAMA lebih dulu
+/// (K-8.2) — dua "Ani" di daftar adalah pilihan yang mustahil dibedakan.
+class NamaPenggunaSudahAdaException implements Exception {
+  const NamaPenggunaSudahAdaException(this.name);
+
+  final String name;
+
+  @override
+  String toString() => 'Sudah ada pengguna bernama "$name".';
+}
+
+/// Dilempar saat akun yang dirujuk tidak ada di database (PRD v1.1 §8).
+class PenggunaTidakDitemukanException implements Exception {
+  const PenggunaTidakDitemukanException();
+
+  @override
+  String toString() => 'Pengguna tidak ditemukan.';
+}
+
+/// Dilempar saat akun **Pemilik aktif terakhir** hendak dinonaktifkan atau
+/// diturunkan perannya. Kalau ini diizinkan, tidak ada satu orang pun yang
+/// bisa membuka Pengaturan lagi — aplikasi terkunci dari pemiliknya sendiri
+/// (risiko utama §8.7).
+class PemilikTerakhirException implements Exception {
+  const PemilikTerakhirException();
+
+  @override
+  String toString() =>
+      'Harus ada minimal satu Pemilik aktif. Jadikan pengguna lain '
+      'Pemilik dulu sebelum menonaktifkan yang ini.';
+}
+
+/// Dilempar saat kode pemulihan yang dimasukkan tidak cocok (PRD v1.1
+/// §8.3.E).
+class KodePemulihanSalahException implements Exception {
+  const KodePemulihanSalahException();
+
+  @override
+  String toString() => 'Kode pemulihan tidak cocok.';
+}
+
+/// Dilempar saat aksi yang hanya boleh dilakukan Pemilik dicoba oleh Kasir
+/// (PRD v1.1 §8.3.C). Penjagaan sesungguhnya ada di `redirect` router &
+/// repository; exception ini adalah jaring terakhir di lapisan domain.
+class AksesDitolakException implements Exception {
+  const AksesDitolakException();
+
+  @override
+  String toString() =>
+      'Fitur ini hanya untuk Pemilik. Minta Pemilik untuk masuk.';
+}

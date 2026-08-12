@@ -6,6 +6,7 @@ import '../../../domain/entities/product.dart';
 import '../../../domain/entities/stock_movement.dart';
 import '../../../domain/repositories/stock_repository.dart';
 import '../../../domain/usecases/adjust_stock_usecase.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../../products/providers/product_providers.dart';
 import '../../settings/providers/settings_providers.dart';
 
@@ -21,7 +22,10 @@ final Provider<StockRepository> stockRepoProvider = Provider<StockRepository>((r
 final Provider<AdjustStockUsecase> adjustStockUsecaseProvider = Provider<AdjustStockUsecase>((
   ref,
 ) {
-  return AdjustStockUsecase(ref.watch(stockRepoProvider));
+  return AdjustStockUsecase(
+    ref.watch(stockRepoProvider),
+    actor: ref.watch(currentUserProvider),
+  );
 });
 
 /// Threshold stok menipis default global — dibaca dari `settings` (key

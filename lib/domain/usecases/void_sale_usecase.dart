@@ -1,3 +1,4 @@
+import '../entities/app_user.dart';
 import '../repositories/repository_exceptions.dart';
 import '../repositories/sale_repository.dart';
 
@@ -13,9 +14,17 @@ import '../repositories/sale_repository.dart';
 /// gerbang PIN (hook, lihat `features/transactions/utils/pin_gate.dart`)
 /// dilakukan DI LUAR usecase ini, sebelum dipanggil.
 class VoidSaleUsecase {
-  const VoidSaleUsecase(this._repository);
+  const VoidSaleUsecase(this._repository, {this.actor});
 
   final SaleRepository _repository;
+
+  /// Siapa yang membatalkan (PRD v1.1 §8.3.D) — dicatat di
+  /// `sales.voided_by_user_id`. Void adalah aksi yang menyentuh uang; tanpa
+  /// nama di belakangnya, "kas kurang" tidak pernah bisa ditelusuri.
+  ///
+  /// Penjagaan bahwa Kasir TIDAK BOLEH void (AC-8.6) ada di lapisan UI &
+  /// router; pemeriksaan di sini adalah jaring terakhirnya.
+  final AppUser? actor;
 
   /// Melempar `TransaksiTidakDitemukanException` bila [saleId] tidak ada,
   /// atau `TransaksiSudahDibatalkanException` bila transaksi tersebut
@@ -26,6 +35,10 @@ class VoidSaleUsecase {
     if (sale.status == 'voided') {
       throw const TransaksiSudahDibatalkanException();
     }
-    await _repository.voidSale(saleId);
+    final by = actor;
+    if (by != null && !by.role.canVoidSale) {
+      throw const AksesDitolakException();
+    }
+    await _repository.voidSale(saleId, voidedByUserId: by?.id);
   }
 }

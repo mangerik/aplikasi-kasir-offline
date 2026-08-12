@@ -25,6 +25,7 @@ class SaleResult {
     this.pointsRedeemedValue = 0,
     this.pointsEarned = 0,
     this.pointsBalanceAfter = 0,
+    this.userName,
   });
 
   final int saleId;
@@ -54,6 +55,11 @@ class SaleResult {
   /// Tautan ke pelanggan (`customers.id`), sejak `schemaVersion` 2 —
   /// `null` untuk transaksi tanpa pelanggan (PRD v1.1 §7.5).
   final int? customerId;
+
+  /// Nama kasir yang melayani (snapshot, K-8.6) — dicetak sebagai baris
+  /// `Kasir: <nama>` di struk (§8.3.D). `null` saat multi-user mati, dan
+  /// barisnya memang tidak dicetak dalam mode itu (AC-8.1).
+  final String? userName;
 
   /// Jumlah poin yang DITUKAR pada transaksi ini (K-7.6) — 0 bila program
   /// poin mati atau pelanggan tidak menukar poin. Dipakai struk untuk

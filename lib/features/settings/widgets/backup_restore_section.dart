@@ -7,6 +7,7 @@ import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../data/db/database_provider.dart';
 import '../../../data/services/backup_service.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../providers/settings_providers.dart';
 import 'settings_card.dart';
 
@@ -112,6 +113,16 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
       await ref.read(databaseProvider).close();
       await BackupService.restoreFrom(path);
       ref.invalidate(databaseProvider);
+      // Backup membawa seluruh akun & perannya (AC-8.16). Sesi perangkat
+      // TIDAK ikut terbawa — `active_user_id` hidup di `shared_preferences`
+      // — jadi sesi lama dilepas dan aplikasi meminta masuk lagi dengan
+      // akun-akun yang baru saja dipulihkan.
+      await ref.read(sessionProvider.notifier).signOut();
+      ref
+        ..invalidate(multiUserSettingsProvider)
+        ..invalidate(activeUsersProvider)
+        ..invalidate(allUsersProvider);
+      await ref.read(sessionProvider.notifier).refresh();
       if (!mounted) return;
       await showDialog<void>(
         context: context,

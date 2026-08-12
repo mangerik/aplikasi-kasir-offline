@@ -8,6 +8,7 @@ import 'core/license/license_verifier.dart';
 import 'core/utils/date_formatter.dart';
 import 'data/services/device_id_service.dart';
 import 'features/license/providers/license_providers.dart';
+import 'features/auth/providers/session_store.dart';
 import 'features/license/providers/license_store.dart';
 import 'features/settings/providers/theme_providers.dart';
 
@@ -50,6 +51,11 @@ Future<void> main() async {
           SharedPrefsThemeModeStore(prefs),
         ),
         licenseStoreProvider.overrideWithValue(licenseStore),
+        // Sesi & hitungan percobaan PIN (§8.5): dibaca sinkron dari
+        // `shared_preferences` yang sudah dimuat di atas, supaya frame
+        // pertama sudah menampilkan layar Masuk bila memang diperlukan —
+        // alasan yang sama dengan tema & lisensi.
+        sessionStoreProvider.overrideWithValue(SharedPrefsSessionStore(prefs)),
         deviceCodeProvider.overrideWithValue(deviceRaw),
         licenseBootstrapProvider.overrideWithValue(licenseStatus),
       ],

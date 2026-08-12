@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_widgets.dart';
+import '../../../domain/entities/app_user.dart';
+import '../../auth/providers/auth_providers.dart';
+import '../../auth/widgets/user_avatar.dart';
 import '../../license/widgets/license_section.dart';
 import '../widgets/appearance_section.dart';
 import '../widgets/backup_reminder_banner.dart';
@@ -11,6 +15,7 @@ import '../widgets/pin_section.dart';
 import '../widgets/points_section.dart';
 import '../widgets/printer_section.dart';
 import '../widgets/store_profile_section.dart';
+import '../widgets/users_section.dart';
 
 /// Layar Pengaturan (plan.md Milestone 5) — profil toko, threshold stok
 /// menipis default, export Excel, backup/restore database, dan kunci PIN.
@@ -24,14 +29,14 @@ import '../widgets/store_profile_section.dart';
 /// masing-masing dibuka [SectionHeader] ber-eyebrow dan diisi satu/dua
 /// [SettingsCard]. Grup membuat layar panjang ini bisa dipindai sekilas
 /// alih-alih jadi tumpukan kartu seragam.
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Jangkar untuk melompat dari banner pengingat ke kartu Backup —
   /// pengingat yang tidak bisa langsung ditindaklanjuti hanyalah teguran.
   final GlobalKey _backupKey = GlobalKey();
@@ -49,84 +54,164 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Kasir tetap boleh membuka Pengaturan — tapi hanya untuk tema
+    // (§8.3.C "kecuali tema") dan untuk menyerahkan giliran. Kartu lain
+    // TIDAK dirender sama sekali, bukan disembunyikan setengah-setengah:
+    // tombol mati yang tetap terlihat hanya mengundang percobaan.
+    final isOwner = ref.watch(currentRoleProvider).isOwner;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Pengaturan')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSizes.screenPadding,
-            AppSizes.spaceSm,
-            AppSizes.screenPadding,
-            AppSizes.bottomSafePadding,
-          ),
-          children: [
-            BackupReminderBanner(onBackup: _scrollToBackup),
+      body: SafeArea(child: isOwner ? _ownerBody() : const _CashierBody()),
+    );
+  }
 
-            const SectionHeader(
-              eyebrow: 'TAMPILAN',
-              title: 'Mata Kamu',
-              subtitle: 'Terang untuk siang, gelap untuk warung malam.',
-            ),
-            const AppearanceSection(),
-
-            const SizedBox(height: AppSizes.spaceXl),
-            const SectionHeader(
-              eyebrow: 'IDENTITAS',
-              title: 'Toko Kamu',
-              subtitle: 'Dipakai di kepala struk pembeli.',
-            ),
-            const StoreProfileSection(),
-
-            const SizedBox(height: AppSizes.spaceXl),
-            const SectionHeader(
-              eyebrow: 'OPERASIONAL',
-              title: 'Aturan Warung',
-              subtitle: 'Batas stok menipis dan hadiah untuk pelanggan setia.',
-            ),
-            const LowStockDefaultSection(),
-
-            const SizedBox(height: AppSizes.spaceMs),
-            const PointsSection(),
-
-            const SizedBox(height: AppSizes.spaceXl),
-            const SectionHeader(
-              eyebrow: 'PERANGKAT',
-              title: 'Printer Struk',
-              subtitle: 'Secarik kertas di tangan pembeli, dalam hitungan detik.',
-            ),
-            const PrinterSection(),
-
-            const SizedBox(height: AppSizes.spaceXl),
-            const SectionHeader(
-              eyebrow: 'DATA',
-              title: 'Cadangan & Ekspor',
-              subtitle: 'Amankan data, atau bawa ke Excel.',
-            ),
-            KeyedSubtree(key: _backupKey, child: const BackupRestoreSection()),
-            const SizedBox(height: AppSizes.spaceMs),
-            const ExportSection(),
-
-            const SizedBox(height: AppSizes.spaceXl),
-            const SectionHeader(
-              eyebrow: 'KEAMANAN',
-              title: 'Kunci Akses',
-              subtitle: 'Batasi siapa yang boleh melihat uang & membatalkan.',
-            ),
-            const PinSection(),
-
-            const SizedBox(height: AppSizes.spaceXl),
-            const SectionHeader(
-              eyebrow: 'LISENSI',
-              title: 'Aktivasi Aplikasi',
-              subtitle: 'Sekali diaktifkan, jalan terus tanpa internet.',
-            ),
-            const LicenseSection(),
-
-            const SizedBox(height: AppSizes.space2xl),
-            const _SettingsFooter(),
-          ],
-        ),
+  Widget _ownerBody() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.screenPadding,
+        AppSizes.spaceSm,
+        AppSizes.screenPadding,
+        AppSizes.bottomSafePadding,
       ),
+      children: [
+        BackupReminderBanner(onBackup: _scrollToBackup),
+
+        const SectionHeader(
+          eyebrow: 'TAMPILAN',
+          title: 'Mata Kamu',
+          subtitle: 'Terang untuk siang, gelap untuk warung malam.',
+        ),
+        const AppearanceSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'IDENTITAS',
+          title: 'Toko Kamu',
+          subtitle: 'Dipakai di kepala struk pembeli.',
+        ),
+        const StoreProfileSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'OPERASIONAL',
+          title: 'Aturan Warung',
+          subtitle: 'Batas stok menipis dan hadiah untuk pelanggan setia.',
+        ),
+        const LowStockDefaultSection(),
+
+        const SizedBox(height: AppSizes.spaceMs),
+        const PointsSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'PERANGKAT',
+          title: 'Printer Struk',
+          subtitle: 'Secarik kertas di tangan pembeli, dalam hitungan detik.',
+        ),
+        const PrinterSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'DATA',
+          title: 'Cadangan & Ekspor',
+          subtitle: 'Amankan data, atau bawa ke Excel.',
+        ),
+        KeyedSubtree(key: _backupKey, child: const BackupRestoreSection()),
+        const SizedBox(height: AppSizes.spaceMs),
+        const ExportSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'KEAMANAN',
+          title: 'Kunci Akses',
+          subtitle: 'Batasi siapa yang boleh melihat uang & membatalkan.',
+        ),
+        const PinSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'ORANG',
+          title: 'Siapa yang Bertugas',
+          subtitle: 'Akun & PIN untuk setiap orang yang menjaga warung.',
+        ),
+        const UsersSection(),
+
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'LISENSI',
+          title: 'Aktivasi Aplikasi',
+          subtitle: 'Sekali diaktifkan, jalan terus tanpa internet.',
+        ),
+        const LicenseSection(),
+
+        const SizedBox(height: AppSizes.space2xl),
+        const _SettingsFooter(),
+      ],
+    );
+  }
+}
+
+/// Pengaturan versi Kasir (§8.3.C): tema + menyerahkan giliran, titik.
+class _CashierBody extends ConsumerWidget {
+  const _CashierBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final theme = Theme.of(context);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.screenPadding,
+        AppSizes.spaceSm,
+        AppSizes.screenPadding,
+        AppSizes.bottomSafePadding,
+      ),
+      children: [
+        if (user != null)
+          AppCard(
+            child: Row(
+              children: [
+                UserAvatar(user: user, size: 48),
+                const SizedBox(width: AppSizes.spaceMs),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(user.name, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSizes.spaceXs),
+                      UserRolePill(role: user.role),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => ref.read(sessionProvider.notifier).signOut(),
+                  icon: const Icon(Icons.swap_horiz_rounded, size: AppSizes.iconSm),
+                  label: const Text('Ganti'),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: AppSizes.spaceXl),
+        const SectionHeader(
+          eyebrow: 'TAMPILAN',
+          title: 'Mata Kamu',
+          subtitle: 'Terang untuk siang, gelap untuk warung malam.',
+        ),
+        const AppearanceSection(),
+        const SizedBox(height: AppSizes.spaceXl),
+        AppCard(
+          color: context.palette.surfaceAlt,
+          child: Text(
+            'Setelan toko, printer, data, dan pengguna hanya bisa diubah '
+            'Pemilik. Minta Pemilik untuk masuk kalau ada yang perlu diubah.',
+            style: theme.textTheme.bodySmall?.copyWith(color: context.palette.inkSecondary),
+          ),
+        ),
+        const SizedBox(height: AppSizes.space2xl),
+        const _SettingsFooter(),
+      ],
     );
   }
 }

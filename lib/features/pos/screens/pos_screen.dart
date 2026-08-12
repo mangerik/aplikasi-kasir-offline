@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_widgets.dart';
+import '../../auth/providers/auth_providers.dart';
+import '../../auth/widgets/active_user_chip.dart';
 import '../../license/providers/license_providers.dart';
 import '../../license/widgets/license_banner.dart';
 import '../providers/held_cart_providers.dart';
@@ -38,13 +40,40 @@ class PosScreen extends ConsumerWidget {
     // layar ini, sehingga transaksi yang sedang berjalan tetap boleh
     // diselesaikan sampai tersimpan — K-6.10, AC-6.18.
     final canSell = ref.watch(licenseStatusProvider).state.canSell;
+    // Satu-satunya tambahan multi-user di layar Kasir (§8.6): chip pengguna
+    // aktif + aksi "Ganti Kasir" di menu ⋮. Layar ini milik alur jualan;
+    // apa pun yang ditambahkan di sini harus benar-benar dibutuhkan di
+    // tengah jam sibuk — dan berganti giliran memang salah satunya.
+    final multiUser = ref.watch(sessionProvider).multiUserEnabled;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kasir'),
         actions: [
+          if (multiUser) ...[
+            const ActiveUserChip(),
+            const SizedBox(width: AppSizes.spaceXs),
+          ],
           _HeldCartsAction(count: heldCount),
-          const SizedBox(width: AppSizes.spaceMd),
+          if (multiUser)
+            PopupMenuButton<String>(
+              tooltip: 'Menu lain',
+              onSelected: (value) {
+                if (value == 'switch') ActiveUserChip.switchUser(context, ref);
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem<String>(
+                  value: 'switch',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.swap_horiz_rounded),
+                    title: Text('Ganti Kasir'),
+                  ),
+                ),
+              ],
+            )
+          else
+            const SizedBox(width: AppSizes.spaceMd),
         ],
       ),
       body: SafeArea(

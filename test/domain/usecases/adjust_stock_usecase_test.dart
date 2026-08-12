@@ -19,6 +19,7 @@ class _FakeStockRepository implements StockRepository {
     required String type,
     required double amount,
     String? note,
+    int? userId,
   }) async {
     adjustStockCalled = true;
     lastType = type;

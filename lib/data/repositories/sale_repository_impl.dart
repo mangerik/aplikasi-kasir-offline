@@ -37,6 +37,8 @@ class SaleRepositoryImpl implements SaleRepository {
     int pointsRedeemed = 0,
     PointsSettings points = const PointsSettings(),
     String? note,
+    int? userId,
+    String? userName,
   }) {
     final now = DateTime.now();
     final createdAtMillis = DateFormatter.toEpochMillis(now);
@@ -67,6 +69,10 @@ class SaleRepositoryImpl implements SaleRepository {
               status: status,
               note: Value(note),
               createdAt: createdAtMillis,
+              userId: Value(userId),
+              // Snapshot nama kasir (K-8.6): mengganti nama pengguna nanti
+              // tidak boleh mengubah struk yang sudah terjadi (AC-8.7).
+              userName: Value(userName),
             ),
           );
 
@@ -190,6 +196,7 @@ class SaleRepositoryImpl implements SaleRepository {
         customerId: customerId,
         note: note,
         createdAt: now,
+        userName: userName,
         items: resultItems,
         status: status,
         pointsRedeemed: pointsRedeemed,
@@ -228,6 +235,7 @@ class SaleRepositoryImpl implements SaleRepository {
     DateTime? endDate,
     String? paymentMethod,
     String? status,
+    int? userId,
     required int limit,
     required int offset,
   }) async {
@@ -246,6 +254,10 @@ class SaleRepositoryImpl implements SaleRepository {
     }
     if (status != null) {
       statement.where((s) => s.status.equals(status));
+    }
+    // Filter "Kasir" (AC-8.9) — memakai index `idx_sales_user`.
+    if (userId != null) {
+      statement.where((s) => s.userId.equals(userId));
     }
     statement
       ..orderBy([(s) => OrderingTerm(expression: s.createdAt, mode: OrderingMode.desc)])
@@ -293,6 +305,7 @@ class SaleRepositoryImpl implements SaleRepository {
       customerId: sale.customerId,
       note: sale.note,
       createdAt: DateFormatter.fromEpochMillis(sale.createdAt),
+      userName: sale.userName,
       items: itemRows
           .map(
             (row) => SaleResultItem(
@@ -336,7 +349,7 @@ class SaleRepositoryImpl implements SaleRepository {
   }
 
   @override
-  Future<void> voidSale(int saleId) {
+  Future<void> voidSale(int saleId, {int? voidedByUserId}) {
     final now = DateFormatter.toEpochMillis(DateTime.now());
 
     return _db.transaction(() async {
@@ -384,7 +397,11 @@ class SaleRepositoryImpl implements SaleRepository {
       }
 
       await (_db.update(_db.sales)..where((s) => s.id.equals(saleId))).write(
-        db.SalesCompanion(status: const Value('voided'), voidedAt: Value(now)),
+        db.SalesCompanion(
+          status: const Value('voided'),
+          voidedAt: Value(now),
+          voidedByUserId: Value(voidedByUserId),
+        ),
       );
 
       // ---- Poin ikut dibatalkan (PRD v1.1 §7.3.C, AC-7.8) -------------
@@ -451,5 +468,7 @@ class SaleRepositoryImpl implements SaleRepository {
         createdAt: DateFormatter.fromEpochMillis(row.createdAt),
         voidedAt: row.voidedAt == null ? null : DateFormatter.fromEpochMillis(row.voidedAt!),
         debtPaidAt: row.debtPaidAt == null ? null : DateFormatter.fromEpochMillis(row.debtPaidAt!),
+        userId: row.userId,
+        userName: row.userName,
       );
 }

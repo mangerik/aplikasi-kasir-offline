@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../domain/entities/app_user.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/entities/product.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../../inventory/providers/stock_providers.dart';
 import '../../inventory/screens/low_stock_screen.dart';
 import '../providers/category_providers.dart';
@@ -68,6 +70,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final categoriesAsync = ref.watch(categoryListProvider);
     final filter = ref.watch(productFilterProvider);
     final lowStockCount = ref.watch(lowStockCountProvider).value ?? 0;
+    final canManage = ref.watch(currentRoleProvider).canManageProducts;
     final lowStockThreshold =
         ref.watch(lowStockDefaultThresholdProvider).value ??
         Product.defaultLowStockThreshold;
@@ -114,11 +117,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           const SizedBox(width: AppSizes.spaceXs),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('${AppRoutes.products}/tambah'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Tambah Produk'),
-      ),
+      // Kasir boleh MELIHAT katalog (dia butuh untuk berjualan) tapi tidak
+      // menambah/mengubah harga (§8.3.C). Rutenya sendiri sudah ditolak
+      // `redirect` (AC-8.4); tombol ini disembunyikan supaya tidak ada
+      // ajakan menuju pintu yang terkunci.
+      floatingActionButton: canManage
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('${AppRoutes.products}/tambah'),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Tambah Produk'),
+            )
+          : null,
       body: Column(
         children: [
           Padding(

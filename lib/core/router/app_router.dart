@@ -1,6 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/app_user.dart';
+import '../../features/auth/providers/auth_providers.dart';
+import '../../features/auth/screens/access_denied_screen.dart';
+import '../../features/auth/screens/login_screen.dart';
 import '../../features/license/providers/license_providers.dart';
 import '../../features/license/screens/activation_screen.dart';
 import '../../features/license/screens/license_expired_screen.dart';
@@ -26,6 +31,30 @@ abstract final class AppRoutes {
 
   /// Layar "masa coba berakhir" — juga di luar shell.
   static const String licenseExpired = '/lisensi-berakhir';
+
+  /// Gerbang masuk multi-user (pilih nama → PIN) — di luar shell.
+  static const String login = '/masuk';
+
+  /// Penolakan akses untuk Kasir yang menabrak batas izin — di luar shell.
+  static const String accessDenied = '/akses-ditolak';
+
+  /// Rute yang HANYA boleh dibuka Pemilik (PRD v1.1 §8.3.C).
+  ///
+  /// Daftar ini adalah penjagaan sesungguhnya (AC-8.4): menyembunyikan
+  /// tombol saja bisa dilewati lewat deep link, `go()` langsung, atau
+  /// tautan dari layar lain — `redirect` berlaku untuk semua jalan masuk
+  /// sekaligus.
+  ///
+  /// `/pengaturan` sengaja TIDAK di sini: Kasir tetap boleh membukanya
+  /// untuk mengubah tema (§8.3.C "kecuali tema"); isi kartunya sendiri
+  /// yang menyesuaikan peran.
+  static bool isOwnerOnly(String location) {
+    if (location == reports || location.startsWith('$reports/')) return true;
+    // Tambah/ubah produk & harga — daftar produknya sendiri tetap terbuka
+    // karena kasir butuh melihat barang untuk berjualan.
+    if (location.startsWith('$products/')) return true;
+    return false;
+  }
 }
 
 /// Gerbang lisensi di lapisan router (K-6.9, AC-6.1).
@@ -66,6 +95,66 @@ String? licenseRedirect(LicenseState state, String location) {
   }
 }
 
+/// Keadaan gerbang masuk & izin, dalam bentuk yang bisa dibaca `redirect`
+/// secara **sinkron** (PRD v1.1 §8.6, AC-8.4).
+@immutable
+class AuthGateState {
+  const AuthGateState({required this.needsLogin, required this.role});
+
+  final bool needsLogin;
+  final UserRole role;
+
+  @override
+  bool operator ==(Object other) =>
+      other is AuthGateState &&
+      other.needsLogin == needsLogin &&
+      other.role == role;
+
+  @override
+  int get hashCode => Object.hash(needsLogin, role);
+}
+
+/// Gerbang MASUK & IZIN di lapisan router — jalan kedua setelah lisensi.
+///
+/// Urutan gerbangnya: **lisensi → masuk → izin peran → shell**.
+///
+/// Penjagaan izin sengaja ada di sini DAN di UI (§8.6). UI yang
+/// menyembunyikan tombol menjaga pengalaman; `redirect` yang menolak rute
+/// menjaga datanya — dan hanya yang kedua yang tidak bisa dilewati lewat
+/// deep link atau navigasi langsung (AC-8.4).
+String? authRedirect(AuthGateState gate, String location) {
+  if (gate.needsLogin) {
+    return location == AppRoutes.login ? null : AppRoutes.login;
+  }
+  if (location == AppRoutes.login) return AppRoutes.pos;
+
+  if (!gate.role.isOwner && AppRoutes.isOwnerOnly(location)) {
+    return AppRoutes.accessDenied;
+  }
+  // Pemilik tidak pernah perlu melihat layar penolakan (mis. setelah
+  // "Masuk sebagai Pemilik" dari layar itu sendiri).
+  if (location == AppRoutes.accessDenied && gate.role.isOwner) {
+    return AppRoutes.pos;
+  }
+  return null;
+}
+
+/// Jembatan [SessionState] → `Listenable` untuk `GoRouter.refreshListenable`
+/// — pola yang sama dengan `licenseGateProvider`.
+final Provider<ValueNotifier<AuthGateState>> authGateProvider =
+    Provider<ValueNotifier<AuthGateState>>((ref) {
+  AuthGateState read(SessionState session) => AuthGateState(
+        needsLogin: session.needsLogin,
+        role: session.role,
+      );
+  final notifier = ValueNotifier<AuthGateState>(read(ref.read(sessionProvider)));
+  ref.listen<SessionState>(sessionProvider, (previous, next) {
+    notifier.value = read(next);
+  });
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
+
 /// Konfigurasi navigasi aplikasi: gerbang lisensi di luar shell, lalu shell
 /// dengan 5 tab bawah (Kasir · Produk · Riwayat · Laporan · Pengaturan),
 /// lihat architecture.md §3 dan plan.md Milestone 0.
@@ -76,11 +165,19 @@ String? licenseRedirect(LicenseState state, String location) {
 /// lokasi navigasi antar test.
 final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
   final gate = ref.watch(licenseGateProvider);
+  final authGate = ref.watch(authGateProvider);
   final router = GoRouter(
     initialLocation: AppRoutes.pos,
-    refreshListenable: gate,
-    redirect: (context, state) =>
-        licenseRedirect(gate.value, state.matchedLocation),
+    refreshListenable: Listenable.merge([gate, authGate]),
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+      // Lisensi lebih dulu: aplikasi yang belum diaktifkan tidak boleh
+      // menampilkan layar Masuk (dan sebaliknya, gerbang masuk tidak boleh
+      // menyandera layar aktivasi).
+      final licenseTarget = licenseRedirect(gate.value, location);
+      if (licenseTarget != null) return licenseTarget;
+      return authRedirect(authGate.value, location);
+    },
     routes: [
       GoRoute(
         path: AppRoutes.activation,
@@ -89,6 +186,14 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.licenseExpired,
         builder: (context, state) => const LicenseExpiredScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accessDenied,
+        builder: (context, state) => const AccessDeniedScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

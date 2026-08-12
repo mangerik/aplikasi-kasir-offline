@@ -112,6 +112,14 @@ class ReceiptWidget extends ConsumerWidget {
             Text(profile.phone!.trim(), textAlign: TextAlign.center, style: _body),
           const SizedBox(height: AppSizes.spaceSm),
           Text('No. Struk: ${sale.invoiceNumber}', textAlign: TextAlign.center, style: _body),
+          // Baris "Kasir" hanya ada saat multi-user aktif (§8.3.D); struk
+          // mode single-user tetap identik dengan v1.0 (AC-8.1).
+          if ((sale.userName ?? '').trim().isNotEmpty)
+            Text(
+              'Kasir: ${sale.userName!.trim()}',
+              textAlign: TextAlign.center,
+              style: _body,
+            ),
           Text(
             DateFormatter.formatDateTime(sale.createdAt),
             textAlign: TextAlign.center,

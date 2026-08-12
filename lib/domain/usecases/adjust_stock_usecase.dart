@@ -1,3 +1,4 @@
+import '../entities/app_user.dart';
 import '../repositories/repository_exceptions.dart';
 import '../repositories/stock_repository.dart';
 
@@ -10,9 +11,13 @@ import '../repositories/stock_repository.dart';
 /// update `products.stock` + insert `stock_movements` dalam SATU
 /// `db.transaction()` (architecture.md §4).
 class AdjustStockUsecase {
-  const AdjustStockUsecase(this._repository);
+  const AdjustStockUsecase(this._repository, {this.actor});
 
   final StockRepository _repository;
+
+  /// Siapa yang menyesuaikan stok (PRD v1.1 §8.3.D, AC-8.8). Kasir BOLEH
+  /// menyesuaikan stok — yang penting penyesuaiannya tercatat atas namanya.
+  final AppUser? actor;
 
   static const Set<String> _validTypes = {'adjust_in', 'adjust_out', 'opname'};
 
@@ -46,6 +51,7 @@ class AdjustStockUsecase {
       type: type,
       amount: amount,
       note: trimmedNote,
+      userId: actor?.id,
     );
   }
 }

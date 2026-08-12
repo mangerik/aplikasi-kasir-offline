@@ -27,6 +27,8 @@ class _FakeSaleRepository implements SaleRepository {
     int pointsRedeemed = 0,
     PointsSettings points = const PointsSettings(),
     String? note,
+    int? userId,
+    String? userName,
   }) => throw UnimplementedError();
 
   @override
@@ -35,6 +37,7 @@ class _FakeSaleRepository implements SaleRepository {
     DateTime? endDate,
     String? paymentMethod,
     String? status,
+    int? userId,
     required int limit,
     required int offset,
   }) => throw UnimplementedError();
@@ -63,7 +66,7 @@ class _FakeSaleRepository implements SaleRepository {
   }
 
   @override
-  Future<void> voidSale(int saleId) => throw UnimplementedError();
+  Future<void> voidSale(int saleId, {int? voidedByUserId}) => throw UnimplementedError();
 }
 
 void main() {

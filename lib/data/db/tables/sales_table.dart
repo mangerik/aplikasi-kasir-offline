@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'customers_table.dart';
+import 'users_table.dart';
 
 /// Transaksi penjualan (header). Lihat architecture.md §4.
 ///
@@ -49,4 +50,18 @@ class Sales extends Table {
 
   /// Epoch millis UTC.
   IntColumn get debtPaidAt => integer().nullable()();
+
+  /// Kasir yang melayani transaksi ini (PRD v1.1 §8.5, `schemaVersion` 3).
+  /// `null` untuk transaksi lama & untuk mode single-user (multi-user mati
+  /// = perilaku v1.0 persis, AC-8.1).
+  IntColumn get userId => integer().nullable().references(Users, #id)();
+
+  /// **SNAPSHOT** nama kasir saat transaksi terjadi (K-8.6) — sengaja
+  /// tidak ikut berubah saat nama pengguna diganti, persis seperti
+  /// `sale_items.product_name` & `sales.customer_name` (AC-8.7).
+  TextColumn get userName => text().nullable()();
+
+  /// Siapa yang membatalkan transaksi ini (PRD v1.1 §8.3.D).
+  IntColumn get voidedByUserId =>
+      integer().nullable().references(Users, #id)();
 }

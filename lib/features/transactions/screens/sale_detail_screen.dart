@@ -10,7 +10,9 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/receipt_service.dart';
+import '../../../domain/entities/app_user.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../../customers/screens/customer_detail_screen.dart';
 import '../../pos/providers/sale_providers.dart';
 import '../../pos/widgets/print_receipt_button.dart';
@@ -275,7 +277,12 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                   ),
                 ),
               ),
-              if (sale.status != 'voided') ...[
+              // Void hanya untuk Pemilik (AC-8.6). Tombolnya TIDAK
+              // dirender untuk Kasir — dan `VoidSaleUsecase` menolaknya
+              // sekali lagi di lapisan domain, supaya tidak ada jalur lain
+              // yang kelewat.
+              if (sale.status != 'voided' &&
+                  ref.watch(currentRoleProvider).canVoidSale) ...[
                 const SizedBox(height: AppSizes.spaceLg),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
@@ -433,6 +440,18 @@ class _HeaderCard extends StatelessWidget {
                   child: _CustomerLink(
                     name: sale.customerName!.trim(),
                     customerId: sale.customerId,
+                  ),
+                ),
+              ],
+              // Jejak kasir (§8.3.D): siapa yang melayani transaksi ini.
+              // Nama ini SNAPSHOT — mengganti nama pengguna tidak mengubah
+              // transaksi lama (AC-8.7).
+              if ((sale.userName ?? '').trim().isNotEmpty) ...[
+                const SizedBox(width: AppSizes.spaceMs),
+                Flexible(
+                  child: AppPill(
+                    label: 'Kasir: ${sale.userName!.trim()}',
+                    icon: Icons.person_outline_rounded,
                   ),
                 ),
               ],
