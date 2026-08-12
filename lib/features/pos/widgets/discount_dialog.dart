@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/app_widgets.dart';
 
 /// Dialog input diskon — dipakai untuk diskon PER ITEM (`CartItemTile`) dan
 /// diskon TOTAL transaksi (`CartPanel`).
@@ -100,39 +100,90 @@ class _DiscountDialogContentState extends State<_DiscountDialogContent> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final previewNominal = _nominalFromInput();
+    final afterDiscount = (_baseAmount - previewNominal).clamp(0, _baseAmount);
+
     return AlertDialog(
       title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Dasar: ${CurrencyFormatter.format(_baseAmount)}'),
-          const SizedBox(height: AppSizes.spaceMd),
-          SegmentedButton<_DiscountMode>(
-            segments: const [
-              ButtonSegment(value: _DiscountMode.nominal, label: Text('Rp')),
-              ButtonSegment(value: _DiscountMode.percent, label: Text('%')),
-            ],
-            selected: {_mode},
-            onSelectionChanged: (selection) => _switchMode(selection.first),
-          ),
-          const SizedBox(height: AppSizes.spaceMd),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-            decoration: InputDecoration(
-              labelText: _mode == _DiscountMode.nominal ? 'Diskon (Rp)' : 'Diskon (%)',
-              prefixText: _mode == _DiscountMode.nominal ? 'Rp ' : null,
-              suffixText: _mode == _DiscountMode.percent ? '%' : null,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppCard(
+              color: AppColors.surfaceAlt,
+              radius: AppSizes.radiusMd,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.spaceMd,
+                vertical: AppSizes.spaceSm,
+              ),
+              child: AppKeyValueRow(
+                label: 'Harga sebelum diskon',
+                value: CurrencyFormatter.format(_baseAmount),
+              ),
             ),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: AppSizes.spaceSm),
-          Text('= ${CurrencyFormatter.format(previewNominal)}'),
-        ],
+            const SizedBox(height: AppSizes.spaceMd),
+            SegmentedButton<_DiscountMode>(
+              segments: const [
+                ButtonSegment(value: _DiscountMode.nominal, label: Text('Nominal')),
+                ButtonSegment(value: _DiscountMode.percent, label: Text('Persen')),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (selection) => _switchMode(selection.first),
+            ),
+            const SizedBox(height: AppSizes.spaceMd),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+              style: AppTextStyles.moneyLarge,
+              decoration: InputDecoration(
+                labelText: _mode == _DiscountMode.nominal ? 'Diskon (Rp)' : 'Diskon (%)',
+                prefixText: _mode == _DiscountMode.nominal ? 'Rp ' : null,
+                suffixText: _mode == _DiscountMode.percent ? '%' : null,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: AppSizes.spaceMd),
+            AppCard(
+              color: AppColors.primary50,
+              borderColor: AppColors.primary100,
+              radius: AppSizes.radiusMd,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.spaceMd,
+                vertical: AppSizes.spaceSm,
+              ),
+              child: Column(
+                children: [
+                  AppKeyValueRow(
+                    label: 'Potongan',
+                    value: previewNominal > 0
+                        ? '-${CurrencyFormatter.format(previewNominal)}'
+                        : CurrencyFormatter.format(0),
+                    valueColor: previewNominal > 0
+                        ? AppColors.dangerText
+                        : AppColors.inkSecondary,
+                  ),
+                  AppKeyValueRow(
+                    label: 'Jadi bayar',
+                    value: CurrencyFormatter.format(afterDiscount),
+                    valueColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+            if (_mode == _DiscountMode.percent && _baseAmount > 0) ...[
+              const SizedBox(height: AppSizes.spaceSm),
+              Text(
+                'Persen dihitung dari harga sebelum diskon dan disimpan '
+                'sebagai nominal.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
       ),
       actions: [
         TextButton(

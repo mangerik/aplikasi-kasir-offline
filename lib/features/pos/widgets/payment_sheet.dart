@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../providers/cart_provider.dart';
 import '../providers/sale_providers.dart';
@@ -16,6 +15,9 @@ import '../providers/sale_providers.dart';
 /// docs/laporan-m3.md §3).
 const List<String> _noncashTypes = ['QRIS', 'Transfer Bank', 'Kartu', 'Lainnya'];
 
+/// Pecahan uang yang paling sering diterima warung — tombol tambah cepat.
+const List<int> _quickAmounts = [10000, 20000, 50000, 100000];
+
 /// Sheet pembayaran (plan.md Milestone 2 poin 5 & Milestone 3 poin 1):
 /// pilih metode Tunai/Non-tunai/Hutang, lalu form sesuai metode:
 /// - **Tunai:** input uang diterima, pecahan cepat, kembalian otomatis.
@@ -23,6 +25,12 @@ const List<String> _noncashTypes = ['QRIS', 'Transfer Bank', 'Kartu', 'Lainnya']
 ///   integrasi, hanya dicatat.
 /// - **Hutang:** nama pelanggan WAJIB diisi, status tersimpan
 ///   `debt_unpaid`.
+///
+/// Desain (docs/ui-redesign-foundation.md): total belanja tampil sebagai
+/// panel hero di atas, metode bayar berupa tiga kartu besar (target sentuh
+/// jauh di atas 48dp), pecahan cepat sebagai tombol tonal, dan kembalian
+/// diberi panel bernada (`success` cukup / `danger` kurang) dengan angka
+/// `AppMoneySize.lg` supaya terbaca dari jarak satu lengan.
 ///
 /// Mengembalikan `SaleResult` lewat `Navigator.pop` bila pembayaran
 /// berhasil disimpan, atau `null` bila dibatalkan.
@@ -140,59 +148,74 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     final cart = ref.watch(cartProvider);
     final total = cart.total;
     final theme = Theme.of(context);
-    final isEnough = _isFormValid(total);
+    final isValid = _isFormValid(total);
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.spaceMd),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSizes.spaceMd),
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.screenPadding,
+            0,
+            AppSizes.screenPadding,
+            AppSizes.spaceMd,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Pembayaran', style: theme.textTheme.headlineSmall),
+              const SizedBox(height: AppSizes.spaceMd),
+              AppCard(
+                color: AppColors.primary50,
+                borderColor: AppColors.primary100,
+                padding: const EdgeInsets.all(AppSizes.spaceMl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('TOTAL BELANJA', style: AppTextStyles.eyebrow),
+                    const SizedBox(height: AppSizes.spaceXs),
+                    AppMoneyText(
+                      CurrencyFormatter.format(total),
+                      size: AppMoneySize.lg,
+                      color: AppColors.primary,
                     ),
-                  ),
+                    const SizedBox(height: AppSizes.spaceXs),
+                    Text(
+                      '${cart.lineCount} item di keranjang',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
                 ),
-                Text('Pembayaran', style: theme.textTheme.titleLarge),
+              ),
+              const SizedBox(height: AppSizes.spaceLg),
+              Text('Metode pembayaran', style: theme.textTheme.titleSmall),
+              const SizedBox(height: AppSizes.spaceSm),
+              _buildMethodSelector(),
+              const SizedBox(height: AppSizes.spaceLg),
+              switch (_paymentMethod) {
+                'cash' => _buildCashForm(total),
+                'noncash' => _buildNoncashForm(),
+                'debt' => _buildDebtForm(),
+                _ => const SizedBox.shrink(),
+              },
+              if (_errorMessage != null) ...[
                 const SizedBox(height: AppSizes.spaceMd),
-                _buildMethodSelector(),
-                const SizedBox(height: AppSizes.spaceMd),
-                _SummaryRow(label: 'Total belanja', value: CurrencyFormatter.format(total)),
-                const SizedBox(height: AppSizes.spaceMd),
-                switch (_paymentMethod) {
-                  'cash' => _buildCashForm(total),
-                  'noncash' => _buildNoncashForm(),
-                  'debt' => _buildDebtForm(),
-                  _ => const SizedBox.shrink(),
-                },
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: AppSizes.spaceSm),
-                  Text(_errorMessage!, style: TextStyle(color: theme.colorScheme.error)),
-                ],
-                const SizedBox(height: AppSizes.spaceLg),
-                FilledButton(
-                  onPressed: (_saving || !isEnough) ? null : () => _confirm(total),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Selesaikan Pembayaran'),
+                AppBanner(
+                  tone: AppTone.danger,
+                  icon: Icons.error_outline_rounded,
+                  title: 'Pembayaran gagal disimpan',
+                  message: _errorMessage!,
                 ),
               ],
-            ),
+              const SizedBox(height: AppSizes.spaceLg),
+              _ConfirmButton(
+                enabled: !_saving && isValid,
+                saving: _saving,
+                onPressed: () => _confirm(total),
+              ),
+            ],
           ),
         ),
       ),
@@ -203,7 +226,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     return Row(
       children: [
         Expanded(
-          child: _MethodButton(
+          child: _MethodCard(
             label: 'Tunai',
             icon: Icons.payments_outlined,
             value: 'cash',
@@ -213,9 +236,9 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
         ),
         const SizedBox(width: AppSizes.spaceSm),
         Expanded(
-          child: _MethodButton(
+          child: _MethodCard(
             label: 'Non-tunai',
-            icon: Icons.qr_code_outlined,
+            icon: Icons.qr_code_2_rounded,
             value: 'noncash',
             selected: _paymentMethod,
             onSelect: _selectMethod,
@@ -223,7 +246,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
         ),
         const SizedBox(width: AppSizes.spaceSm),
         Expanded(
-          child: _MethodButton(
+          child: _MethodCard(
             label: 'Hutang',
             icon: Icons.receipt_long_outlined,
             value: 'debt',
@@ -239,6 +262,9 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     final paid = _paidAmount;
     final change = paid - total;
     final isEnough = paid >= total;
+    final tone = isEnough ? AppTone.success : AppTone.danger;
+    final toneColors = tone.colors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -247,41 +273,76 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
           autofocus: true,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: AppTextStyles.moneyLarge,
           decoration: const InputDecoration(
             labelText: 'Uang diterima',
             prefixText: 'Rp ',
           ),
           onChanged: (_) => setState(() {}),
         ),
+        const SizedBox(height: AppSizes.spaceMs),
+        // Dua kolom (bukan empat) supaya tiap pecahan punya lebar penuh
+        // untuk jempol — kasir menekannya sambil melihat uang di tangan.
+        for (var row = 0; row < _quickAmounts.length; row += 2) ...[
+          if (row > 0) const SizedBox(height: AppSizes.spaceSm),
+          Row(
+            children: [
+              for (var i = row; i < row + 2 && i < _quickAmounts.length; i++) ...[
+                if (i > row) const SizedBox(width: AppSizes.spaceSm),
+                Expanded(
+                  child: _QuickButton(
+                    label: CurrencyFormatter.format(_quickAmounts[i]),
+                    onTap: () => _addQuickAmount(_quickAmounts[i]),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
         const SizedBox(height: AppSizes.spaceSm),
-        Wrap(
-          spacing: AppSizes.spaceSm,
-          runSpacing: AppSizes.spaceSm,
-          children: [
-            _QuickButton(label: 'Rp10.000', onTap: () => _addQuickAmount(10000)),
-            _QuickButton(label: 'Rp20.000', onTap: () => _addQuickAmount(20000)),
-            _QuickButton(label: 'Rp50.000', onTap: () => _addQuickAmount(50000)),
-            _QuickButton(label: 'Rp100.000', onTap: () => _addQuickAmount(100000)),
-            _QuickButton(label: 'Uang Pas', onTap: () => _setExact(total)),
-          ],
+        _QuickButton(
+          label: 'Uang Pas',
+          tone: AppTone.accent,
+          icon: Icons.done_all_rounded,
+          onTap: () => _setExact(total),
         ),
         const SizedBox(height: AppSizes.spaceMd),
-        _SummaryRow(
-          label: 'Kembalian',
-          value: isEnough
-              ? CurrencyFormatter.format(change)
-              : 'Kurang ${CurrencyFormatter.format(-change)}',
-          color: isEnough ? AppColors.success : AppColors.danger,
+        AppCard(
+          color: toneColors.bg,
+          borderColor: toneColors.border,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spaceMd,
+            vertical: AppSizes.spaceMs,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  isEnough ? 'Kembalian' : 'Kurang bayar',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: toneColors.fg,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.spaceSm),
+              AppMoneyText(
+                CurrencyFormatter.format(isEnough ? change : -change),
+                size: AppMoneySize.lg,
+                color: toneColors.fg,
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
   Widget _buildNoncashForm() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Jenis pembayaran', style: Theme.of(context).textTheme.bodyLarge),
+        Text('Jenis pembayaran', style: theme.textTheme.titleSmall),
         const SizedBox(height: AppSizes.spaceSm),
         Wrap(
           spacing: AppSizes.spaceSm,
@@ -291,7 +352,10 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
               ChoiceChip(
                 label: Text(type),
                 selected: _noncashType == type,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.spaceMs,
+                  vertical: AppSizes.spaceSm,
+                ),
                 onSelected: (_) => setState(() => _noncashType = type),
               ),
           ],
@@ -303,13 +367,12 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             decoration: const InputDecoration(labelText: 'Sebutkan jenisnya'),
           ),
         ],
-        const SizedBox(height: AppSizes.spaceSm),
-        Text(
-          'Pembayaran non-tunai HANYA dicatat jenisnya — tidak ada '
-          'integrasi/pengecekan otomatis ke penyedia QRIS/bank.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        const SizedBox(height: AppSizes.spaceMd),
+        const AppBanner(
+          tone: AppTone.info,
+          icon: Icons.info_outline_rounded,
+          message: 'Pembayaran non-tunai HANYA dicatat jenisnya — tidak ada '
+              'integrasi/pengecekan otomatis ke penyedia QRIS/bank.',
         ),
       ],
     );
@@ -326,6 +389,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: 'Nama pelanggan *',
+            prefixIcon: const Icon(Icons.person_outline_rounded),
             errorText: showError ? 'Nama pelanggan wajib diisi' : null,
           ),
           onChanged: (_) => setState(() {}),
@@ -333,23 +397,27 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
         const SizedBox(height: AppSizes.spaceMd),
         TextField(
           controller: _noteController,
-          decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+          decoration: const InputDecoration(
+            labelText: 'Catatan (opsional)',
+            prefixIcon: Icon(Icons.sticky_note_2_outlined),
+          ),
         ),
-        const SizedBox(height: AppSizes.spaceSm),
-        Text(
-          'Transaksi ini tersimpan sebagai HUTANG (belum lunas) — bisa '
-          'ditandai lunas nanti dari layar Riwayat.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        const SizedBox(height: AppSizes.spaceMd),
+        const AppBanner(
+          tone: AppTone.accent,
+          icon: Icons.schedule_rounded,
+          message: 'Transaksi ini tersimpan sebagai HUTANG (belum lunas) — '
+              'bisa ditandai lunas nanti dari layar Riwayat.',
         ),
       ],
     );
   }
 }
 
-class _MethodButton extends StatelessWidget {
-  const _MethodButton({
+/// Kartu pilihan metode bayar — target sentuh besar (>= 72dp) dengan ikon
+/// yang berganti outlined→filled saat terpilih, konsisten dengan dock nav.
+class _MethodCard extends StatelessWidget {
+  const _MethodCard({
     required this.label,
     required this.icon,
     required this.value,
@@ -366,66 +434,121 @@ class _MethodButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = value == selected;
-    if (isSelected) {
-      return FilledButton.icon(
-        onPressed: () => onSelect(value),
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-      );
-    }
-    return OutlinedButton.icon(
-      onPressed: () => onSelect(value),
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-    );
-  }
-}
+    final fg = isSelected ? AppColors.primary : AppColors.inkSecondary;
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value, this.color});
-
-  final String label;
-  final String value;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Text(
+    return AppCard(
+      selected: isSelected,
+      onTap: () => onSelect(value),
+      radius: AppSizes.radiusMd,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spaceSm,
+        vertical: AppSizes.spaceMs,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: AppSizes.iconLg, color: fg),
+          const SizedBox(height: AppSizes.spaceSm),
+          Text(
             label,
-            style: theme.textTheme.titleMedium,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg),
           ),
-        ),
-        const SizedBox(width: AppSizes.spaceSm),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
+/// Tombol pecahan cepat / uang pas. Bernada brand (atau aksen untuk "Uang
+/// Pas", satu-satunya pintasan yang menyelesaikan input sekali tap).
 class _QuickButton extends StatelessWidget {
-  const _QuickButton({required this.label, required this.onTap});
+  const _QuickButton({
+    required this.label,
+    required this.onTap,
+    this.tone = AppTone.primary,
+    this.icon,
+  });
 
   final String label;
   final VoidCallback onTap;
+  final AppTone tone;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(onPressed: onTap, child: Text(label));
+    final c = tone.colors;
+    return AppCard(
+      onTap: onTap,
+      radius: AppSizes.radiusMd,
+      color: c.bg,
+      borderColor: c.border,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spaceSm,
+        vertical: AppSizes.spaceMd,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: AppSizes.iconSm, color: c.fg),
+            const SizedBox(width: AppSizes.spaceSm),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: c.fg),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConfirmButton extends StatelessWidget {
+  const _ConfirmButton({
+    required this.enabled,
+    required this.saving,
+    required this.onPressed,
+  });
+
+  final bool enabled;
+  final bool saving;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = SizedBox(
+      height: AppSizes.buttonHeightLarge,
+      child: FilledButton(
+        onPressed: enabled ? onPressed : null,
+        child: saving
+            ? const SizedBox(
+                width: AppSizes.iconMd,
+                height: AppSizes.iconMd,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppColors.onDark,
+                ),
+              )
+            : const Text('Selesaikan Pembayaran'),
+      ),
+    );
+    if (!enabled) return button;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        boxShadow: AppShadows.primaryGlow,
+      ),
+      child: button,
+    );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../providers/settings_providers.dart';
 import '../screens/pin_entry_screen.dart';
@@ -11,6 +11,10 @@ import 'settings_card.dart';
 /// Seksi Kunci PIN (plan.md Milestone 5 poin 6, architecture.md §5.4):
 /// set/ubah/hapus PIN 6 digit, melindungi tab Laporan, Pengaturan, dan
 /// void transaksi (`checkPinGate`, `MainShell`).
+///
+/// Visual: status kunci jadi hal pertama yang terbaca (ikon bernada +
+/// [AppPill]), lalu daftar area yang dilindungi sebagai pill — pengguna
+/// tahu persis apa yang ia dapat sebelum menekan tombol.
 class PinSection extends ConsumerWidget {
   const PinSection({super.key});
 
@@ -48,7 +52,9 @@ class PinSection extends ConsumerWidget {
       }
     } on PinTidakValidException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       }
     }
   }
@@ -82,7 +88,9 @@ class PinSection extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
       }
     }
   }
@@ -90,49 +98,136 @@ class PinSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeAsync = ref.watch(pinActiveProvider);
-    return SettingsCard(
-      title: 'Kunci PIN',
-      subtitle: 'Melindungi tab Laporan, Pengaturan, dan pembatalan transaksi.',
+
+    return activeAsync.when(
+      data: (active) => SettingsCard(
+        icon: active ? Icons.lock_rounded : Icons.lock_open_outlined,
+        title: 'Kunci PIN',
+        subtitle: 'PIN 6 digit untuk area yang menyangkut uang.',
+        tone: active ? AppTone.success : AppTone.neutral,
+        trailing: AppPill(
+          label: active ? 'Aktif' : 'Nonaktif',
+          tone: active ? AppTone.success : AppTone.neutral,
+          dense: true,
+        ),
+        children: [
+          _PinBody(
+            active: active,
+            onActivate: () => _activate(context, ref),
+            onChange: () => _change(context, ref),
+            onRemove: () => _remove(context, ref),
+          ),
+        ],
+      ),
+      loading: () => const SettingsCard(
+        icon: Icons.lock_outline,
+        title: 'Kunci PIN',
+        subtitle: 'PIN 6 digit untuk area yang menyangkut uang.',
+        tone: AppTone.neutral,
+        children: [AppLoadingView(compact: true)],
+      ),
+      error: (e, _) => SettingsCard(
+        icon: Icons.lock_outline,
+        title: 'Kunci PIN',
+        subtitle: 'PIN 6 digit untuk area yang menyangkut uang.',
+        tone: AppTone.neutral,
+        children: [
+          AppErrorView(
+            title: 'Status PIN gagal dimuat',
+            message: AppErrorMessage.from(e),
+            compact: true,
+            onRetry: () => ref.invalidate(pinActiveProvider),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PinBody extends StatelessWidget {
+  const _PinBody({
+    required this.active,
+    required this.onActivate,
+    required this.onChange,
+    required this.onRemove,
+  });
+
+  final bool active;
+  final VoidCallback onActivate;
+  final VoidCallback onChange;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        activeAsync.when(
-          data: (active) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        Text(
+          active
+              ? 'Area di bawah ini minta PIN sebelum bisa dibuka:'
+              : 'Aktifkan supaya area di bawah ini tidak bisa dibuka orang lain:',
+          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.inkSecondary),
+        ),
+        const SizedBox(height: AppSizes.spaceMs),
+        Wrap(
+          spacing: AppSizes.spaceSm,
+          runSpacing: AppSizes.spaceSm,
+          children: [
+            AppPill(
+              label: 'Laporan',
+              icon: Icons.insights_outlined,
+              tone: active ? AppTone.success : AppTone.neutral,
+            ),
+            AppPill(
+              label: 'Setelan',
+              icon: Icons.tune_rounded,
+              tone: active ? AppTone.success : AppTone.neutral,
+            ),
+            AppPill(
+              label: 'Batalkan transaksi',
+              icon: Icons.undo_rounded,
+              tone: active ? AppTone.success : AppTone.neutral,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSizes.spaceMd),
+        if (!active)
+          SizedBox(
+            height: AppSizes.buttonHeight,
+            child: FilledButton.icon(
+              onPressed: onActivate,
+              icon: const Icon(Icons.lock_outline),
+              label: const Text('Aktifkan PIN'),
+            ),
+          )
+        else
+          Row(
             children: [
-              Text(active ? 'Status: AKTIF' : 'Status: nonaktif'),
-              const SizedBox(height: AppSizes.spaceSm),
-              if (!active)
-                SizedBox(
-                  height: AppSizes.minTouchTarget,
-                  child: FilledButton.icon(
-                    onPressed: () => _activate(context, ref),
-                    icon: const Icon(Icons.lock_outline),
-                    label: const Text('Aktifkan PIN'),
-                  ),
-                )
-              else ...[
-                SizedBox(
-                  height: AppSizes.minTouchTarget,
+              Expanded(
+                child: SizedBox(
+                  height: AppSizes.buttonHeight,
                   child: OutlinedButton.icon(
-                    onPressed: () => _change(context, ref),
+                    onPressed: onChange,
                     icon: const Icon(Icons.password_outlined),
                     label: const Text('Ubah PIN'),
                   ),
                 ),
-                const SizedBox(height: AppSizes.spaceSm),
-                SizedBox(
-                  height: AppSizes.minTouchTarget,
+              ),
+              const SizedBox(width: AppSizes.spaceSm),
+              Expanded(
+                child: SizedBox(
+                  height: AppSizes.buttonHeight,
                   child: OutlinedButton.icon(
-                    onPressed: () => _remove(context, ref),
+                    onPressed: onRemove,
                     icon: const Icon(Icons.lock_open_outlined),
                     label: const Text('Hapus PIN'),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Gagal memuat status PIN: ${AppErrorMessage.from(e)}'),
-        ),
       ],
     );
   }

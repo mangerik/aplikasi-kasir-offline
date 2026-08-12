@@ -4,8 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasir_warung/app.dart';
 import 'package:kasir_warung/core/utils/date_formatter.dart';
+import 'package:kasir_warung/core/widgets/main_shell.dart';
 import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/db/database_provider.dart';
+import 'package:go_router/go_router.dart';
+
+/// Tab ke-N di dalam dock navigasi kustom.
+Finder _navTab(String label) => find.descendant(
+  of: find.byKey(MainShell.dockKey),
+  matching: find.text(label),
+);
+
+int _currentIndex(WidgetTester tester) => tester
+    .widget<StatefulNavigationShell>(find.byType(StatefulNavigationShell))
+    .currentIndex;
 
 void main() {
   late AppDatabase db;
@@ -50,12 +62,19 @@ void main() {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
 
+      // Navigasi utama kini berupa dock kustom (lihat
+      // docs/ui-redesign-foundation.md §6), bukan NavigationBar Material.
       final labels = tester
-          .widgetList<NavigationDestination>(find.byType(NavigationDestination))
-          .map((d) => d.label)
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byKey(MainShell.dockKey),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((t) => t.data)
           .toList();
 
-      expect(labels, ['Kasir', 'Produk', 'Riwayat', 'Laporan', 'Pengaturan']);
+      expect(labels, ['Kasir', 'Produk', 'Riwayat', 'Laporan', 'Setelan']);
 
       await disposeApp(tester);
     },
@@ -65,8 +84,7 @@ void main() {
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
-    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBar.selectedIndex, 0);
+    expect(_currentIndex(tester), 0);
 
     await disposeApp(tester);
   });
@@ -75,24 +93,22 @@ void main() {
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Produk'));
+    await tester.tap(_navTab('Produk'));
     await tester.pumpAndSettle();
 
-    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBar.selectedIndex, 1);
+    expect(_currentIndex(tester), 1);
 
     await disposeApp(tester);
   });
 
-  testWidgets('tap tab Pengaturan berpindah selectedIndex ke 4', (tester) async {
+  testWidgets('tap tab Setelan berpindah selectedIndex ke 4', (tester) async {
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Pengaturan'));
+    await tester.tap(_navTab('Setelan'));
     await tester.pumpAndSettle();
 
-    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBar.selectedIndex, 4);
+    expect(_currentIndex(tester), 4);
 
     await disposeApp(tester);
   });

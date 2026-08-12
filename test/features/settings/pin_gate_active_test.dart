@@ -7,6 +7,7 @@ import 'package:kasir_warung/core/utils/date_formatter.dart';
 import 'package:kasir_warung/core/utils/pin_hasher.dart';
 import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/db/database_provider.dart';
+import 'package:go_router/go_router.dart';
 
 /// Widget test end-to-end untuk gerbang PIN (plan.md Milestone 5 poin 6):
 /// tab Laporan HARUS meminta PIN lewat [PinEntryScreen] (`checkPinGate`)
@@ -66,8 +67,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Belum berpindah tab — layar verifikasi PIN muncul dulu (menutupi
-    // `NavigationBar` tab Kasir di belakangnya, jadi TIDAK dicek lewat
-    // `find.byType(NavigationBar)` di sini — widget itu jadi "offstage").
+    // dock navigasi tab Kasir di belakangnya, jadi index tab TIDAK dicek
+    // di sini — widget itu jadi "offstage").
     expect(find.text('Verifikasi PIN'), findsOneWidget);
 
     // PIN salah -> tetap di layar verifikasi dengan pesan error.
@@ -80,8 +81,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Verifikasi PIN'), findsNothing);
-    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBar.selectedIndex, 3);
+    // Navigasi utama kini dock kustom (docs/ui-redesign-foundation.md §6):
+    // index tab dibaca langsung dari StatefulNavigationShell.
+    expect(
+      tester
+          .widget<StatefulNavigationShell>(
+            find.byType(StatefulNavigationShell),
+          )
+          .currentIndex,
+      3,
+    );
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(Duration.zero);

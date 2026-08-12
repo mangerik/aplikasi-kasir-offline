@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/product.dart';
 
-/// Baris daftar produk: nama, kategori, stok (+ indikator stok menipis),
-/// harga jual format Rupiah, dan penanda "Nonaktif" bila produk dinonaktifkan
-/// (plan.md Milestone 1 poin 2 & 6).
+/// Kartu satu produk di daftar Produk.
+///
+/// Susunan mengikuti resep §7.3 fondasi ("baris item di list"):
+/// [AppIconBadge] sebagai leading, nama produk `titleMedium`, baris meta
+/// (kategori + sisa stok bergaya angka), status stok sebagai [AppPill]
+/// bernada [AppTone], dan harga jual sebagai [AppMoneyText] di kanan.
+///
+/// Prinsip §1 poin 1 dipatuhi: dua angka yang dicari pemilik warung —
+/// **harga** dan **sisa stok** — tampil lebih tebal daripada labelnya.
 class ProductListTile extends StatelessWidget {
   const ProductListTile({
     super.key,
@@ -28,123 +33,99 @@ class ProductListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final stockLabel = _formatStock(product.stock);
+    final isOut = product.stock <= 0;
+    final isLow = !isOut && product.isLowStockWith(lowStockThreshold);
+    final inactive = !product.isActive;
 
-    return InkWell(
+    // Nada stok: habis -> danger, menipis -> warning, aman -> netral.
+    // Stok aman sengaja TIDAK diberi warna supaya warna hanya muncul saat
+    // butuh tindakan (§2.2: hemat aksen, satu fokus per layar).
+    final stockTone = isOut
+        ? AppTone.danger
+        : isLow
+        ? AppTone.warning
+        : AppTone.neutral;
+
+    return AppCard(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSizes.minTouchTarget),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.spaceMd,
-            vertical: AppSizes.spaceSm,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          AppIconBadge(
+            icon: inactive
+                ? Icons.visibility_off_outlined
+                : Icons.inventory_2_outlined,
+            tone: inactive ? AppTone.neutral : AppTone.primary,
+            size: AppIconBadgeSize.lg,
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor:
-                    product.isActive ? AppColors.primaryLight : AppColors.border,
-                child: Icon(
-                  Icons.inventory_2_outlined,
-                  color: product.isActive ? AppColors.primary : AppColors.textSecondary,
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  product.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: inactive ? AppColors.inkSecondary : AppColors.ink,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: AppSizes.spaceMd),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: AppSizes.spaceXs),
+                // Baris meta memakai Wrap: di layar sempit chip-nya turun ke
+                // baris berikutnya, bukan meluber.
+                Wrap(
+                  spacing: AppSizes.spaceSm,
+                  runSpacing: AppSizes.spaceXs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            product.name,
-                            style: theme.textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (!product.isActive) ...[
-                          const SizedBox(width: AppSizes.spaceSm),
-                          _Badge(label: 'Nonaktif', color: AppColors.textSecondary),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
                     Text(
-                      [
-                        ?categoryName,
-                        '$stockLabel ${product.unit}',
-                      ].join(' · '),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                      '${_formatStock(product.stock)} ${product.unit}',
+                      style: AppTextStyles.numeric.copyWith(
+                        fontSize: 13,
+                        color: stockTone.colors.fg,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (product.isLowStockWith(lowStockThreshold)) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            size: 16,
-                            color: AppColors.warning,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Stok menipis',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.warning,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                    if (isOut || isLow)
+                      AppPill(
+                        label: isOut ? 'Stok habis' : 'Stok menipis',
+                        tone: stockTone,
+                        icon: isOut
+                            ? Icons.remove_shopping_cart_outlined
+                            : Icons.warning_amber_rounded,
+                        dense: true,
                       ),
-                    ],
+                    // Kategori hanya ditampilkan saat stok aman: kalau stok
+                    // butuh tindakan, statusnya yang harus dibaca duluan —
+                    // sekaligus menjaga baris meta tetap ringkas di HP kecil.
+                    if (categoryName != null && !isOut && !isLow)
+                      AppPill(label: _shortCategory(categoryName!), dense: true),
+                    if (inactive) const AppPill(label: 'Nonaktif', dense: true),
                   ],
                 ),
-              ),
-              const SizedBox(width: AppSizes.spaceSm),
-              Text(
-                CurrencyFormatter.format(product.sellPrice),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: AppSizes.spaceMs),
+          AppMoneyText(
+            CurrencyFormatter.format(product.sellPrice),
+            color: inactive ? AppColors.inkSecondary : AppColors.primary,
+          ),
+        ],
       ),
     );
   }
+
+  /// Pill tidak bisa memendekkan teksnya sendiri, jadi nama kategori yang
+  /// kepanjangan dipotong di sini supaya tidak mendorong baris meta melebihi
+  /// lebar kartu di HP kecil.
+  static String _shortCategory(String name) =>
+      name.length <= 16 ? name : '${name.substring(0, 15)}…';
 
   String _formatStock(double value) {
     if (value == value.roundToDouble()) return value.toInt().toString();
     return value.toString();
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
-      ),
-    );
   }
 }

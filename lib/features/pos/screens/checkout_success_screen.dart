@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../settings/providers/settings_providers.dart';
@@ -17,6 +16,12 @@ import '../widgets/receipt_widget.dart';
 /// Layar sukses transaksi (plan.md Milestone 2 poin 7): ringkasan + struk
 /// digital (`ReceiptWidget`), share struk sebagai GAMBAR (capture
 /// `RepaintBoundary` lewat `ReceiptService.shareAsImage`) maupun TEKS.
+///
+/// **Ini momen puncak aplikasi** (docs/ui-redesign-foundation.md §1):
+/// centang hijau yang muncul dengan animasi singkat, lalu angka yang paling
+/// dibutuhkan kasir saat itu juga — **kembalian** untuk tunai, **total**
+/// untuk non-tunai/hutang — dalam `AppMoneySize.hero` (40pt). Layar lain
+/// sengaja dibuat lebih tenang supaya tidak mencuri perhatian dari sini.
 class CheckoutSuccessScreen extends ConsumerStatefulWidget {
   const CheckoutSuccessScreen({super.key, required this.sale});
 
@@ -75,61 +80,75 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
   @override
   Widget build(BuildContext context) {
     final sale = widget.sale;
+    final theme = Theme.of(context);
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) Navigator.of(context).pop();
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Transaksi Berhasil')),
+        appBar: AppBar(
+          title: const Text('Transaksi Berhasil'),
+          automaticallyImplyLeading: false,
+        ),
         body: SafeArea(
+          top: false,
           child: ListView(
-            padding: const EdgeInsets.all(AppSizes.spaceMd),
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.screenPadding,
+              AppSizes.spaceSm,
+              AppSizes.screenPadding,
+              AppSizes.spaceLg,
+            ),
             children: [
-              const Icon(Icons.check_circle, color: AppColors.success, size: 72),
-              const SizedBox(height: AppSizes.spaceSm),
-              Center(
-                child: Text(
-                  'Pembayaran berhasil disimpan',
-                  style: Theme.of(context).textTheme.titleLarge,
+              AppCard(
+                elevated: true,
+                padding: const EdgeInsets.all(AppSizes.spaceMl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: _SuccessMark()),
+                    const SizedBox(height: AppSizes.spaceMd),
+                    Text(
+                      'Pembayaran berhasil disimpan',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: AppSizes.spaceSm),
+                    Center(
+                      child: AppPill(
+                        label: 'Struk ${sale.invoiceNumber}',
+                        icon: Icons.receipt_long_outlined,
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spaceLg),
+                    _HeroAmount(sale: sale),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSizes.spaceSm),
-              Center(
-                child: Text(
-                  'No. Struk: ${sale.invoiceNumber}',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
+              const SizedBox(height: AppSizes.spaceXl),
+              const SectionHeader(
+                title: 'Struk digital',
+                subtitle: 'Bagikan ke pembeli lewat WhatsApp, atau simpan '
+                    'sebagai gambar.',
               ),
-              const SizedBox(height: AppSizes.spaceLg),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSizes.spaceMd),
-                  child: Column(
-                    children: [
-                      _SummaryRow(label: 'Total belanja', value: sale.total),
-                      if (sale.paymentMethod == 'cash') ...[
-                        _SummaryRow(label: 'Uang diterima', value: sale.paidAmount),
-                        _SummaryRow(label: 'Kembalian', value: sale.changeAmount),
-                      ],
-                    ],
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: Center(
+                  child: RepaintBoundary(
+                    key: _receiptKey,
+                    child: ReceiptWidget(sale: sale),
                   ),
                 ),
               ),
-              const SizedBox(height: AppSizes.spaceLg),
-              Center(
-                child: RepaintBoundary(
-                  key: _receiptKey,
-                  child: ReceiptWidget(sale: sale),
-                ),
-              ),
-              const SizedBox(height: AppSizes.spaceLg),
+              const SizedBox(height: AppSizes.spaceMd),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _sharing ? null : _shareAsText,
-                      icon: const Icon(Icons.text_snippet_outlined),
+                      icon: const Icon(Icons.text_snippet_outlined, size: AppSizes.iconSm),
                       label: const Text('Bagikan Teks'),
                     ),
                   ),
@@ -137,16 +156,26 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _sharing ? null : _shareAsImage,
-                      icon: const Icon(Icons.image_outlined),
+                      icon: const Icon(Icons.image_outlined, size: AppSizes.iconSm),
                       label: const Text('Bagikan Gambar'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSizes.spaceMd),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Transaksi Baru'),
+              const SizedBox(height: AppSizes.spaceLg),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  boxShadow: AppShadows.primaryGlow,
+                ),
+                child: SizedBox(
+                  height: AppSizes.buttonHeightLarge,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.point_of_sale_rounded, size: AppSizes.iconMd),
+                    label: const Text('Transaksi Baru'),
+                  ),
+                ),
               ),
             ],
           ),
@@ -156,35 +185,114 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
-
-  final String label;
-  final int value;
+/// Centang perayaan — muncul dengan skala+fade singkat (`AppDurations.slow`,
+/// `easeOutCubic`). Sekali jalan, tanpa loop: perayaan yang terasa, bukan
+/// yang menahan kasir.
+class _SuccessMark extends StatelessWidget {
+  const _SuccessMark();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyLarge,
-              overflow: TextOverflow.ellipsis,
-            ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: AppDurations.slow,
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value.clamp(0, 1),
+        child: Transform.scale(scale: 0.85 + (0.15 * value), child: child),
+      ),
+      child: const AppIconBadge(
+        icon: Icons.check_rounded,
+        tone: AppTone.success,
+        size: AppIconBadgeSize.xl,
+        filled: true,
+      ),
+    );
+  }
+}
+
+/// Blok angka utama layar sukses. Yang ditonjolkan berbeda per metode:
+/// tunai → **kembalian** (yang harus segera diserahkan), non-tunai & hutang
+/// → **total**.
+class _HeroAmount extends StatelessWidget {
+  const _HeroAmount({required this.sale});
+
+  final SaleResult sale;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCash = sale.paymentMethod == 'cash';
+    final isDebt = sale.paymentMethod == 'debt';
+
+    final heroLabel = isCash
+        ? 'KEMBALIAN'
+        : isDebt
+        ? 'TOTAL HUTANG'
+        : 'TOTAL DIBAYAR';
+    final heroValue = isCash ? sale.changeAmount : sale.total;
+    final heroColor = isCash
+        ? AppColors.successText
+        : isDebt
+        ? AppColors.accentText
+        : AppColors.ink;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(heroLabel, style: AppTextStyles.eyebrow, textAlign: TextAlign.center),
+        const SizedBox(height: AppSizes.spaceXs),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: AppMoneyText(
+            CurrencyFormatter.format(heroValue),
+            size: AppMoneySize.hero,
+            color: heroColor,
           ),
-          const SizedBox(width: AppSizes.spaceSm),
-          Text(
-            CurrencyFormatter.format(value),
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppSizes.spaceMd),
+        AppCard(
+          color: AppColors.surfaceAlt,
+          radius: AppSizes.radiusMd,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spaceMd,
+            vertical: AppSizes.spaceSm,
+          ),
+          child: Column(
+            children: [
+              AppKeyValueRow(
+                label: 'Total belanja',
+                value: CurrencyFormatter.format(sale.total),
+              ),
+              if (isCash)
+                AppKeyValueRow(
+                  label: 'Uang diterima',
+                  value: CurrencyFormatter.format(sale.paidAmount),
+                ),
+              if (isDebt)
+                AppKeyValueRow(
+                  label: 'Atas nama',
+                  value: sale.customerName ?? '-',
+                ),
+            ],
+          ),
+        ),
+        if (!isCash) ...[
+          const SizedBox(height: AppSizes.spaceMs),
+          Center(
+            child: isDebt
+                ? const AppPill(
+                    label: 'Belum lunas',
+                    tone: AppTone.accent,
+                    icon: Icons.schedule_rounded,
+                  )
+                : const AppPill(
+                    label: 'Non-tunai',
+                    tone: AppTone.info,
+                    icon: Icons.qr_code_2_rounded,
+                  ),
           ),
         ],
-      ),
+      ],
     );
   }
 }

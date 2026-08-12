@@ -2,10 +2,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../data/db/database_provider.dart';
 import '../../../data/services/backup_service.dart';
 import '../providers/settings_providers.dart';
@@ -21,6 +20,10 @@ import 'settings_card.dart';
 ///   timpa file -> `ref.invalidate(databaseProvider)` supaya seluruh
 ///   repository/provider turunan otomatis memakai koneksi BARU tanpa
 ///   restart paksa aplikasi.
+///
+/// Visual: status backup terakhir naik jadi INFORMASI UTAMA kartu (nilai
+/// lebih besar dari labelnya, prinsip §1.1 fondasi), lengkap dengan nada
+/// warna — hijau bila baru saja, amber bila sudah lama/belum pernah.
 class BackupRestoreSection extends ConsumerStatefulWidget {
   const BackupRestoreSection({super.key});
 
@@ -30,9 +33,13 @@ class BackupRestoreSection extends ConsumerStatefulWidget {
 
 class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
   bool _busy = false;
+  String _busyLabel = '';
 
   Future<void> _backup() async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyLabel = 'Menyiapkan file backup…';
+    });
     try {
       final db = ref.read(databaseProvider);
       final path = await BackupService.createBackup(db);
@@ -48,14 +55,18 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
       ).showSnackBar(const SnackBar(content: Text('Backup berhasil dibuat.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal backup: ${AppErrorMessage.from(e)}')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal backup: ${AppErrorMessage.from(e)}')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _restore() async {
-    final result = await FilePicker.platform.pickFiles(
+    // file_picker 12.x menghapus `FilePicker.platform`; API-nya kini static
+    // langsung di kelas `FilePicker` (lihat `FilePicker.pickFiles`).
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['db'],
       dialogTitle: 'Pilih file backup (.db)',
@@ -63,7 +74,10 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
     final path = result?.files.single.path;
     if (path == null || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyLabel = 'Memeriksa file backup…';
+    });
     try {
       await BackupService.validateBackupFile(path);
     } catch (e) {
@@ -90,7 +104,10 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
     );
     if (confirmedTwice != true || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyLabel = 'Memulihkan data…';
+    });
     try {
       await ref.read(databaseProvider).close();
       await BackupService.restoreFrom(path);
@@ -100,6 +117,11 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
+          icon: const AppIconBadge(
+            icon: Icons.check_rounded,
+            tone: AppTone.success,
+            size: AppIconBadgeSize.lg,
+          ),
           title: const Text('Restore berhasil'),
           content: const Text(
             'Data sudah dipulihkan dan aplikasi siap dipakai. Bila ada '
@@ -116,7 +138,9 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal restore: ${AppErrorMessage.from(e)}')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal restore: ${AppErrorMessage.from(e)}')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -130,6 +154,11 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        icon: const AppIconBadge(
+          icon: Icons.warning_amber_rounded,
+          tone: AppTone.danger,
+          size: AppIconBadgeSize.lg,
+        ),
         title: Text(title),
         content: Text(message),
         actions: [
@@ -151,27 +180,37 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
   Widget build(BuildContext context) {
     final lastBackupAsync = ref.watch(lastBackupAtProvider);
     return SettingsCard(
+      icon: Icons.cloud_sync_outlined,
       title: 'Backup & Restore',
-      subtitle: 'Satu file berisi seluruh data — bisa dipindahkan ke HP lain.',
+      subtitle: 'Satu file berisi seluruh data — bisa dipindah ke HP lain.',
       children: [
         lastBackupAsync.when(
-          data: (lastBackup) => Text(
-            lastBackup == null
-                ? 'Belum pernah backup.'
-                : 'Backup terakhir: ${DateFormatter.formatDateTime(lastBackup)}',
-            style: Theme.of(context).textTheme.bodyMedium,
+          data: (lastBackup) => _LastBackupPanel(lastBackup: lastBackup),
+          loading: () => const AppLoadingView(compact: true),
+          error: (e, _) => AppErrorView(
+            title: 'Status backup gagal dimuat',
+            message: AppErrorMessage.from(e),
+            compact: true,
+            onRetry: () => ref.invalidate(lastBackupAtProvider),
           ),
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
         ),
         const SizedBox(height: AppSizes.spaceMd),
-        if (_busy) const Padding(
-          padding: EdgeInsets.only(bottom: AppSizes.spaceMd),
-          child: LinearProgressIndicator(minHeight: 4),
-        ),
+        if (_busy) ...[
+          Row(
+            children: [
+              const SizedBox(
+                width: AppSizes.iconSm,
+                height: AppSizes.iconSm,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: AppSizes.spaceMs),
+              Expanded(child: Text(_busyLabel, style: Theme.of(context).textTheme.bodyMedium)),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spaceMd),
+        ],
         SizedBox(
-          width: double.infinity,
-          height: AppSizes.minTouchTarget,
+          height: AppSizes.buttonHeight,
           child: FilledButton.icon(
             onPressed: _busy ? null : _backup,
             icon: const Icon(Icons.backup_outlined),
@@ -180,15 +219,82 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
         ),
         const SizedBox(height: AppSizes.spaceSm),
         SizedBox(
-          width: double.infinity,
-          height: AppSizes.minTouchTarget,
+          height: AppSizes.buttonHeight,
           child: OutlinedButton.icon(
             onPressed: _busy ? null : _restore,
             icon: const Icon(Icons.restore_outlined),
             label: const Text('Restore dari File'),
           ),
         ),
+        const SizedBox(height: AppSizes.spaceMs),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              size: AppSizes.iconSm,
+              color: AppColors.inkSecondary,
+            ),
+            const SizedBox(width: AppSizes.spaceSm),
+            Expanded(
+              child: Text(
+                'Restore menimpa SELURUH data yang ada sekarang — pastikan '
+                'sudah backup dulu sebelum memulihkan.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+}
+
+/// Sub-panel status: kapan terakhir kali data diamankan.
+class _LastBackupPanel extends StatelessWidget {
+  const _LastBackupPanel({required this.lastBackup});
+
+  final DateTime? lastBackup;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final days = lastBackup == null ? null : DateTime.now().difference(lastBackup!).inDays;
+    final stale = lastBackup == null || (days != null && days > 7);
+    final tone = stale ? AppTone.warning : AppTone.success;
+
+    return AppCard(
+      color: AppColors.surfaceAlt,
+      radius: AppSizes.radiusMd,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          AppIconBadge(
+            icon: stale ? Icons.history_toggle_off_outlined : Icons.verified_outlined,
+            tone: tone,
+            size: AppIconBadgeSize.sm,
+          ),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('BACKUP TERAKHIR', style: AppTextStyles.eyebrow),
+                const SizedBox(height: AppSizes.spaceXs),
+                Text(
+                  lastBackup == null ? 'Belum pernah' : DateFormatter.formatDateTime(lastBackup!),
+                  style: theme.textTheme.titleSmall,
+                ),
+              ],
+            ),
+          ),
+          if (days != null) ...[
+            const SizedBox(width: AppSizes.spaceSm),
+            AppPill(label: days == 0 ? 'Hari ini' : '$days hari lalu', tone: tone, dense: true),
+          ],
+        ],
+      ),
     );
   }
 }

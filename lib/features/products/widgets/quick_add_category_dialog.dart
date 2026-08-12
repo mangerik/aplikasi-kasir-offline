@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/app_widgets.dart';
 import '../utils/product_form_validator.dart';
 
 /// Dialog ringkas untuk mengetik nama kategori baru, dipakai dari dropdown
@@ -41,16 +42,35 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Tambah Kategori Baru'),
+      icon: const AppIconBadge(
+        icon: Icons.sell_outlined,
+        size: AppIconBadgeSize.lg,
+      ),
+      title: const Text('Kategori Baru'),
       content: Form(
         key: _formKey,
-        child: TextFormField(
-          controller: _controller,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(labelText: 'Nama kategori'),
-          validator: ProductFormValidator.categoryName,
-          onFieldSubmitted: (_) => _submit(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: 'Nama kategori',
+                hintText: 'mis. Minuman',
+              ),
+              validator: ProductFormValidator.categoryName,
+              onFieldSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: AppSizes.spaceSm),
+            Text(
+              'Kategori langsung dipakai untuk produk yang sedang kamu isi.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ),
       ),
       actions: [

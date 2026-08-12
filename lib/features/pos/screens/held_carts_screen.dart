@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/held_cart.dart';
 import '../providers/cart_provider.dart';
 import '../providers/held_cart_providers.dart';
 
 /// Daftar transaksi yang ditahan/parkir — lanjutkan atau hapus
 /// (plan.md Milestone 2 poin 8).
+///
+/// Desain (docs/ui-redesign-foundation.md): transaksi ditahan memakai nada
+/// `AppTone.accent` (gula aren) di seluruh aplikasi — sama seperti badge di
+/// AppBar layar Kasir. Tiap kartu memuat empat hal yang dibutuhkan kasir
+/// untuk memilih: label, jumlah item, waktu parkir, dan totalnya.
 class HeldCartsScreen extends ConsumerWidget {
   const HeldCartsScreen({super.key});
 
@@ -57,6 +61,10 @@ class HeldCartsScreen extends ConsumerWidget {
             child: const Text('Batal'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: AppColors.onDark,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Hapus'),
           ),
@@ -77,68 +85,118 @@ class HeldCartsScreen extends ConsumerWidget {
       body: heldCartsAsync.when(
         data: (heldCarts) {
           if (heldCarts.isEmpty) {
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSizes.spaceLg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.pause_circle_outline,
-                      size: 64,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(height: AppSizes.spaceMd),
-                    Text(
-                      'Belum ada transaksi ditahan',
-                      style: Theme.of(context).textTheme.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSizes.spaceSm),
-                    Text(
-                      'Tap "Tahan" di keranjang untuk memarkir transaksi dan '
-                      'melayani pembeli lain dulu.',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
+            return const EmptyState(
+              icon: Icons.pause_circle_outline,
+              tone: AppTone.accent,
+              title: 'Belum ada transaksi ditahan',
+              message: 'Tap "Tahan" di keranjang untuk memarkir transaksi dan '
+                  'melayani pembeli lain dulu. Transaksinya menunggu di sini.',
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(AppSizes.spaceMd),
-            itemCount: heldCarts.length,
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.screenPadding,
+              AppSizes.spaceSm,
+              AppSizes.screenPadding,
+              AppSizes.spaceLg,
+            ),
+            itemCount: heldCarts.length + 1,
             separatorBuilder: (_, _) => const SizedBox(height: AppSizes.spaceSm),
             itemBuilder: (context, index) {
-              final heldCart = heldCarts[index];
-              return Card(
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spaceMd,
-                    vertical: AppSizes.spaceSm,
-                  ),
-                  title: Text(heldCart.label?.isNotEmpty == true ? heldCart.label! : 'Tanpa label'),
-                  subtitle: Text(
-                    '${heldCart.items.length} item · ${CurrencyFormatter.format(heldCart.total)}\n'
-                    '${DateFormatter.formatDateTime(heldCart.createdAt)}',
-                  ),
-                  isThreeLine: true,
-                  onTap: () => _resume(context, ref, heldCart),
-                  trailing: IconButton(
-                    tooltip: 'Hapus',
-                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                    onPressed: () => _delete(context, ref, heldCart),
-                  ),
-                ),
+              if (index == 0) {
+                return SectionHeader(
+                  eyebrow: 'DIPARKIR',
+                  title: '${heldCarts.length} transaksi menunggu',
+                  subtitle: 'Tap kartu untuk melanjutkannya ke keranjang.',
+                );
+              }
+              final heldCart = heldCarts[index - 1];
+              return _HeldCartCard(
+                heldCart: heldCart,
+                onResume: () => _resume(context, ref, heldCart),
+                onDelete: () => _delete(context, ref, heldCart),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Gagal memuat transaksi ditahan: ${AppErrorMessage.from(error)}')),
+        loading: () => const AppLoadingView(),
+        error: (error, stack) => AppErrorView(
+          title: 'Gagal memuat transaksi ditahan',
+          message: AppErrorMessage.from(error),
+          onRetry: () => ref.invalidate(heldCartListProvider),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeldCartCard extends StatelessWidget {
+  const _HeldCartCard({
+    required this.heldCart,
+    required this.onResume,
+    required this.onDelete,
+  });
+
+  final HeldCart heldCart;
+  final VoidCallback onResume;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasLabel = heldCart.label?.trim().isNotEmpty ?? false;
+
+    return AppCard(
+      onTap: onResume,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          const AppIconBadge(
+            icon: Icons.pause_circle_filled_rounded,
+            tone: AppTone.accent,
+            size: AppIconBadgeSize.lg,
+          ),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  hasLabel ? heldCart.label!.trim() : 'Tanpa label',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: hasLabel ? AppColors.ink : AppColors.inkSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.spaceXs),
+                Row(
+                  children: [
+                    AppPill(label: '${heldCart.items.length} item', dense: true),
+                    const SizedBox(width: AppSizes.spaceSm),
+                    Flexible(
+                      child: Text(
+                        DateFormatter.formatDateTime(heldCart.createdAt),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.spaceSm),
+                AppMoneyText(CurrencyFormatter.format(heldCart.total)),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.spaceSm),
+          IconButton(
+            tooltip: 'Hapus',
+            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+            onPressed: onDelete,
+          ),
+        ],
       ),
     );
   }

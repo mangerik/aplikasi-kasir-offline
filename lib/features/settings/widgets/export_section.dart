@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/excel_export_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../pos/providers/sale_providers.dart';
@@ -16,6 +16,10 @@ import 'settings_card.dart';
 /// penjualan per rentang. Pengambilan data lewat repository (I/O) terjadi
 /// di sini (isolate UI); pembentukan file `.xlsx` dijalankan di ISOLATE
 /// terpisah oleh [ExcelExportService] lewat `compute`.
+///
+/// Visual: tiap pilihan export jadi baris kartu (ikon bernada + judul +
+/// penjelasan singkat + chevron), bukan tiga tombol outline seragam —
+/// pengguna bisa membedakan isinya tanpa membaca ulang tiap kali.
 class ExportSection extends ConsumerStatefulWidget {
   const ExportSection({super.key});
 
@@ -117,53 +121,129 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
   @override
   Widget build(BuildContext context) {
     return SettingsCard(
+      icon: Icons.table_view_outlined,
       title: 'Export Excel',
       subtitle: 'File .xlsx tersimpan lalu langsung bisa dibagikan.',
+      tone: AppTone.info,
       children: [
         if (_busy) ...[
-          LinearProgressIndicator(minHeight: 4),
-          const SizedBox(height: AppSizes.spaceSm),
-          Text('Membuat file "$_busyLabel"…', style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: AppSizes.spaceSm),
+          _ExportProgress(label: _busyLabel),
+          const SizedBox(height: AppSizes.spaceMs),
         ],
-        _ExportButton(
+        _ExportTile(
           icon: Icons.inventory_2_outlined,
-          label: 'Produk & Stok',
-          onPressed: _busy ? null : _exportProducts,
+          tone: AppTone.warning,
+          title: 'Produk & Stok',
+          description: 'Daftar barang, harga, dan sisa stok saat ini.',
+          onTap: _busy ? null : _exportProducts,
         ),
         const SizedBox(height: AppSizes.spaceSm),
-        _ExportButton(
+        _ExportTile(
           icon: Icons.receipt_long_outlined,
-          label: 'Transaksi per Rentang Tanggal',
-          onPressed: _busy ? null : _exportTransactions,
+          tone: AppTone.primary,
+          title: 'Transaksi',
+          description: 'Semua struk pada rentang tanggal pilihanmu.',
+          onTap: _busy ? null : _exportTransactions,
         ),
         const SizedBox(height: AppSizes.spaceSm),
-        _ExportButton(
+        _ExportTile(
           icon: Icons.bar_chart_outlined,
-          label: 'Laporan Penjualan per Rentang Tanggal',
-          onPressed: _busy ? null : _exportReport,
+          tone: AppTone.success,
+          title: 'Laporan Penjualan',
+          description: 'Ringkasan omzet & laba per rentang tanggal.',
+          onTap: _busy ? null : _exportReport,
         ),
       ],
     );
   }
 }
 
-class _ExportButton extends StatelessWidget {
-  const _ExportButton({required this.icon, required this.label, required this.onPressed});
+/// Baris status saat file sedang dibentuk di isolate.
+class _ExportProgress extends StatelessWidget {
+  const _ExportProgress({required this.label});
 
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: AppSizes.minTouchTarget,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Align(alignment: Alignment.centerLeft, child: Text(label)),
+    return AppCard(
+      color: AppColors.primary50,
+      borderColor: AppColors.primary100,
+      radius: AppSizes.radiusMd,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: AppSizes.iconSm,
+            height: AppSizes.iconSm,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Text('Menyiapkan file "$label"…', style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Satu pilihan export sebagai baris kartu yang bisa ditekan.
+class _ExportTile extends StatelessWidget {
+  const _ExportTile({
+    required this.icon,
+    required this.tone,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final AppTone tone;
+  final String title;
+  final String description;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final enabled = onTap != null;
+    return AppCard(
+      onTap: onTap,
+      color: AppColors.surfaceAlt,
+      radius: AppSizes.radiusMd,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          AppIconBadge(
+            icon: icon,
+            tone: enabled ? tone : AppTone.neutral,
+            size: AppIconBadgeSize.sm,
+          ),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: enabled ? AppColors.ink : AppColors.inkSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(description, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.spaceSm),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: AppSizes.iconMd,
+            color: AppColors.inkTertiary,
+          ),
+        ],
       ),
     );
   }

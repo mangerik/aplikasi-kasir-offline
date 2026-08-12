@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/store_profile.dart';
 import '../providers/settings_providers.dart';
 import 'settings_card.dart';
@@ -17,16 +17,19 @@ class StoreProfileSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(storeProfileProvider);
     return SettingsCard(
+      icon: Icons.storefront_outlined,
       title: 'Profil Toko',
-      subtitle: 'Nama, alamat, dan no. HP tampil otomatis di struk.',
+      subtitle: 'Tercetak di kepala struk pembeli.',
       children: [
         profileAsync.when(
           data: (profile) => _StoreProfileForm(profile: profile),
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSizes.spaceMd),
-            child: Center(child: CircularProgressIndicator()),
+          loading: () => const AppLoadingView(compact: true),
+          error: (e, _) => AppErrorView(
+            title: 'Profil toko gagal dimuat',
+            message: AppErrorMessage.from(e),
+            compact: true,
+            onRetry: () => ref.invalidate(storeProfileProvider),
           ),
-          error: (e, _) => Text('Gagal memuat profil toko: ${AppErrorMessage.from(e)}'),
         ),
       ],
     );
@@ -85,34 +88,45 @@ class _StoreProfileFormState extends ConsumerState<_StoreProfileForm> {
       children: [
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Nama Toko'),
+          decoration: const InputDecoration(
+            labelText: 'Nama Toko',
+            hintText: 'Warung Bu Erik',
+            prefixIcon: Icon(Icons.store_mall_directory_outlined),
+          ),
           textCapitalization: TextCapitalization.words,
         ),
-        const SizedBox(height: AppSizes.spaceSm),
+        const SizedBox(height: AppSizes.spaceMs),
         TextField(
           controller: _addressController,
-          decoration: const InputDecoration(labelText: 'Alamat'),
+          decoration: const InputDecoration(
+            labelText: 'Alamat',
+            prefixIcon: Icon(Icons.place_outlined),
+          ),
           maxLines: 2,
           textCapitalization: TextCapitalization.sentences,
         ),
-        const SizedBox(height: AppSizes.spaceSm),
+        const SizedBox(height: AppSizes.spaceMs),
         TextField(
           controller: _phoneController,
-          decoration: const InputDecoration(labelText: 'No. HP'),
+          decoration: const InputDecoration(
+            labelText: 'No. HP',
+            prefixIcon: Icon(Icons.call_outlined),
+          ),
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: AppSizes.spaceMd),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton(
+        SizedBox(
+          height: AppSizes.buttonHeight,
+          child: FilledButton.icon(
             onPressed: _saving ? null : _save,
-            child: _saving
+            icon: _saving
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: AppSizes.iconSm,
+                    height: AppSizes.iconSm,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Simpan'),
+                : const Icon(Icons.check_rounded),
+            label: Text(_saving ? 'Menyimpan…' : 'Simpan Profil'),
           ),
         ),
       ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../providers/category_providers.dart';
@@ -9,6 +10,10 @@ import '../utils/product_form_validator.dart';
 
 /// Dialog CRUD kategori sederhana: tambah, ubah nama, hapus — dengan
 /// validasi "kategori masih dipakai produk" (plan.md Milestone 1 poin 5).
+///
+/// Tata letak: daftar kategori sebagai kartu kecil (ikon label + nama +
+/// dua aksi ikon), lalu panel "tambah cepat" yang menempel di bawah supaya
+/// menambah kategori berturut-turut tidak perlu menutup dialog.
 class CategoryManageDialog extends ConsumerWidget {
   const CategoryManageDialog({super.key});
 
@@ -24,54 +29,59 @@ class CategoryManageDialog extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoryListProvider);
     return AlertDialog(
       title: const Text('Kelola Kategori'),
+      contentPadding: const EdgeInsets.fromLTRB(
+        AppSizes.spaceMl,
+        AppSizes.spaceSm,
+        AppSizes.spaceMl,
+        AppSizes.spaceSm,
+      ),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Flexible(
               child: categoriesAsync.when(
                 data: (categories) {
                   if (categories.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('Belum ada kategori.'),
+                    return const EmptyState(
+                      icon: Icons.sell_outlined,
+                      title: 'Belum ada kategori',
+                      message:
+                          'Kelompokkan barang (mis. Minuman, Rokok, Sembako) '
+                          'supaya lebih cepat dicari di layar Kasir.',
+                      compact: true,
                     );
                   }
-                  return ListView.builder(
+                  return ListView.separated(
                     shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSizes.spaceXs,
+                    ),
                     itemCount: categories.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppSizes.spaceSm),
                     itemBuilder: (context, index) {
                       final category = categories[index];
-                      return ListTile(
-                        title: Text(category.name),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Ubah nama',
-                              icon: const Icon(Icons.edit_outlined),
-                              onPressed: () => _rename(context, ref, category),
-                            ),
-                            IconButton(
-                              tooltip: 'Hapus',
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => _delete(context, ref, category),
-                            ),
-                          ],
-                        ),
+                      return _CategoryRow(
+                        category: category,
+                        onRename: () => _rename(context, ref, category),
+                        onDelete: () => _delete(context, ref, category),
                       );
                     },
                   );
                 },
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator()),
+                loading: () => const AppLoadingView(compact: true),
+                error: (error, stack) => AppErrorView(
+                  title: 'Gagal memuat kategori',
+                  message: AppErrorMessage.from(error),
+                  compact: true,
+                  onRetry: () => ref.invalidate(categoryListProvider),
                 ),
-                error: (error, stack) => Text('Gagal memuat kategori: ${AppErrorMessage.from(error)}'),
               ),
             ),
-            const Divider(),
+            const SizedBox(height: AppSizes.spaceMs),
             _AddCategoryField(onSubmit: (name) => _add(context, ref, name)),
           ],
         ),
@@ -102,6 +112,7 @@ class CategoryManageDialog extends ConsumerWidget {
         content: TextField(
           controller: controller,
           autofocus: true,
+          textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(labelText: 'Nama kategori'),
         ),
         actions: [
@@ -129,14 +140,25 @@ class CategoryManageDialog extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus Kategori'),
-        content: Text('Hapus kategori "${category.name}"?'),
+        icon: const AppIconBadge(
+          icon: Icons.delete_outline_rounded,
+          tone: AppTone.danger,
+          size: AppIconBadgeSize.lg,
+        ),
+        title: const Text('Hapus kategori?'),
+        content: Text(
+          'Kategori "${category.name}" akan dihapus. Produk yang masih '
+          'memakainya tidak bisa dihapus kategorinya.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Batal'),
           ),
+          // Satu-satunya override warna tombol yang diizinkan fondasi §7.3:
+          // konfirmasi aksi merusak.
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Hapus'),
           ),
@@ -156,6 +178,63 @@ class CategoryManageDialog extends ConsumerWidget {
   }
 }
 
+/// Satu baris kategori di dalam dialog.
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.category,
+    required this.onRename,
+    required this.onDelete,
+  });
+
+  final Category category;
+  final VoidCallback onRename;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      color: AppColors.surfaceAlt,
+      radius: AppSizes.radiusMd,
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.spaceMs,
+        AppSizes.spaceXs,
+        AppSizes.spaceXs,
+        AppSizes.spaceXs,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              category.name,
+              style: Theme.of(context).textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Ubah nama',
+            iconSize: AppSizes.iconSm,
+            onPressed: onRename,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            tooltip: 'Hapus',
+            iconSize: AppSizes.iconSm,
+            style: IconButton.styleFrom(foregroundColor: AppColors.dangerText),
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tinggi field input bertema — dipakai supaya tombol tambah rata tinggi
+/// dengan field di sebelahnya.
+const double _fieldHeight = AppSizes.minTouchTarget + AppSizes.spaceSm;
+
+/// Panel tambah kategori cepat yang menempel di bawah daftar.
 class _AddCategoryField extends StatefulWidget {
   const _AddCategoryField({required this.onSubmit});
 
@@ -186,19 +265,32 @@ class _AddCategoryFieldState extends State<_AddCategoryField> {
     return Form(
       key: _formKey,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: TextFormField(
               controller: _controller,
-              decoration: const InputDecoration(labelText: 'Kategori baru'),
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Kategori baru',
+                hintText: 'mis. Minuman',
+              ),
               validator: ProductFormValidator.categoryName,
               onFieldSubmitted: (_) => _submit(),
             ),
           ),
-          IconButton(
-            tooltip: 'Tambah',
-            icon: const Icon(Icons.add_circle),
-            onPressed: _submit,
+          const SizedBox(width: AppSizes.spaceSm),
+          SizedBox(
+            width: _fieldHeight,
+            height: _fieldHeight,
+            child: FilledButton(
+              onPressed: _submit,
+              style: FilledButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size.square(_fieldHeight),
+              ),
+              child: const Icon(Icons.add_rounded),
+            ),
           ),
         ],
       ),

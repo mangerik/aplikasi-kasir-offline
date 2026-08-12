@@ -7,6 +7,7 @@ import 'package:kasir_warung/app.dart';
 import 'package:kasir_warung/core/utils/date_formatter.dart';
 import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/db/database_provider.dart';
+import 'package:kasir_warung/features/transactions/widgets/history_tile.dart';
 
 /// Widget test end-to-end Milestone 6 — Tugas B poin 5: regresi otomatis
 /// alur PRD §4 (user stories) & §5 (alur utama kasir) lewat UI SUNGGUHAN
@@ -237,8 +238,10 @@ void main() {
 
       // `HistoryTile` menampilkan no. struk/tanggal/metode/total (BUKAN
       // nama produk) — hanya ada 1 transaksi di DB pada titik ini, jadi
-      // aman tap `ListTile` pertama di daftar Riwayat.
-      await tester.tap(find.byType(ListTile).first);
+      // aman tap kartu riwayat pertama di daftar. Sejak redesign UI
+      // (docs/ui-redesign-transactions-reports.md) baris riwayat berupa
+      // `AppCard`, bukan `ListTile` lagi.
+      await tester.tap(find.byType(HistoryTile).first);
       await tester.pumpAndSettle();
 
       // Tombol void ada di detail, teks "Batalkan Transaksi".

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/entities/product.dart';
 import '../../inventory/providers/stock_providers.dart';
@@ -18,6 +17,11 @@ import '../widgets/product_list_tile.dart';
 /// Layar daftar produk — pencarian real-time (debounce), filter kategori
 /// (chips), indikator stok menipis, harga format Rupiah (plan.md
 /// Milestone 1).
+///
+/// Struktur visual (design language "Kertas & Daun"):
+/// kolom pencarian → chip kategori → banner stok menipis (kalau ada) →
+/// [SectionHeader] dengan jumlah hasil → daftar [ProductListTile] berupa
+/// kartu terpisah, bukan baris berpembatas.
 class ProductsScreen extends ConsumerStatefulWidget {
   const ProductsScreen({super.key});
 
@@ -34,6 +38,19 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     super.dispose();
   }
 
+  void _clearFilter() {
+    _searchController.clear();
+    ref.read(productFilterProvider.notifier).setQuery('');
+    ref.read(productFilterProvider.notifier).setCategory(null);
+    setState(() {});
+  }
+
+  void _openLowStock() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LowStockScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productListProvider);
@@ -41,7 +58,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final filter = ref.watch(productFilterProvider);
     final lowStockCount = ref.watch(lowStockCountProvider).value ?? 0;
     final lowStockThreshold =
-        ref.watch(lowStockDefaultThresholdProvider).value ?? Product.defaultLowStockThreshold;
+        ref.watch(lowStockDefaultThresholdProvider).value ??
+        Product.defaultLowStockThreshold;
+
+    final categories = categoriesAsync.value ?? const <Category>[];
+    final hasFilter = filter.query.isNotEmpty || filter.categoryId != null;
+    final products = productsAsync.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,44 +76,45 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               isLabelVisible: lowStockCount > 0,
               child: const Icon(Icons.warning_amber_rounded),
             ),
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const LowStockScreen())),
+            onPressed: _openLowStock,
           ),
           IconButton(
             tooltip: 'Kelola kategori',
-            icon: const Icon(Icons.category_outlined),
+            icon: const Icon(Icons.sell_outlined),
             onPressed: () => CategoryManageDialog.show(context),
           ),
+          const SizedBox(width: AppSizes.spaceXs),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('${AppRoutes.products}/tambah'),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Tambah Produk'),
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.spaceMd,
+              AppSizes.screenPadding,
               AppSizes.spaceSm,
-              AppSizes.spaceMd,
-              AppSizes.spaceXs,
+              AppSizes.screenPadding,
+              AppSizes.spaceMs,
             ),
             child: TextField(
               controller: _searchController,
+              textInputAction: TextInputAction.search,
               onChanged: (value) {
                 ref.read(productFilterProvider.notifier).setQuery(value);
                 setState(() {});
               },
               decoration: InputDecoration(
-                hintText: 'Cari nama atau barcode produk...',
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Cari nama atau barcode…',
+                prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear),
+                        tooltip: 'Hapus pencarian',
+                        icon: const Icon(Icons.close_rounded),
                         onPressed: () {
                           _searchController.clear();
                           ref.read(productFilterProvider.notifier).setQuery('');
@@ -101,47 +124,103 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ),
             ),
           ),
-          categoriesAsync.when(
-            data: (categories) => _CategoryChips(
+          if (categories.isNotEmpty)
+            _CategoryChips(
               categories: categories,
               selectedId: filter.categoryId,
-              onSelect: (id) => ref.read(productFilterProvider.notifier).setCategory(id),
+              onSelect: (id) =>
+                  ref.read(productFilterProvider.notifier).setCategory(id),
             ),
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
-          const SizedBox(height: AppSizes.spaceXs),
+          if (lowStockCount > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.screenPadding,
+                AppSizes.spaceMs,
+                AppSizes.screenPadding,
+                0,
+              ),
+              child: AppBanner(
+                tone: AppTone.warning,
+                icon: Icons.warning_amber_rounded,
+                message: lowStockCount == 1
+                    ? '1 produk stoknya menipis dan perlu diisi ulang.'
+                    : '$lowStockCount produk stoknya menipis dan perlu diisi ulang.',
+                actionLabel: 'Lihat daftarnya',
+                onAction: _openLowStock,
+              ),
+            ),
+          if (products != null && products.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.screenPadding,
+                AppSizes.spaceMs,
+                AppSizes.screenPadding,
+                0,
+              ),
+              child: SectionHeader(
+                title: _headerTitle(filter, categories),
+                padding: const EdgeInsets.only(bottom: AppSizes.spaceSm),
+                trailing: AppPill(
+                  label: products.length == 1
+                      ? '1 produk'
+                      : '${products.length} produk',
+                  dense: true,
+                ),
+              ),
+            ),
           Expanded(
             child: productsAsync.when(
               data: (products) {
-                final categories = categoriesAsync.value ?? const <Category>[];
                 if (products.isEmpty) {
-                  final hasFilter = filter.query.isNotEmpty || filter.categoryId != null;
-                  return _EmptyState(hasFilter: hasFilter);
+                  return _ProductsEmptyState(
+                    hasFilter: hasFilter,
+                    onClearFilter: _clearFilter,
+                    onAdd: () => context.push('${AppRoutes.products}/tambah'),
+                  );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 96),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.screenPadding,
+                    AppSizes.spaceXs,
+                    AppSizes.screenPadding,
+                    AppSizes.bottomSafePadding,
+                  ),
                   itemCount: products.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSizes.spaceSm),
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    final categoryName = _categoryName(categories, product.categoryId);
                     return ProductListTile(
                       product: product,
-                      categoryName: categoryName,
-                      onTap: () => context.push('${AppRoutes.products}/${product.id}/ubah'),
+                      categoryName: _categoryName(
+                        categories,
+                        product.categoryId,
+                      ),
+                      onTap: () => context.push(
+                        '${AppRoutes.products}/${product.id}/ubah',
+                      ),
                       lowStockThreshold: lowStockThreshold,
                     );
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Gagal memuat produk: ${AppErrorMessage.from(error)}')),
+              loading: () => const AppLoadingView(message: 'Memuat produk…'),
+              error: (error, stack) => AppErrorView(
+                title: 'Gagal memuat produk',
+                message: AppErrorMessage.from(error),
+                onRetry: () => ref.invalidate(productListProvider),
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _headerTitle(ProductFilter filter, List<Category> categories) {
+    if (filter.query.isNotEmpty) return 'Hasil pencarian';
+    final name = _categoryName(categories, filter.categoryId);
+    return name ?? 'Semua produk';
   }
 
   String? _categoryName(List<Category> categories, int? categoryId) {
@@ -153,6 +232,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   }
 }
 
+/// Baris chip filter kategori (§7.3: `ChoiceChip` dalam list horizontal,
+/// tinggi >= 40 supaya tetap mudah ditekan sambil berdiri).
 class _CategoryChips extends StatelessWidget {
   const _CategoryChips({
     required this.categories,
@@ -166,74 +247,77 @@ class _CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-      height: 52,
-      child: ListView(
+      height: AppSizes.minTouchTarget,
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.spaceMd),
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.screenPadding,
+        ),
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSizes.spaceSm),
+        itemBuilder: (context, index) {
+          final isAll = index == 0;
+          final category = isAll ? null : categories[index - 1];
+          final selected = isAll
+              ? selectedId == null
+              : selectedId == category!.id;
+          return Center(
             child: ChoiceChip(
-              label: const Text('Semua'),
-              selected: selectedId == null,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              onSelected: (_) => onSelect(null),
+              label: Text(isAll ? 'Semua' : category!.name),
+              selected: selected,
+              avatar: selected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: AppSizes.iconSm,
+                      color: AppColors.primary,
+                    )
+                  : null,
+              onSelected: (_) => onSelect(isAll ? null : category!.id),
             ),
-          ),
-          for (final category in categories)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: ChoiceChip(
-                label: Text(category.name),
-                selected: selectedId == category.id,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                onSelected: (_) => onSelect(category.id),
-              ),
-            ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.hasFilter});
+/// Layar kosong daftar produk — selalu mengarahkan (§1 prinsip 5):
+/// beda pesan & beda aksi untuk "belum punya produk" vs "filter tidak
+/// menemukan apa-apa".
+class _ProductsEmptyState extends StatelessWidget {
+  const _ProductsEmptyState({
+    required this.hasFilter,
+    required this.onClearFilter,
+    required this.onAdd,
+  });
 
   final bool hasFilter;
+  final VoidCallback onClearFilter;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.spaceLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.inventory_2_outlined,
-              size: 64,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(height: AppSizes.spaceMd),
-            Text(
-              hasFilter ? 'Produk tidak ditemukan' : 'Belum ada produk',
-              style: theme.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSizes.spaceSm),
-            Text(
-              hasFilter
-                  ? 'Coba ubah kata kunci pencarian atau filter kategori.'
-                  : 'Tambahkan produk pertama lewat tombol "Tambah Produk" di bawah.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    if (hasFilter) {
+      return EmptyState(
+        icon: Icons.search_off_rounded,
+        tone: AppTone.neutral,
+        title: 'Produk tidak ditemukan',
+        message:
+            'Tidak ada barang yang cocok dengan pencarian atau kategori ini. '
+            'Coba kata kunci lain, atau tampilkan semua produk.',
+        actionLabel: 'Tampilkan Semua',
+        onAction: onClearFilter,
+      );
+    }
+    return EmptyState(
+      icon: Icons.inventory_2_outlined,
+      title: 'Belum ada produk',
+      message:
+          'Daftarkan barang jualanmu dulu — nama dan harganya langsung bisa '
+          'dipakai di layar Kasir.',
+      actionLabel: 'Tambah Produk',
+      onAction: onAdd,
     );
   }
 }

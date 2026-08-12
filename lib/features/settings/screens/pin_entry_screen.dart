@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_sizes.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../widgets/pin_keypad.dart';
 
 /// Layar input PIN dengan keypad besar (plan.md Milestone 5 poin 6).
@@ -9,6 +9,12 @@ import '../widgets/pin_keypad.dart';
 /// void — lihat `features/transactions/utils/pin_gate.dart`), dan
 /// set/ubah/hapus PIN (lihat `features/settings/widgets/pin_section.dart`).
 /// Satu widget dipakai ulang di semua tempat supaya UX konsisten.
+///
+/// Desain (docs/ui-redesign-foundation.md): satu titik fokus — gembok,
+/// judul, titik indikator — lalu keypad menempel di sepertiga bawah layar
+/// (zona jempol). Saat PIN sedang diverifikasi keypad TIDAK diganti
+/// spinner (bikin layar melompat), hanya dinonaktifkan sambil menampilkan
+/// baris status kecil.
 class PinEntryScreen extends StatefulWidget {
   const PinEntryScreen({super.key, required this.title, this.subtitle, this.validator});
 
@@ -68,31 +74,80 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      // Judul sengaja TIDAK ditaruh di AppBar: di layar sefokus ini judul
+      // besar di badan layar lebih terbaca, dan menghindari teks kembar.
+      appBar: AppBar(),
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSizes.spaceLg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.subtitle != null) ...[
-                  Text(
-                    widget.subtitle!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppSizes.maxContentWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.screenPadding,
+                AppSizes.spaceLg,
+                AppSizes.screenPadding,
+                AppSizes.spaceXl,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppIconBadge(
+                    icon: Icons.lock_outline_rounded,
+                    tone: AppTone.primary,
+                    size: AppIconBadgeSize.xl,
                   ),
-                  const SizedBox(height: AppSizes.spaceLg),
+                  const SizedBox(height: AppSizes.spaceMl),
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: AppSizes.spaceXs),
+                  Text(
+                    widget.subtitle ?? 'Masukkan 6 digit PIN kamu.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.inkSecondary),
+                  ),
+                  const SizedBox(height: AppSizes.spaceXl),
+                  PinKeypad(onCompleted: _onCompleted, errorText: _errorText, enabled: !_checking),
+                  const SizedBox(height: AppSizes.spaceMd),
+                  SizedBox(
+                    height: AppSizes.minTouchTarget,
+                    child: _checking
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: AppSizes.iconSm,
+                                height: AppSizes.iconSm,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              const SizedBox(width: AppSizes.spaceSm),
+                              Text('Memeriksa PIN…', style: theme.textTheme.bodySmall),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.shield_outlined,
+                                size: AppSizes.iconSm,
+                                color: AppColors.inkSecondary,
+                              ),
+                              const SizedBox(width: AppSizes.spaceXs + 2),
+                              Flexible(
+                                child: Text(
+                                  'PIN hanya tersimpan di HP ini, tidak dikirim ke mana pun.',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ],
-                if (_checking)
-                  const Padding(
-                    padding: EdgeInsets.all(AppSizes.spaceLg),
-                    child: CircularProgressIndicator(),
-                  )
-                else
-                  PinKeypad(onCompleted: _onCompleted, errorText: _errorText),
-              ],
+              ),
             ),
           ),
         ),

@@ -122,6 +122,26 @@ flutter:
     - assets/icon/
     - assets/splash/
 
+  # Tipografi aplikasi: Plus Jakarta Sans (Tokotype, OFL) — dirancang di
+  # Indonesia, geometris-humanis, angkanya lebar & jelas untuk layar kasir.
+  # Sengaja DI-BUNDLE sebagai asset, BUKAN lewat package `google_fonts`:
+  # google_fonts mengunduh file font dari internet saat runtime pertama,
+  # sedangkan PRD §1 mewajibkan aplikasi ini 100% offline tanpa satupun
+  # fitur yang butuh koneksi.
+  fonts:
+    - family: Plus Jakarta Sans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
+
 # Konfigurasi flutter_launcher_icons (plan.md Milestone 6 poin 4) — ikon
 # sederhana keranjang belanja warna hijau brand (AppColors.primary), sesuai
 # tema "Kasir Warung". `assets/icon/icon.png` (1024x1024, background hijau

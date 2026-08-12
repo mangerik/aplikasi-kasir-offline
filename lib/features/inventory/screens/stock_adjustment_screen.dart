@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/repositories/repository_exceptions.dart';
 import '../providers/stock_providers.dart';
@@ -16,6 +15,11 @@ import '../providers/stock_providers.dart';
 /// Mengembalikan `true` lewat `Navigator.pop` bila penyesuaian berhasil
 /// disimpan, supaya layar pemanggil (mis. `ProductFormScreen`) tahu perlu
 /// memuat ulang data produk.
+///
+/// Susunan visual mengikuti cara orang berpikir saat menghitung barang:
+/// **stok sekarang → mau diapakan → berapa → jadi berapa**. Kartu pratinjau
+/// "sebelum → sesudah" adalah inti layar ini; warnanya mengikuti arah
+/// pergerakan (masuk hijau, keluar merah, opname biru).
 class StockAdjustmentScreen extends ConsumerStatefulWidget {
   const StockAdjustmentScreen({super.key, required this.product});
 
@@ -85,6 +89,26 @@ class _StockAdjustmentScreenState extends ConsumerState<StockAdjustmentScreen> {
     return value.toString();
   }
 
+  /// Nada warna sesuai arah pergerakan — dipakai konsisten oleh chip jenis,
+  /// kartu pratinjau, dan ikon.
+  AppTone get _tone => switch (_type) {
+        'adjust_in' => AppTone.success,
+        'adjust_out' => AppTone.danger,
+        _ => AppTone.info,
+      };
+
+  IconData get _typeIcon => switch (_type) {
+        'adjust_in' => Icons.south_rounded,
+        'adjust_out' => Icons.north_rounded,
+        _ => Icons.fact_check_outlined,
+      };
+
+  String get _noteHint => switch (_type) {
+        'adjust_in' => 'mis. Belanja stok dari agen',
+        'adjust_out' => 'mis. Barang rusak / kedaluwarsa',
+        _ => 'mis. Hasil hitung ulang rak depan',
+      };
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
@@ -116,90 +140,252 @@ class _StockAdjustmentScreenState extends ConsumerState<StockAdjustmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final preview = _preview;
+    final unit = widget.product.unit;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sesuaikan Stok')),
       body: SafeArea(
+        bottom: false,
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSizes.spaceMd),
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.screenPadding,
+              AppSizes.spaceMs,
+              AppSizes.screenPadding,
+              AppSizes.spaceLg,
+            ),
             children: [
-              Text(widget.product.name, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text(
-                'Stok sekarang: ${_formatNum(widget.product.stock)} ${widget.product.unit}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: AppSizes.spaceMd),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'adjust_in', label: Text('Stok Masuk'), icon: Icon(Icons.add)),
-                  ButtonSegment(
-                    value: 'adjust_out',
-                    label: Text('Stok Keluar'),
-                    icon: Icon(Icons.remove),
-                  ),
-                  ButtonSegment(
-                    value: 'opname',
-                    label: Text('Opname'),
-                    icon: Icon(Icons.fact_check_outlined),
-                  ),
-                ],
-                selected: {_type},
-                onSelectionChanged: (selection) {
-                  setState(() => _type = selection.first);
-                  _formKey.currentState?.validate();
-                },
-              ),
-              const SizedBox(height: AppSizes.spaceMd),
-              TextFormField(
-                controller: _amountController,
-                decoration: InputDecoration(labelText: _amountLabel()),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                textInputAction: TextInputAction.next,
-                validator: _validateAmount,
-                onChanged: (_) => setState(() {}),
-              ),
-              if (preview != null) ...[
-                const SizedBox(height: AppSizes.spaceSm),
-                Text(
-                  'Stok setelah penyesuaian: ${_formatNum(preview)} ${widget.product.unit}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
+              // 1. Duduk perkaranya: barang apa, stoknya berapa sekarang.
+              AppCard(
+                elevated: true,
+                padding: const EdgeInsets.all(AppSizes.spaceMl),
+                child: Row(
+                  children: [
+                    const AppIconBadge(
+                      icon: Icons.inventory_2_outlined,
+                      size: AppIconBadgeSize.lg,
+                    ),
+                    const SizedBox(width: AppSizes.spaceMs),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.product.name,
+                            style: theme.textTheme.titleMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSizes.spaceXs),
+                          Text('STOK SEKARANG', style: AppTextStyles.eyebrow),
+                          const SizedBox(height: AppSizes.spaceXs),
+                          Text(
+                            '${_formatNum(widget.product.stock)} $unit',
+                            style: AppTextStyles.moneyLarge.copyWith(
+                              fontSize: 26,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                  ],
                 ),
-              ],
-              const SizedBox(height: AppSizes.spaceMd),
-              TextFormField(
-                controller: _noteController,
-                decoration: const InputDecoration(
-                  labelText: 'Alasan / catatan *',
-                  hintText: 'mis. Belanja stok baru, barang rusak, hasil hitung ulang',
+              ),
+              const SizedBox(height: AppSizes.spaceMs),
+
+              // 2. Mau diapakan.
+              AppCard(
+                padding: const EdgeInsets.all(AppSizes.spaceMd),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SectionHeader(
+                      title: 'Jenis penyesuaian',
+                      subtitle: 'Opname dipakai kalau kamu menghitung ulang fisik barang.',
+                    ),
+                    const SizedBox(height: AppSizes.spaceXs),
+                    SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: 'adjust_in',
+                          label: Text('Masuk'),
+                          icon: Icon(Icons.south_rounded),
+                        ),
+                        ButtonSegment(
+                          value: 'adjust_out',
+                          label: Text('Keluar'),
+                          icon: Icon(Icons.north_rounded),
+                        ),
+                        ButtonSegment(
+                          value: 'opname',
+                          label: Text('Opname'),
+                          icon: Icon(Icons.fact_check_outlined),
+                        ),
+                      ],
+                      selected: {_type},
+                      onSelectionChanged: (selection) {
+                        setState(() => _type = selection.first);
+                        _formKey.currentState?.validate();
+                      },
+                    ),
+                    const SizedBox(height: AppSizes.spaceMd),
+                    TextFormField(
+                      controller: _amountController,
+                      decoration: InputDecoration(
+                        labelText: _amountLabel(),
+                        prefixIcon: Icon(_typeIcon),
+                        suffixText: unit,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.next,
+                      validator: _validateAmount,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    if (preview != null) ...[
+                      const SizedBox(height: AppSizes.spaceMs),
+                      _PreviewCard(
+                        tone: _tone,
+                        before: '${_formatNum(widget.product.stock)} $unit',
+                        after: '${_formatNum(preview)} $unit',
+                      ),
+                    ],
+                  ],
                 ),
-                maxLines: 2,
-                textInputAction: TextInputAction.done,
-                validator: _validateNote,
               ),
-              const SizedBox(height: AppSizes.spaceLg),
-              FilledButton(
-                onPressed: _saving ? null : _submit,
-                child: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Simpan Penyesuaian'),
+              const SizedBox(height: AppSizes.spaceMs),
+
+              // 3. Kenapa — wajib, jadi jangan disembunyikan di bawah.
+              AppCard(
+                padding: const EdgeInsets.all(AppSizes.spaceMd),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SectionHeader(
+                      title: 'Alasan',
+                      subtitle: 'Tercatat di riwayat stok supaya bisa ditelusuri nanti.',
+                    ),
+                    const SizedBox(height: AppSizes.spaceXs),
+                    TextFormField(
+                      controller: _noteController,
+                      decoration: InputDecoration(
+                        labelText: 'Alasan / catatan *',
+                        hintText: _noteHint,
+                      ),
+                      maxLines: 2,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.done,
+                      validator: _validateNote,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSizes.spaceLg),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: AppDecorations.floating(radius: AppSizes.radius2xl),
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.spaceMd,
+          AppSizes.spaceMs,
+          AppSizes.spaceMd,
+          AppSizes.spaceMs,
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: AppSizes.buttonHeightLarge,
+            child: FilledButton.icon(
+              onPressed: _saving ? null : _submit,
+              icon: _saving
+                  ? const SizedBox(
+                      width: AppSizes.iconSm,
+                      height: AppSizes.iconSm,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.onDark,
+                      ),
+                    )
+                  : const Icon(Icons.check_rounded),
+              label: Text(_saving ? 'Menyimpan…' : 'Simpan Penyesuaian'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pratinjau "sebelum → sesudah": inti layar penyesuaian stok.
+///
+/// Nilai sesudah sengaja dibuat paling besar & paling tebal (§1 prinsip 1:
+/// angka lebih penting dari labelnya).
+class _PreviewCard extends StatelessWidget {
+  const _PreviewCard({
+    required this.tone,
+    required this.before,
+    required this.after,
+  });
+
+  final AppTone tone;
+  final String before;
+  final String after;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = tone.colors;
+
+    return AnimatedContainer(
+      duration: AppDurations.fast,
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      decoration: AppDecorations.tonal(tone, radius: AppSizes.radiusMd),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('SEBELUM', style: AppTextStyles.eyebrow),
+                const SizedBox(height: AppSizes.spaceXs),
+                Text(
+                  before,
+                  style: AppTextStyles.numeric.copyWith(
+                    color: AppColors.inkSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_rounded, color: c.fg),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'STOK JADI',
+                  style: AppTextStyles.eyebrow.copyWith(color: c.fg),
+                ),
+                const SizedBox(height: AppSizes.spaceXs),
+                Text(
+                  after,
+                  style: theme.textTheme.headlineSmall?.copyWith(color: c.fg),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

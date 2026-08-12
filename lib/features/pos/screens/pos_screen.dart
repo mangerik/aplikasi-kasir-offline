@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../providers/held_cart_providers.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/cart_summary_bar.dart';
@@ -11,12 +10,22 @@ import 'held_carts_screen.dart';
 
 /// Layar Kasir (POS) — adaptif HP/tablet (plan.md Milestone 2 poin 2 & 3,
 /// architecture.md §5.1):
-/// - **HP (portrait, < 600dp):** grid produk di atas, bar keranjang ringkas
-///   menempel di bawah; tap bar membuka sheet keranjang penuh.
+/// - **HP (portrait, < 600dp):** grid produk di atas, bar keranjang
+///   mengambang menempel di bawah (zona jempol); tap bar membuka sheet
+///   keranjang penuh.
 /// - **Tablet (>= 600dp):** dua panel berdampingan — grid produk kiri,
-///   keranjang kanan (selalu terlihat).
+///   keranjang kanan di atas permukaan `surface` (selalu terlihat).
+///
+/// Desain mengikuti `docs/ui-redesign-foundation.md`: aksi utama (Bayar)
+/// selalu di sepertiga bawah layar, nominal memakai `AppMoneyText`, dan
+/// transaksi ditahan tampil sebagai pil aksen — bukan badge titik kecil
+/// yang mudah terlewat.
 class PosScreen extends ConsumerWidget {
   const PosScreen({super.key});
+
+  /// Lebar panel keranjang di tablet — cukup untuk nama produk + stepper
+  /// qty + nominal tanpa membuat grid produk sempit.
+  static const double _cartPanelWidth = 380;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,43 +35,12 @@ class PosScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Kasir'),
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                tooltip: 'Transaksi ditahan',
-                icon: const Icon(Icons.pause_circle_outline),
-                onPressed: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const HeldCartsScreen())),
-              ),
-              if (heldCount > 0)
-                Positioned(
-                  right: 6,
-                  top: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(
-                      color: AppColors.secondary,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      '$heldCount',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          _HeldCartsAction(count: heldCount),
+          const SizedBox(width: AppSizes.spaceMd),
         ],
       ),
       body: SafeArea(
+        top: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isTablet = constraints.maxWidth >= AppSizes.tabletBreakpoint;
@@ -70,8 +48,14 @@ class PosScreen extends ConsumerWidget {
               return const Row(
                 children: [
                   Expanded(flex: 3, child: ProductGrid()),
-                  VerticalDivider(width: 1),
-                  SizedBox(width: 400, child: CartPanel()),
+                  VerticalDivider(width: AppSizes.hairline),
+                  SizedBox(
+                    width: _cartPanelWidth,
+                    child: ColoredBox(
+                      color: AppColors.surface,
+                      child: CartPanel(),
+                    ),
+                  ),
                 ],
               );
             }
@@ -82,6 +66,64 @@ class PosScreen extends ConsumerWidget {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Pintasan ke daftar transaksi ditahan.
+///
+/// Saat ada transaksi diparkir, tombol berubah jadi **pil aksen berlabel
+/// angka** (bukan sekadar ikon + titik) supaya kasir langsung tahu ada
+/// pekerjaan yang menunggu — satu-satunya elemen aksen di layar ini
+/// (fondasi §2.2: aksen dipakai hemat).
+class _HeldCartsAction extends StatelessWidget {
+  const _HeldCartsAction({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    void open() => Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const HeldCartsScreen()));
+
+    if (count == 0) {
+      return IconButton(
+        tooltip: 'Transaksi ditahan',
+        icon: const Icon(Icons.pause_circle_outline),
+        onPressed: open,
+      );
+    }
+
+    return Tooltip(
+      message: 'Transaksi ditahan',
+      child: SizedBox(
+        height: AppSizes.minTouchTarget - 4,
+        child: AppCard(
+          onTap: open,
+          radius: AppSizes.radiusPill,
+          color: AppColors.accent50,
+          borderColor: AppColors.accent100,
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.spaceMs),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.pause_circle_filled_rounded,
+                size: AppSizes.iconSm,
+                color: AppColors.accentText,
+              ),
+              const SizedBox(width: AppSizes.spaceXs + 2),
+              Text(
+                '$count ditahan',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.accentText,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

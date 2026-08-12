@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/app_widgets.dart';
 
 /// Hasil input dialog item bebas (plan.md Milestone 2 poin 1: "Item bebas
 /// (nama + harga manual)").
@@ -21,6 +22,9 @@ class FreeItemInput {
 
 /// Dialog tambah item bebas (barang tak terdaftar) ke keranjang: nama,
 /// harga, qty, satuan — semua diketik manual, `productId` tetap null.
+///
+/// Desain: total baris dihitung langsung saat mengetik (`AppMoneyText`)
+/// supaya kasir bisa memverifikasi angkanya sebelum menekan Tambah.
 class FreeItemDialog {
   static Future<FreeItemInput?> show(BuildContext context) {
     return showDialog<FreeItemInput>(
@@ -53,14 +57,20 @@ class _FreeItemDialogContentState extends State<_FreeItemDialogContent> {
     super.dispose();
   }
 
+  double get _qty {
+    final parsed = double.tryParse(_qtyController.text.trim().replaceAll(',', '.')) ?? 1;
+    return parsed <= 0 ? 1 : parsed;
+  }
+
+  int get _price => int.tryParse(_priceController.text.trim()) ?? 0;
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final qty = double.tryParse(_qtyController.text.trim().replaceAll(',', '.')) ?? 1;
     Navigator.of(context).pop(
       FreeItemInput(
         name: _nameController.text.trim(),
         price: int.parse(_priceController.text.trim()),
-        qty: qty <= 0 ? 1 : qty,
+        qty: _qty,
         unit: _unitController.text.trim().isEmpty ? 'pcs' : _unitController.text.trim(),
       ),
     );
@@ -68,18 +78,33 @@ class _FreeItemDialogContentState extends State<_FreeItemDialogContent> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AlertDialog(
       title: const Text('Tambah Item Bebas'),
       content: Form(
         key: _formKey,
+        onChanged: () => setState(() {}),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                'Untuk barang yang belum terdaftar — dicatat sekali pakai, '
+                'tanpa memengaruhi stok.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.inkSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSizes.spaceMd),
               TextFormField(
                 controller: _nameController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Nama barang *'),
+                decoration: const InputDecoration(
+                  labelText: 'Nama barang *',
+                  prefixIcon: Icon(Icons.label_outline_rounded),
+                ),
                 textInputAction: TextInputAction.next,
                 validator: (value) =>
                     (value == null || value.trim().isEmpty) ? 'Nama wajib diisi' : null,
@@ -87,7 +112,10 @@ class _FreeItemDialogContentState extends State<_FreeItemDialogContent> {
               const SizedBox(height: AppSizes.spaceMd),
               TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Harga (Rp) *', prefixText: 'Rp '),
+                decoration: const InputDecoration(
+                  labelText: 'Harga (Rp) *',
+                  prefixText: 'Rp ',
+                ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textInputAction: TextInputAction.next,
@@ -119,6 +147,20 @@ class _FreeItemDialogContentState extends State<_FreeItemDialogContent> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: AppSizes.spaceMd),
+              AppCard(
+                color: AppColors.surfaceAlt,
+                radius: AppSizes.radiusMd,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.spaceMd,
+                  vertical: AppSizes.spaceSm,
+                ),
+                child: AppKeyValueRow(
+                  label: 'Total baris',
+                  value: CurrencyFormatter.format((_price * _qty).round()),
+                  emphasized: true,
+                ),
               ),
             ],
           ),

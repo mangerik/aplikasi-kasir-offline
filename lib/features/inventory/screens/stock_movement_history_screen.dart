@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/utils/error_message.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/product.dart';
 import '../providers/stock_providers.dart';
 import '../widgets/stock_movement_tile.dart';
@@ -12,6 +11,10 @@ import 'stock_adjustment_screen.dart';
 /// Layar riwayat pergerakan stok SATU produk (plan.md Milestone 4 poin 2):
 /// jenis, qty ±, stok akhir, referensi transaksi, waktu — terbaru dulu,
 /// infinite scroll (pola sama dengan Riwayat Transaksi Milestone 3).
+///
+/// Judul AppBar dipersingkat jadi "Riwayat Stok"; nama produk & stok
+/// terakhir pindah ke kartu ringkasan di atas daftar supaya tidak terpotong
+/// di HP kecil dan tetap terbaca sebagai konteks.
 class StockMovementHistoryScreen extends ConsumerStatefulWidget {
   const StockMovementHistoryScreen({super.key, required this.product});
 
@@ -59,72 +62,122 @@ class _StockMovementHistoryScreenState extends ConsumerState<StockMovementHistor
     final stateAsync = ref.watch(stockMovementListProvider(widget.product.id));
 
     return Scaffold(
-      appBar: AppBar(title: Text('Riwayat Stok — ${widget.product.name}')),
+      appBar: AppBar(title: const Text('Riwayat Stok')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAdjustment,
-        icon: const Icon(Icons.tune),
+        icon: const Icon(Icons.tune_rounded),
         label: const Text('Sesuaikan Stok'),
       ),
-      body: stateAsync.when(
-        data: (state) {
-          if (state.items.isEmpty) {
-            return const _EmptyState();
-          }
-          return ListView.separated(
-            controller: _scrollController,
-            padding: const EdgeInsets.only(bottom: AppSizes.spaceXl * 2),
-            itemCount: state.items.length + (state.hasMore ? 1 : 0),
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              if (index >= state.items.length) {
-                return const Padding(
-                  padding: EdgeInsets.all(AppSizes.spaceMd),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              return StockMovementTile(
-                movement: state.items[index],
-                unit: widget.product.unit,
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSizes.spaceLg),
-            child: Text('Gagal memuat riwayat stok: ${AppErrorMessage.from(error)}', textAlign: TextAlign.center),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.screenPadding,
+              AppSizes.spaceMs,
+              AppSizes.screenPadding,
+              AppSizes.spaceSm,
+            ),
+            child: _ProductSummary(product: widget.product),
           ),
-        ),
+          Expanded(
+            child: stateAsync.when(
+              data: (state) {
+                if (state.items.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.swap_vert_rounded,
+                    tone: AppTone.neutral,
+                    title: 'Belum ada pergerakan stok',
+                    message:
+                        'Penjualan, pembatalan, dan penyesuaian manual akan '
+                        'tercatat di sini lengkap dengan alasannya.',
+                    actionLabel: 'Sesuaikan Stok',
+                    onAction: _openAdjustment,
+                  );
+                }
+                return ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.screenPadding,
+                    AppSizes.spaceXs,
+                    AppSizes.screenPadding,
+                    AppSizes.bottomSafePadding,
+                  ),
+                  itemCount: state.items.length + (state.hasMore ? 1 : 0),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSizes.spaceSm),
+                  itemBuilder: (context, index) {
+                    if (index >= state.items.length) {
+                      return const AppLoadingView(compact: true);
+                    }
+                    return StockMovementTile(
+                      movement: state.items[index],
+                      unit: widget.product.unit,
+                    );
+                  },
+                );
+              },
+              loading: () => const AppLoadingView(message: 'Memuat riwayat…'),
+              error: (error, stack) => AppErrorView(
+                title: 'Gagal memuat riwayat stok',
+                message: AppErrorMessage.from(error),
+                onRetry: () =>
+                    ref.invalidate(stockMovementListProvider(widget.product.id)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+/// Kartu konteks di atas daftar: produk mana & stok terakhirnya.
+class _ProductSummary extends StatelessWidget {
+  const _ProductSummary({required this.product});
+
+  final Product product;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.spaceLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.swap_vert, size: 64, color: AppColors.textSecondary),
-            const SizedBox(height: AppSizes.spaceMd),
-            Text('Belum ada pergerakan stok', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSizes.spaceSm),
-            Text(
-              'Pergerakan stok (penjualan, void, penyesuaian manual) akan muncul di sini.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
+    return AppCard(
+      elevated: true,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          const AppIconBadge(
+            icon: Icons.inventory_2_outlined,
+            size: AppIconBadgeSize.md,
+          ),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Text(
+              product.name,
+              style: theme.textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSizes.spaceSm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('STOK KINI', style: AppTextStyles.eyebrow),
+              const SizedBox(height: AppSizes.spaceXs),
+              Text(
+                '${_formatNum(product.stock)} ${product.unit}',
+                style: AppTextStyles.numeric.copyWith(fontSize: 17),
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  String _formatNum(double value) {
+    if (value == value.roundToDouble()) return value.toInt().toString();
+    return value.toString();
   }
 }
