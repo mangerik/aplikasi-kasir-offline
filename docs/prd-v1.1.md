@@ -14,7 +14,9 @@
 
 MVP v1.0 sudah **rilis dan tuntas**: seluruh milestone M0–M6 tercentang di [plan.md](plan.md), APK release terbangun dengan R8, dan alur inti (kasir tunai/non-tunai/hutang, void, stok, laporan, export Excel, backup/restore lintas perangkat) sudah diuji di perangkat nyata pada 2026-08-12.
 
-Dokumen ini menurunkan **enam fitur "Fase Berikutnya"** yang sudah disebut di [prd.md §3.3](prd.md) menjadi spesifikasi yang bisa langsung direncanakan dan dikerjakan. Tidak ada fitur baru di luar keenam itu.
+Dokumen ini menurunkan **enam fitur "Fase Berikutnya"** yang sudah disebut di [prd.md §3.3](prd.md) menjadi spesifikasi yang bisa langsung direncanakan dan dikerjakan. Tidak ada fitur produk baru di luar keenam itu.
+
+Ditambah **satu fitur yang tidak berasal dari daftar tersebut**: **Sistem Lisensi Offline** (§6). Ini bukan permintaan pengguna melainkan **keputusan komersial pemilik produk** — aplikasi akan dijual ke UMKM, sehingga dibutuhkan gerbang aktivasi sebelum aplikasi bisa dipakai. Karena lisensi menggerbangi mulainya penjualan, ia masuk **Tier 1** dan wajib selesai **sebelum** rilis v1.1.0. Konsekuensinya terhadap prinsip "100% offline" dibahas terbuka di §1.4.
 
 ### 1.2 Cakupan dokumen
 
@@ -23,21 +25,35 @@ Dokumen ini menurunkan **enam fitur "Fase Berikutnya"** yang sudah disebut di [p
 | 1 | Cetak struk ke printer thermal Bluetooth 58mm | **Tier 1** | §3 |
 | 2 | Import produk dari Excel | **Tier 1** | §4 |
 | 3 | Mode gelap | **Tier 1** | §5 |
-| 4 | Manajemen pelanggan lengkap (poin, riwayat belanja) | Tier 2 | §6 |
-| 5 | Multi-user dengan PIN per kasir | Tier 2 | §7 |
-| 6 | Grafik penjualan di dashboard | Tier 2 | §8 |
+| 4 | **Sistem lisensi offline (aktivasi wajib: trial 3 hari / lifetime / tahunan)** | **Tier 1** | **§6** |
+| 5 | Manajemen pelanggan lengkap (poin, riwayat belanja) | Tier 2 | §7 |
+| 6 | Multi-user dengan PIN per kasir | Tier 2 | §8 |
+| 7 | Grafik penjualan di dashboard | Tier 2 | §9 |
 
 ### 1.3 Prinsip yang TIDAK boleh dilanggar
 
 Seluruh prinsip v1.0 tetap mengikat penuh — fitur di dokumen ini tidak boleh melonggarkannya sedikit pun:
 
-1. **100% offline, selamanya.** Tidak ada satupun fitur baru yang butuh internet. Bluetooth ke printer adalah komunikasi lokal perangkat-ke-perangkat, bukan koneksi jaringan — tetap sah. Dependency yang mengunduh aset saat runtime (`google_fonts` dan sejenisnya) tetap **dilarang**.
+1. **100% offline, selamanya.** Tidak ada satupun fitur baru yang butuh internet. Bluetooth ke printer adalah komunikasi lokal perangkat-ke-perangkat, bukan koneksi jaringan — tetap sah. Dependency yang mengunduh aset saat runtime (`google_fonts` dan sejenisnya) tetap **dilarang**. Sistem lisensi (§6) tidak melanggar ini — perangkat kasir tetap tidak pernah menyentuh jaringan — tapi ia **mengubah janji produk** dengan cara lain; lihat §1.4.
 2. **Bahasa Indonesia** sebagai satu-satunya bahasa UI, termasuk seluruh pesan error, label template Excel, dan isi struk.
 3. **Target sentuh ≥ 48dp**, CTA 52–60dp, teks & angka besar (lihat [ui-redesign-foundation.md §4.4](ui-redesign-foundation.md)).
 4. **Data tidak keluar perangkat** kecuali pengguna sendiri yang share/export/cetak.
 5. **Atomisitas data.** Setiap operasi tulis multi-tabel wajib dibungkus satu `db.transaction()` — berlaku juga untuk import Excel dan mutasi poin pelanggan.
-6. **Sederhana.** Fitur baru tidak boleh menambah langkah pada alur kasir inti (pilih barang → bayar → selesai). Semua fitur di dokumen ini bersifat opsional dan **mati secara default**, kecuali mode gelap yang default-nya "Terang" (lihat §5.7).
+6. **Sederhana.** Fitur baru tidak boleh menambah langkah pada alur kasir inti (pilih barang → bayar → selesai). Semua fitur di dokumen ini bersifat opsional dan **mati secara default**, dengan dua pengecualian: mode gelap yang default-nya "Terang" (lihat §5.7), dan sistem lisensi (§6) yang justru **wajib dan aktif sejak pemasangan pertama** — itulah hakikatnya sebagai gerbang penjualan.
 7. **Anggaran teknis tetap:** APK < 40 MB, cold start < 3 detik, Android 8.0 (API 26) ke atas.
+
+### 1.4 Pengecualian yang disengaja terhadap prinsip offline
+
+Sistem lisensi (§6) adalah **pengecualian pertama yang disengaja** terhadap janji "100% offline" [prd.md §1](prd.md), dan dokumen ini menuliskannya terus terang alih-alih menyamarkannya.
+
+**Yang TIDAK berubah:**
+- Perangkat kasir **tidak pernah** membutuhkan internet — tidak saat aktivasi, tidak saat verifikasi, tidak saat berjualan. Verifikasi kode terjadi sepenuhnya di dalam perangkat, memakai tanda tangan kriptografis dan kunci publik yang ditanam di aplikasi.
+- Tidak ada server, tidak ada akun, tidak ada login, tidak ada telemetri, tidak ada satu byte pun data toko yang keluar dari perangkat.
+- Pertukaran kode aktivasi terjadi lewat **manusia** (mis. WhatsApp), dan boleh dilakukan dari **HP mana pun** — bukan dari perangkat kasir.
+
+**Yang berubah:** ada **gerbang aktivasi** sebelum aplikasi bisa dipakai, dan aplikasi menjadi produk berbayar dengan masa berlaku (kecuali lisensi selamanya). Aplikasi tidak lagi "pasang lalu jalan".
+
+Ini bukan pelonggaran diam-diam melainkan pertukaran yang disadari: gerbang penjualan adalah syarat agar pengembangan v1.2 dan seterusnya punya sumber daya. Batasnya dijaga ketat oleh §6.8 — begitu ada kebutuhan yang menuntut server, jawabannya tetap "tidak" untuk v1.1.
 
 ---
 
@@ -45,7 +61,11 @@ Seluruh prinsip v1.0 tetap mengikat penuh — fitur di dokumen ini tidak boleh m
 
 ### 2.1 Kriteria penentuan tier
 
-Prioritas ditentukan oleh tiga hal, berurutan:
+Sejak v1.1 ada satu kriteria yang berdiri **di atas** ketiganya:
+
+0. **Apakah fitur itu menggerbangi penjualan produk?** Hanya satu fitur yang memenuhinya — sistem lisensi (§6). Tanpa gerbang aktivasi, tidak ada penjualan; tanpa penjualan, tidak ada v1.2. Karena itu ia masuk Tier 1 dan menjadi syarat rilis v1.1.0, terlepas dari nilainya bagi pengguna akhir.
+
+Sisanya ditentukan oleh tiga hal, berurutan:
 
 1. **Seberapa sering keluhan itu muncul dalam pemakaian harian** (frekuensi > kedalaman).
 2. **Rasio nilai terhadap risiko teknis** — terutama risiko terhadap integritas data.
@@ -58,14 +78,15 @@ Prioritas ditentukan oleh tiga hal, berurutan:
 | **Cetak struk thermal 58mm** | Permintaan paling nyata: pembeli minta struk fisik, dan share WhatsApp tidak menggantikan itu. Ini juga satu-satunya fitur di daftar yang membuat aplikasi terasa "seperti kasir betulan" di mata pembeli. |
 | **Import produk dari Excel** | Hambatan terbesar pengguna baru: mengetik 300–1.000 produk satu per satu lewat HP praktis mustahil. Fitur ini menentukan apakah warung yang sudah punya daftar barang mau pindah ke aplikasi ini sama sekali. Export Excel sudah ada, jadi arah baliknya wajar dilengkapi. |
 | **Mode gelap** | Warung banyak yang buka sampai malam; kanvas kertas `#F5F2EA` di ruangan gelap menyilaukan. Biaya implementasinya sedang, risikonya nyaris nol terhadap data, dan makin lama ditunda makin mahal karena setiap layar baru menambah utang token warna. |
+| **Sistem lisensi offline** | **Gerbang penjualan.** Aplikasi ini akan dijual; selama gerbang aktivasi belum ada, setiap APK yang beredar adalah pemakai gratis dan pendanaan v1.2 tidak pernah datang. Ia juga **tidak boleh menyusul belakangan**: memasang gerbang pada pengguna yang sudah terbiasa memakai aplikasi secara bebas jauh lebih menyakitkan daripada memasangnya sejak rilis berbayar pertama. Karena itu lisensi wajib selesai **sebelum** v1.1.0 keluar, bukan sesudahnya. |
 
-**Alasan kolektif Tier 1: ketiganya TIDAK menyentuh skema database sama sekali.** Cukup kunci baru di tabel `settings`/`shared_preferences` dan penulisan lewat repository yang sudah ada. `schemaVersion` tetap **1**, sehingga backup v1.0 dan v1.1 saling kompatibel penuh selama Tier 1 — properti yang sangat berharga untuk fase pertama pasca-rilis.
+**Alasan kolektif Tier 1: keempatnya TIDAK menyentuh skema database sama sekali.** Cukup kunci baru di tabel `settings`/`shared_preferences` dan penulisan lewat repository yang sudah ada (lisensi bahkan **hanya** memakai `shared_preferences` dan tidak menulis ke database sama sekali — §6.5). `schemaVersion` tetap **1**, sehingga backup v1.0 dan v1.1 saling kompatibel penuh selama Tier 1 — properti yang sangat berharga untuk fase pertama pasca-rilis.
 
 ### 2.3 Tier 2 — berikutnya
 
 | Fitur | Alasan ditunda |
 |---|---|
-| **Manajemen pelanggan (poin, riwayat)** | Butuh tabel baru + **backfill data lama** (`sales.customer_name` teks bebas → entitas pelanggan). Migrasi paling berisiko dari keenam fitur, dan hanya dibutuhkan warung yang sudah rutin melayani pelanggan langganan. |
+| **Manajemen pelanggan (poin, riwayat)** | Butuh tabel baru + **backfill data lama** (`sales.customer_name` teks bebas → entitas pelanggan). Migrasi paling berisiko dari seluruh fitur v1.1, dan hanya dibutuhkan warung yang sudah rutin melayani pelanggan langganan. |
 | **Multi-user PIN per kasir** | Butuh tabel `users` + kolom baru di `sales`, dan menyentuh model izin di seluruh aplikasi. Hanya relevan untuk toko dengan karyawan — sebagian besar target pengguna (pemilik warung yang menjaga sendiri) tidak terpengaruh. |
 | **Grafik penjualan** | Bernilai tinggi tapi murni tambahan visual di atas data yang sudah ada; menunggu tidak merugikan siapa pun. Ditempatkan setelah multi-user agar bisa langsung mendukung filter "per kasir" tanpa dikerjakan dua kali. |
 
@@ -75,21 +96,28 @@ Prioritas ditentukan oleh tiga hal, berurutan:
 Tier 1 (paralel, tanpa migrasi DB, schemaVersion tetap 1)
   ├── §3 Printer thermal      ── independen
   ├── §4 Import Excel         ── independen
-  └── §5 Mode gelap           ── sebaiknya SELESAI sebelum Tier 2,
-                                 supaya layar baru Tier 2 langsung
-                                 ditulis dengan token sadar-tema
+  ├── §5 Mode gelap           ── sebaiknya SELESAI sebelum Tier 2,
+  │                              supaya layar baru Tier 2 langsung
+  │                              ditulis dengan token sadar-tema
+  └── §6 Lisensi offline      ── independen dari §3/§4, tapi WAJIB
+                                 selesai sebelum rilis v1.1.0
+                                 (gerbang penjualan). Layar barunya
+                                 dibuat setelah §5 agar langsung
+                                 sadar-tema.
 
 Tier 2 (berurutan, ada migrasi DB)
-  §6 Pelanggan   → schemaVersion 1 → 2
-  §7 Multi-user  → schemaVersion 2 → 3
-  §8 Grafik      → tanpa tabel baru; hanya menambah index & query.
-                   Filter "per kasir" pada grafik BERGANTUNG pada §7.
+  §7 Pelanggan   → schemaVersion 1 → 2
+  §8 Multi-user  → schemaVersion 2 → 3
+  §9 Grafik      → tanpa tabel baru; hanya menambah index & query.
+                   Filter "per kasir" pada grafik BERGANTUNG pada §8.
 ```
 
 Catatan lintas fitur:
-- §3 (printer) dan §6 (pelanggan) bertemu di struk: nama pelanggan & saldo poin dicetak bila keduanya aktif.
-- §3 dan §7 bertemu di struk: baris "Kasir: <nama>".
-- §5 (mode gelap) memengaruhi §8 (grafik): warna grafik wajib diambil dari token tema, bukan hex tetap.
+- §3 (printer) dan §7 (pelanggan) bertemu di struk: nama pelanggan & saldo poin dicetak bila keduanya aktif.
+- §3 dan §8 bertemu di struk: baris "Kasir: <nama>".
+- §5 (mode gelap) memengaruhi §9 (grafik): warna grafik wajib diambil dari token tema, bukan hex tetap.
+- §6 (lisensi) dan §8 (multi-user) bertemu di gerbang router: urutannya **lisensi → masuk (login) → shell**, tidak boleh terbalik (§6.3.F).
+- §6 memakai `mobile_scanner` yang sudah dipakai untuk barcode produk, dan `share_plus` yang sudah dipakai untuk struk — tanpa dependency baru untuk keduanya.
 
 ---
 
@@ -163,7 +191,7 @@ Kertas 58mm efektif = **32 karakter** pada font A (lihat catatan lebar cetak di 
 --------------------------------
 No. Struk: 20260812-0007
 12 Agustus 2026 19:42
-Kasir: Ratna                   (hanya bila §7 aktif)
+Kasir: Ratna                   (hanya bila §8 aktif)
 Pelanggan: Bu Ani              (hanya bila ada)
 --------------------------------
 Indomie Goreng
@@ -179,7 +207,7 @@ Tunai                 20.000
 Kembali                6.000
 --------------------------------
    Terima kasih :)             (center, dari Pengaturan)
-   Poin Anda: 12               (hanya bila §6 aktif)
+   Poin Anda: 12               (hanya bila §7 aktif)
 [feed 3 baris]
 ```
 
@@ -739,16 +767,404 @@ Alasan: tema adalah preferensi **perangkat & mata penggunanya**, bukan data toko
 - Mode AMOLED/hitam pekat terpisah.
 - Penjadwalan otomatis (gelap saat matahari terbenam, gelap pada jam tertentu).
 - Pemilihan warna brand/aksen oleh pengguna (tema kustom).
-- Tema per layar atau per pengguna (lihat §7 — multi-user tidak membawa preferensi tema per kasir).
+- Tema per layar atau per pengguna (lihat §8 — multi-user tidak membawa preferensi tema per kasir).
 - Splash screen versi gelap.
 - Penyesuaian ukuran font / mode kontras tinggi terpisah (aksesibilitas lanjutan di luar cakupan v1.1).
 - Mode gelap untuk file export atau struk cetak.
 
 ---
 
-## 6. Fitur Tier 2 — Manajemen Pelanggan Lengkap (Poin & Riwayat Belanja)
+## 6. Fitur Tier 1 — Sistem Lisensi Offline (Aktivasi Wajib)
 
 ### 6.1 Latar & masalah pengguna
+
+Lima fitur lain di dokumen ini menjawab kebutuhan **pengguna**. Bab ini menjawab kebutuhan **produk**: aplikasi ini akan **dijual** ke UMKM, bukan dibagikan gratis. Tanpa gerbang aktivasi, satu file APK yang beredar di grup WhatsApp langsung menjadi seratus pemakai tanpa satu rupiah pun kembali ke pengembang — dan pengembangan v1.2 ke atas berhenti dengan sendirinya.
+
+Masalah yang harus diselesaikan sekaligus:
+
+1. **Menggerbangi penjualan.** Aplikasi hanya bisa dipakai setelah pembeli memasukkan kode aktivasi yang diterbitkan penjual.
+2. **Tanpa server.** Menambah backend berarti biaya bulanan, akun, dan ketergantungan jaringan — semuanya melanggar janji inti produk ([prd.md §1](prd.md)). Verifikasi harus **murni offline**.
+3. **Tanpa menyandera data pengguna.** Lisensi habis tidak boleh menghapus atau mengunci data penjualan pengguna selamanya. Yang dikunci adalah **kemampuan berjualan**, bukan datanya.
+4. **Bisa dijalankan satu orang.** Penjualnya adalah satu orang dengan laptop dan WhatsApp, bukan tim. Alur penerbitan kode harus bisa selesai dalam hitungan menit tanpa infrastruktur apa pun.
+
+Tiga jenis lisensi yang dijual (keputusan pemilik produk, final):
+
+| Jenis | Masa berlaku | Untuk |
+|---|---|---|
+| **Coba (trial)** | **3 hari** sejak kode diterbitkan (absolut) | Calon pembeli yang ingin mencoba dulu di warungnya sendiri |
+| **Selamanya (lifetime)** | tanpa kedaluwarsa | Sekali beli, dipakai selamanya di perangkat itu |
+| **Tahunan** | **365 hari** + masa tenggang 7 hari | Harga masuk lebih murah; diperpanjang dengan kode baru |
+
+> **Ini adalah pengecualian pertama yang DISENGAJA terhadap prinsip "100% offline" [prd.md §1](prd.md)** — dan pengecualiannya lebih kecil daripada kelihatannya. Lihat §1.4: perangkat kasir **tetap tidak pernah butuh internet**, bahkan saat aktivasi. Yang berubah adalah adanya **gerbang aktivasi** sebelum aplikasi bisa dipakai, dan pertukaran kode dilakukan lewat **manusia** (WhatsApp dari HP mana pun), bukan lewat jaringan aplikasi.
+
+### 6.2 User stories
+
+Fitur ini punya **dua** pengguna: pembeli aplikasi (pemilik warung) dan penjual aplikasi (pengembang). Keduanya ditulis, karena alur penjual adalah bagian dari produk — bukan urusan internal.
+
+**Pembeli (pemilik warung):**
+
+1. Sebagai calon pembeli, saya bisa mencoba aplikasi **3 hari penuh** di warung saya sendiri sebelum memutuskan membeli.
+2. Sebagai pembeli, saya bisa membaca **kode perangkat** saya di layar pertama dan mengirimkannya ke penjual lewat WhatsApp dengan satu tap — tanpa perlu paham istilah teknis apa pun.
+3. Sebagai pembeli, saya bisa memasukkan kode aktivasi dengan cara termudah yang tersedia: **memindai QR**, **menempel** dari WhatsApp, atau **mengetik manual** kalau kodenya sampai di HP lain.
+4. Sebagai pembeli, saya tahu **kapan lisensi saya berakhir** dan diingatkan jauh-jauh hari, bukan dikejutkan pada pagi hari saat antrian panjang.
+5. Sebagai pembeli lisensi tahunan, saya bisa memperpanjang dengan memasukkan kode baru — **tanpa kehilangan satu transaksi pun**.
+6. Sebagai pembeli yang masa cobanya habis, saya tahu bahwa **data saya masih utuh** dan akan langsung kembali begitu saya membeli.
+7. Sebagai pembeli, saya bisa memakai aplikasi ini **tanpa pernah menyalakan internet di HP kasir**, termasuk saat aktivasi.
+
+**Penjual (pengembang):**
+
+8. Sebagai penjual, saya bisa menerbitkan kode aktivasi untuk satu kode perangkat dalam **satu perintah** di laptop saya, lalu mengirimkannya lewat WhatsApp.
+9. Sebagai penjual, saya bisa menerbitkan trial, lifetime, dan tahunan dari alat yang sama, dan setiap penerbitan **tercatat otomatis** supaya saya tahu perangkat mana yang sudah pernah dapat trial.
+10. Sebagai penjual, saya ingin kode yang saya terbitkan **hanya berlaku di perangkat yang memintanya**, supaya satu kode tidak beredar di grup WhatsApp.
+11. Sebagai penjual, saya ingin kunci penerbit saya aman dan **tidak pernah ikut ter-commit** ke repositori.
+
+### 6.3 Perilaku & alur detail
+
+#### A. Alur aktivasi pertama (sisi pembeli)
+
+```
+Pasang APK → buka aplikasi
+→ Layar Aktivasi (di luar shell navigasi; navigasi bawah TIDAK tampil)
+
+  ┌────────────────────────────────────────┐
+  │  Kasir Warung                          │
+  │  Aplikasi ini perlu diaktifkan dulu.   │
+  │                                        │
+  │  Kode perangkat Anda                   │
+  │      KW-4T7QP-9M2XK        (besar)     │
+  │      [ Salin ]  [ Kirim ke Penjual ]   │
+  │                                        │
+  │  Kirim kode perangkat di atas ke       │
+  │  penjual, lalu masukkan kode aktivasi  │
+  │  yang dikirim balik.                   │
+  │                                        │
+  │  [ Pindai QR ] [ Tempel ] [ Ketik ]    │
+  │  ──────────────────────────────────    │
+  │  [        AKTIFKAN        ] (60dp)     │
+  └────────────────────────────────────────┘
+
+→ "Kirim ke Penjual" membuka lembar berbagi (share_plus yang sudah ada)
+  dengan teks siap kirim:
+  "Halo, saya mau aktivasi Kasir Warung. Kode perangkat saya:
+   KW-4T7QP-9M2XK"
+→ penjual membalas dengan kode aktivasi (teks + gambar QR)
+→ Pindai QR / Tempel / Ketik → tap AKTIFKAN
+→ verifikasi lokal (< 1 detik) → "Aktif — Lisensi Selamanya" → masuk aplikasi
+```
+
+Tiga jalur masuk kode, berurutan dari yang paling mudah:
+
+| Jalur | Kapan dipakai | Catatan |
+|---|---|---|
+| **Pindai QR** | Kode sampai di HP lain / dikirim sebagai gambar | Me-*reuse* `mobile_scanner` yang **sudah** dipakai untuk barcode produk — tanpa dependency baru |
+| **Tempel** | WhatsApp ada di HP kasir itu sendiri | Satu tap; jalur paling sering dalam praktik |
+| **Ketik manual** | Jalur terakhir yang **selalu** bekerja | Kode dikelompokkan 5 karakter, huruf besar, alfabet tanpa karakter kembar (§6.3.D) |
+
+Aplikasi **tidak pernah** menyentuh jaringan pada alur ini. Pengiriman kode perangkat dan penerimaan kode aktivasi terjadi lewat aplikasi lain milik pengguna (WhatsApp/SMS), atau lewat HP orang lain sama sekali.
+
+#### B. Alur penjual (penerbitan kode)
+
+Generator adalah **tool CLI Dart di dalam repo**, dijalankan di laptop penjual:
+
+```
+1. Sekali seumur produk — membuat pasangan kunci:
+   dart run tool/license_generator.dart --buat-kunci
+   → menulis kunci privat ke ~/.kasir-warung/license_ed25519.key   (DI LUAR REPO)
+   → mencetak kunci publik (32 byte, base64) untuk ditempel ke
+     lib/core/license/license_keys.dart
+
+2. Setiap penjualan:
+   dart run tool/license_generator.dart \
+     --device KW-4T7QP-9M2XK \
+     --jenis tahunan \
+     --nama "Warung Bu Ani" --catatan "WA 0812xxxx, transfer 12 Agu"
+
+   Tool melakukan berurutan:
+   a. memeriksa karakter cek kode perangkat  → salah ketik ketahuan SEBELUM
+      kode diterbitkan (tidak ada bolak-balik WhatsApp yang sia-sia)
+   b. mencari kode perangkat itu di lisensi-terbit.csv → memperingatkan bila
+      perangkat ini SUDAH PERNAH dapat trial (mitigasi risiko §6.7.3)
+   c. menandatangani muatan dengan kunci privat
+   d. menulis keluaran:
+      • kode aktivasi teks (120 karakter, terkelompok 5)
+      • lisensi-KW-4T7QP-9M2XK.png  (QR berisi kode yang sama)
+      • satu baris di lisensi-terbit.csv:
+        tanggal, kode perangkat, jenis, kedaluwarsa, nama, catatan
+
+3. Penjual mengirim kode teks + gambar QR lewat WhatsApp.
+```
+
+Perintah pendukung:
+
+| Perintah | Fungsi |
+|---|---|
+| `--buat-kunci` | Membuat pasangan kunci Ed25519 baru (menolak menimpa kunci yang sudah ada) |
+| `--verifikasi <kode> --device <id>` | Menjalankan **jalur verifikasi yang sama persis** dengan aplikasi; dipakai penjual saat pembeli melapor "kode saya ditolak" |
+| `--daftar [--jenis trial]` | Menampilkan isi `lisensi-terbit.csv` (siapa, kapan, jenis apa, kedaluwarsa kapan) |
+
+`lisensi-terbit.csv` dan `*.key` masuk `.gitignore`. Tata kelola kunci: §6.7.2.
+
+#### C. Kode perangkat (device ID)
+
+- Sumber: **ANDROID_ID / SSAID** (`Settings.Secure.ANDROID_ID`). Pada Android 8.0+ nilainya unik per (aplikasi-penanda-tangan × pengguna × perangkat), **stabil melewati uninstall–reinstall selama APK ditandatangani kunci rilis yang sama**, dan hanya berubah saat *factory reset*. Ini persis sifat yang dibutuhkan: trial tidak bisa direset dengan memasang ulang, tapi pengguna jujur juga tidak kehilangan lisensinya saat memperbarui aplikasi.
+- Yang ditampilkan **bukan** SSAID mentah, melainkan turunannya:
+  `deviceId = crockford32( SHA-256("kasirwarung.device.v1|" + SSAID)[0..44 bit] )` → 9 karakter, ditambah **1 karakter cek** berbobot posisi (menangkap salah ketik satu karakter *dan* tertukarnya dua karakter bersebelahan).
+- Format tampil: `KW-4T7QP-9M2XK` — awalan `KW-`, lalu 10 karakter dalam dua kelompok lima.
+- Alasan tidak menampilkan SSAID mentah: (a) 16 karakter heksadesimal jauh lebih rawan salah ketik dan tidak punya karakter cek; (b) SSAID mentah adalah pengenal perangkat yang tidak perlu beredar di WhatsApp; (c) turunan 45 bit (≈ 3,5 × 10¹³ kemungkinan) sudah jauh lebih dari cukup untuk basis pelanggan UMKM.
+- **Kasus khusus:** bila SSAID tidak terbaca atau bernilai cacat yang terkenal (`9774d56d682e549c` pada sebagian perangkat lama), aplikasi membangkitkan pengenal acak sekali dan menyimpannya di `shared_preferences`. Konsekuensinya jujur dan dicatat di UI bantuan: pada perangkat itu, memasang ulang aplikasi **akan** mengubah kode perangkat dan pembeli perlu kode baru dari penjual.
+
+#### D. Kode aktivasi: muatan, tanda tangan, dan bentuknya
+
+**Muatan yang ditandatangani (9 byte):**
+
+| Byte | Isi | Keterangan |
+|---|---|---|
+| 0 | versi format | `0x01`. Versi yang lebih besar dari yang dikenal aplikasi → pesan "Perbarui aplikasi dulu", bukan "kode tidak sah" |
+| 1 | jenis lisensi | `0x01` coba · `0x02` selamanya · `0x03` tahunan |
+| 2–3 | tanggal terbit | uint16 BE, hari sejak 2020-01-01 (UTC) |
+| 4–5 | tanggal kedaluwarsa | uint16 BE, hari sejak 2020-01-01; `0xFFFF` = tanpa kedaluwarsa |
+| 6 | masa tenggang | uint8, jumlah hari (trial `0`, tahunan `7`) — **ikut ditandatangani** supaya penjual bisa memberi kelonggaran khusus tanpa mengubah aplikasi |
+| 7–8 | petunjuk perangkat | 16 bit pertama SHA-256 kode perangkat; **hanya** untuk membedakan pesan "kode ini untuk perangkat lain" dari "kode tidak sah" |
+
+**Pesan yang ditandatangani** (bukan yang dikirim):
+
+```
+msg = "KASIRWARUNG-LICENSE-v1" || 0x00 || deviceId(10 karakter ASCII) || muatan(9 byte)
+sig = Ed25519-sign(kunciPrivatPenjual, msg)            // 64 byte
+```
+
+Kode perangkat **ikut ditandatangani tapi tidak ikut dikirim** — aplikasi menyusun ulang `msg` memakai kode perangkatnya sendiri. Akibatnya: kode yang diterbitkan untuk perangkat lain **tidak akan pernah lolos verifikasi**, tanpa perlu memboroskan karakter untuk mengangkut kode perangkat.
+
+**Bentuk yang diketik/dipindai:**
+
+```
+token = muatan(9) || sig(64) || CRC-16(2)              = 75 byte
+teks  = "KW1-" + Crockford-Base32(token)               = 120 karakter data
+tampil= KW1-4T7QP-9M2XK-...                            dikelompokkan 5 karakter
+```
+
+- **Alfabet Crockford Base32** (0–9, A–Z tanpa `I`, `L`, `O`, `U`): tidak ada pasangan karakter yang mirip saat ditulis tangan atau dibaca di layar retak. Saat memasukkan kode, `I`/`l` diterima sebagai `1`, `O` sebagai `0`, huruf kecil dinaikkan otomatis, tanda hubung/spasi diabaikan. Awalan `KW1-` boleh ada atau tidak (penanda versi format, memudahkan format v2 kelak).
+- **CRC-16 ada meskipun sudah ada tanda tangan.** Tanda tangan bisa menjawab "sah/tidak sah", tapi tidak bisa membedakan **salah ketik** dari **kode palsu**. CRC memungkinkan pesan yang benar: *"Kode belum lengkap atau ada yang salah ketik — periksa lagi kelompok ke-7"* alih-alih menuduh pengguna memakai kode bajakan. Ini menghilangkan seluruh kelas keluhan dukungan.
+- **120 karakter memang panjang, dan itu harga yang disadari.** Tanda tangan Ed25519 berukuran tetap 64 byte; memotongnya membuat verifikasi mustahil, dan mengganti Ed25519 dengan HMAC/kunci simetris berarti menanam kunci penerbit di dalam APK — satu orang membongkarnya, jadilah *keygen* untuk semua perangkat. Karena itu panjang kode tidak dilawan dengan mengorbankan keamanan, melainkan dengan **UX yang membuat pengetikan jadi jalan terakhir**, bukan jalan utama (§6.3.A). Lihat K-6.3 dan tabel risiko.
+
+#### E. Keadaan lisensi & perilaku saat berakhir
+
+Aplikasi mengenal enam keadaan. Semuanya diturunkan dari token + tanggal acuan (§6.3.G), tidak ada yang disimpan sebagai "keadaan" yang bisa melenceng:
+
+| Keadaan | Kapan | Perilaku aplikasi |
+|---|---|---|
+| `belumAktif` | belum pernah ada token sah | Layar Aktivasi mengunci seluruh aplikasi |
+| `aktif` | lifetime, atau `hariIni < hariKedaluwarsa` | Normal sepenuhnya |
+| `akanBerakhir` | sisa ≤ 7 hari (trial: sisa ≤ 1 hari) | Normal + banner peringatan di layar Kasir |
+| `masaTenggang` | lewat kedaluwarsa, masih dalam tenggang (tahunan: 7 hari) | Normal + **banner merah menetap** berisi sisa hari & tombol "Perpanjang" |
+| `kedaluwarsaTahunan` | tenggang habis | **Layar Kasir dikunci.** Riwayat, Laporan, Export Excel, Backup, dan Pengaturan **tetap terbuka** |
+| `kedaluwarsaTrial` | masa coba habis (tanpa tenggang) | Layar penuh ajakan beli; **data tidak dihapus** dan tombol "Cadangkan Data" tetap tersedia |
+
+Aturan yang mengikat perilaku di atas:
+
+1. **Data tidak pernah dihapus, disembunyikan, atau diacak** oleh kedaluwarsa apa pun. Begitu kode baru dimasukkan, seluruh data — termasuk data yang dibuat selama masa coba — muncul kembali apa adanya (AC-6.12).
+2. **Lisensi tahunan yang habis tidak menyandera data.** Yang dikunci hanya kemampuan membuat transaksi baru. Pengguna tetap bisa menagih hutang lama? Tidak — pelunasan hutang adalah penulisan data dan ikut terkunci; tapi ia tetap bisa **melihat** siapa yang berhutang berapa, meng-export-nya ke Excel, dan mem-backup seluruh datanya untuk dibawa ke mana pun. Prinsip "Data milik pengguna" ([prd.md §1](prd.md)) menang atas keinginan menekan pembeli.
+3. **Trial habis mengunci penuh** (keputusan pemilik produk) — dengan satu kelonggaran yang sengaja ditambahkan: tombol **"Cadangkan Data"** pada layar kunci, sehingga pengguna yang memutuskan tidak jadi membeli tetap bisa membawa pergi datanya sendiri. Bila PIN aktif, tombol ini melewati gerbang PIN yang sudah ada. Ini tidak melemahkan gerbang penjualan sama sekali: data tiga hari tidak bernilai bagi pembajak, sementara "aplikasi menyandera catatan warung saya" adalah kerusakan reputasi yang jauh lebih mahal daripada satu lisensi.
+4. **Transaksi yang sedang berjalan tidak pernah diputus di tengah** (§6.3.F).
+
+#### F. Kapan lisensi diperiksa
+
+- **Saat *cold start*, sebelum `runApp()`** — token dibaca dari `shared_preferences` dan diverifikasi, sehingga frame pertama sudah menampilkan layar yang benar (pola yang sama dengan pembacaan tema, K-5.2/AC-5.5). Tidak ada kedipan layar Kasir sebelum layar Aktivasi.
+- **Saat aplikasi kembali ke depan** (`AppLifecycleState.resumed`) — menangkap kasus aplikasi menginap semalam melewati tanggal kedaluwarsa.
+- **Setelah database terbuka** — pemeriksaan mundur-jam yang membutuhkan `sales.created_at` (§6.3.G) dijalankan setelah frame pertama; bila hasilnya menurunkan keadaan lisensi, `redirect` router bereaksi sendiri.
+- **TIDAK pernah** di tengah alur pembayaran. Bila lisensi berakhir saat aplikasi sedang terbuka dan ada keranjang berjalan, transaksi itu **tetap boleh diselesaikan sampai tersimpan**; kunci baru berlaku setelahnya. Menghentikan kasir di depan pembeli yang sedang membayar adalah kerusakan yang tidak sebanding dengan satu hari lisensi.
+- Gerbangnya adalah `redirect` **di lapisan `go_router`, di luar/sebelum `StatefulShellRoute`** — bukan sekadar menyembunyikan layar. Urutan gerbang bila §8 (multi-user) kelak aktif: **lisensi → masuk (login) → shell**.
+
+#### G. Mitigasi mundur-jam (clock rollback)
+
+Aplikasi tidak punya sumber waktu tepercaya. Mitigasinya adalah **jam yang tidak bisa mundur**, dibangun dari jam perangkat ditambah tiga saksi tersimpan:
+
+```
+waktuAcuan = max(
+    jam perangkat sekarang,
+    license_last_seen_at            (nilai tertinggi yang pernah dilihat, shared_preferences),
+    created_at transaksi TERBARU di database,
+    license_activated_at            (saat kode terakhir diaktifkan)
+)
+```
+
+- `license_last_seen_at` diperbarui saat *start*, saat *resume*, dan setiap kali satu penjualan tersimpan.
+- Seluruh evaluasi kedaluwarsa (§6.3.E) memakai **`waktuAcuan`**, bukan jam perangkat. Mundurkan jam sejauh apa pun, sisa masa berlaku tidak pernah bertambah.
+- `created_at` transaksi terbaru adalah saksi yang **tidak ikut hilang** saat pengguna memulihkan backup di perangkat yang jamnya sudah dimundurkan — kasus yang paling mungkin terjadi dalam praktik.
+- Bila `jam perangkat < waktuAcuan − 10 menit`, aplikasi menampilkan banner: *"Jam HP Anda tampaknya mundur. Betulkan tanggal & jam agar laporan dan lisensi tetap akurat."* Toleransi 10 menit mencegah koreksi NTP biasa memicu peringatan palsu.
+- **Jam yang salah tidak pernah dipakai sebagai alasan mengunci aplikasi** selama `waktuAcuan` masih di dalam masa berlaku. Pengguna yang baterainya habis dan jamnya ter-reset ke 2016 adalah pengguna jujur, bukan pembajak.
+
+#### H. Perpanjangan & pindah perangkat
+
+- **Perpanjangan tahunan:** Pengaturan → kartu "Lisensi" → "Masukkan Kode Baru", atau langsung dari banner masa tenggang. Kode baru menimpa yang lama; masa berlaku baru dihitung dari **tanggal terbit kode baru** (bukan ditumpuk pada sisa lama) — sederhana, dan penjual bisa mengompensasi sisa hari saat menerbitkan bila mau.
+- **Kode lama tetap boleh dimasukkan ulang.** Token bukan sekali pakai: setelah memasang ulang aplikasi di perangkat yang sama, pembeli cukup memasukkan kode yang sama. Trial pun begitu — dan justru itu yang membuat trial **tidak bisa direset** dengan memasang ulang: tanggal kedaluwarsanya absolut, tertanam di dalam kode.
+- **Ganti perangkat / factory reset** menghasilkan kode perangkat baru, jadi butuh kode aktivasi baru. Aplikasi tidak punya mekanisme transfer otomatis; ini **kebijakan komersial penjual** (menerbitkan ulang secara cuma-cuma atau tidak), dan `lisensi-terbit.csv` memberi penjual bukti pembelian sebelumnya. Layar Aktivasi menyebut ini secara terbuka: *"Ganti HP? Kirim kode perangkat baru Anda ke penjual."*
+
+### 6.4 Acceptance criteria
+
+| # | Kriteria (bisa diuji) |
+|---|---|
+| AC-6.1 | Pemasangan baru → aplikasi **tidak bisa** dipakai sebelum aktivasi: seluruh rute (`/kasir`, `/produk`, `/riwayat`, `/laporan`, `/pengaturan`) diarahkan ke layar Aktivasi, termasuk saat dibuka lewat *deep link* langsung (penjagaan di `redirect` router, bukan hanya di UI). |
+| AC-6.2 | Kode perangkat yang sama tampil di layar Aktivasi, di kartu Lisensi pada Pengaturan, dan pada teks "Kirim ke Penjual" — **persis sama**, dan tidak berubah setelah aplikasi ditutup paksa & dibuka lagi. |
+| AC-6.3 | Uninstall lalu install ulang APK yang ditandatangani kunci rilis yang sama → kode perangkat **tidak berubah** (diuji di perangkat fisik). |
+| AC-6.4 | Kode aktivasi sah untuk perangkat ini → aktivasi berhasil dan aplikasi terbuka; waktu verifikasi < 1 detik di HP kelas menengah. |
+| AC-6.5 | Kode sah yang diterbitkan untuk **perangkat lain** → ditolak dengan pesan spesifik "Kode ini diterbitkan untuk perangkat lain", bukan pesan generik. |
+| AC-6.6 | Kode yang **satu karakternya salah ketik** → ditolak oleh CRC dengan pesan "Kode salah ketik atau belum lengkap", dan bukan dengan pesan "kode tidak sah". Diuji atas seluruh 120 posisi karakter (uji tabel, satu karakter diubah per kasus). |
+| AC-6.7 | Kode yang tanda tangannya dipalsukan (satu bit muatan diubah lalu CRC dihitung ulang) → **selalu** ditolak. |
+| AC-6.8 | Vektor uji tetap (fixture) berisi ≥ 6 kode: trial/lifetime/tahunan × (sah, kedaluwarsa) diverifikasi oleh unit test **tanpa perangkat dan tanpa jaringan**, dengan pasangan kunci uji yang di-*commit* (kunci uji, bukan kunci produksi). |
+| AC-6.9 | Huruf kecil, `I`/`l`→`1`, `O`→`0`, spasi & tanda hubung acak, serta awalan `KW1-` yang ada/tidak ada — semuanya menghasilkan hasil verifikasi yang sama. |
+| AC-6.10 | Trial 3 hari: pada hari ke-1 dan ke-3 aplikasi terbuka normal; pada hari ke-4 aplikasi menampilkan layar "Masa coba berakhir" (diuji dengan menyuntikkan tanggal acuan, bukan menunggu). |
+| AC-6.11 | **Trial tidak bisa direset:** uninstall → install ulang → memasukkan kode trial yang sama pada hari ke-4 tetap menghasilkan keadaan kedaluwarsa. |
+| AC-6.12 | Trial kedaluwarsa lalu diaktifkan dengan kode lifetime → **seluruh data yang dibuat selama trial tetap ada** (jumlah produk, transaksi, dan pergerakan stok identik sebelum vs sesudah). |
+| AC-6.13 | Lisensi tahunan lewat tanggal kedaluwarsa → 7 hari berikutnya aplikasi tetap berfungsi penuh dengan banner masa tenggang berisi **sisa hari yang benar**. |
+| AC-6.14 | Setelah masa tenggang habis: layar Kasir terkunci, sementara Riwayat, Laporan, Export Excel, Backup, dan Pengaturan **tetap bisa dibuka dan tetap menghasilkan file yang benar**. |
+| AC-6.15 | Layar "Masa coba berakhir" menyediakan "Cadangkan Data" yang menghasilkan file backup sah (bisa di-restore), dan melewati gerbang PIN bila PIN aktif. |
+| AC-6.16 | Jam perangkat dimundurkan 1 tahun → sisa masa berlaku **tidak bertambah**, banner "jam mundur" tampil, dan lisensi yang sudah kedaluwarsa **tetap** kedaluwarsa. |
+| AC-6.17 | Backup dibuat di perangkat A (berlisensi) lalu di-restore di perangkat B (belum aktif) → perangkat B **tetap** meminta aktivasi; tidak ada jejak lisensi di dalam file backup (diverifikasi dengan memeriksa isi tabel `settings` pada file backup). |
+| AC-6.18 | Lisensi berakhir saat aplikasi terbuka dengan keranjang berisi → transaksi berjalan **tetap bisa diselesaikan & tersimpan**; kunci baru berlaku setelah transaksi tersimpan. |
+| AC-6.19 | Kunci privat tidak pernah ada di repositori: `git grep` atas pola kunci & `.gitignore` diperiksa dalam checklist rilis; aplikasi hanya memuat **kunci publik**. |
+| AC-6.20 | Verifikator aplikasi menerima **daftar** kunci publik tepercaya (siap rotasi): token yang ditandatangani kunci lama maupun kunci baru sama-sama lolos selama keduanya masih terdaftar. |
+| AC-6.21 | Muatan dengan `versi` lebih besar dari yang dikenal → pesan "Kode ini butuh versi aplikasi yang lebih baru", bukan "kode tidak sah". |
+| AC-6.22 | Ukuran APK release tetap < 40 MB dan cold start tetap < 3 detik setelah fitur ini masuk (verifikasi Ed25519 tidak menambah waktu buka yang terasa). |
+
+### 6.5 Dampak skema database
+
+**Tidak ada tabel baru, tidak ada kolom baru, `schemaVersion` tetap 1** — dan yang lebih penting: **tidak ada satu pun nilai lisensi yang disimpan di database.**
+
+**Keputusan K-6.1 — status lisensi disimpan di `shared_preferences`, BUKAN di tabel `settings`.** Alasannya berlapis, dan yang pertama menentukan:
+
+1. **File backup boleh berpindah tangan; lisensi tidak boleh ikut.** Tabel `settings` ikut terbawa `backup → restore`. Menaruh token lisensi di sana berarti satu file backup yang beredar di grup WhatsApp membawa serta lisensi berbayarnya. Token memang terikat perangkat sehingga tidak akan lolos verifikasi di HP lain — tapi merancang gerbang penjualan yang keselamatannya bergantung pada satu lapisan saja adalah kecerobohan yang tidak perlu.
+2. **Konsisten dengan keputusan yang sudah diambil.** Preferensi tema memakai alasan yang sama persis (K-5.2): yang bersifat **perangkat**, bukan **data toko**, tidak masuk database. Lisensi adalah contoh paling murni dari kategori itu.
+3. **Harus terbaca sebelum database dibuka.** Gerbang aktivasi berjalan sebelum `runApp()` (§6.3.F); `shared_preferences` bisa dibaca di sana tanpa membuka Drift.
+4. **Restore tidak boleh mengubah status lisensi** — baik menaikkan (mendapat lisensi gratis) maupun menurunkan (kehilangan lisensi yang sudah dibayar karena memulihkan backup lama).
+
+| Penyimpanan | Key | Nilai | Default |
+|---|---|---|---|
+| `shared_preferences` | `license_token` | teks kode aktivasi yang sudah dinormalkan | kosong |
+| `shared_preferences` | `license_activated_at` | epoch millis saat kode terakhir diaktifkan | kosong |
+| `shared_preferences` | `license_last_seen_at` | epoch millis tertinggi yang pernah dilihat (§6.3.G) | kosong |
+| `shared_preferences` | `license_device_id_fallback` | pengenal acak, **hanya** bila SSAID tidak terbaca (§6.3.C) | kosong |
+
+Jenis lisensi, tanggal terbit, kedaluwarsa, dan masa tenggang **sengaja tidak disimpan terpisah** — semuanya diturunkan ulang dengan memverifikasi `license_token` di setiap *cold start*. Tidak ada nilai turunan yang bisa diubah orang lain tanpa merusak tanda tangan, dan tidak ada dua sumber kebenaran yang bisa melenceng.
+
+Satu-satunya sentuhan ke database adalah **pembacaan**: `SELECT MAX(created_at) FROM sales` untuk saksi mundur-jam (§6.3.G), memakai index `idx_sales_created_at` yang sudah ada.
+
+### 6.6 Dampak UI
+
+Semua mengikuti [ui-redesign-foundation.md](ui-redesign-foundation.md). Layar-layar bab ini lahir **setelah** mode gelap (§5) selesai, jadi seluruh warna diambil dari `context.palette` — dilarang `AppColors.*` langsung.
+
+- **Layar Aktivasi** (rute `/aktivasi`, di luar shell): satu titik fokus. `AppIconBadge` kunci ukuran `xl`, judul `headlineMedium` "Aktifkan Kasir Warung", lalu **kartu kode perangkat** (`AppCard(elevated: true)`) berisi kode dengan `AppTextStyles.numeric` berukuran besar bertabular — mengikuti prinsip "angka lebih penting dari labelnya". Dua tombol sekunder setinggi `buttonHeight` 52 ("Salin", "Kirim ke Penjual"), lalu masukan kode, lalu **satu CTA** `buttonHeightLarge` 60 "AKTIFKAN". Konten dibatasi `maxContentWidth` agar rapi di tablet.
+- **Masukan kode manual** meminjam pola `pin_keypad.dart`: kelompok karakter yang terlihat sebagai kotak-kotak, bukan satu `TextField` panjang. Bedanya, alfabetnya alfanumerik sehingga tetap memakai keyboard sistem (`textCapitalization: characters`, `autocorrect: false`, `enableSuggestions: false`) — keypad khusus 32 tombol akan terlalu kecil dan melanggar target sentuh 48dp. Karakter dinormalkan saat diketik (huruf besar otomatis, `O`→`0`), pemisah kelompok muncul sendiri, dan kelompok yang sudah terisi berubah warna tenang.
+- **Umpan balik verifikasi** memakai pola yang sudah ada di `pin_entry_screen.dart`: tombol tidak diganti spinner (bikin layar melompat), melainkan dinonaktifkan sambil baris status berubah "Memeriksa kode…". Kode salah → `AppPill(tone: danger)` dengan pesan yang **spesifik** (§6.4 AC-6.5, AC-6.6, AC-6.21), plus getaran halus + `HapticFeedback.heavyImpact` seperti PIN salah.
+- **Layar "Masa coba berakhir"** (`/lisensi-berakhir`): `EmptyState` bernada `AppTone.accent` — ikon, judul "Masa coba 3 hari sudah berakhir", kalimat pengarah **yang menenangkan** ("Semua data Anda masih tersimpan aman dan akan langsung kembali setelah aplikasi diaktifkan."), kode perangkat, lalu CTA "Masukkan Kode Aktivasi" dan tombol tersier "Cadangkan Data". Tidak ada nada menghukum, tidak ada hitungan mundur dramatis.
+- **Layar Kasir terkunci** (lisensi tahunan setelah tenggang): pola `EmptyState` yang sama di dalam shell — **navigasi bawah tetap ada dan tetap berfungsi**, sehingga terlihat jelas bahwa Riwayat/Laporan/Pengaturan masih bisa dibuka. Ini pesan visual yang penting: yang terkunci adalah jualannya, bukan datanya.
+- **Banner** memakai `AppBanner` yang sudah ada, di atas daftar produk pada layar Kasir:
+  - `AppTone.warning` — "Lisensi berakhir 5 hari lagi" (`akanBerakhir`),
+  - `AppTone.danger` — "Lisensi sudah berakhir. Sisa masa tenggang 3 hari." + tombol "Perpanjang" (`masaTenggang`),
+  - `AppTone.info` — banner jam mundur (§6.3.G).
+  Banner **tidak pernah** menutupi bar keranjang atau CTA "Bayar", dan bisa ditutup untuk sesi berjalan kecuali pada keadaan `masaTenggang`.
+- **Kartu "Lisensi" di Pengaturan** memakai `SettingsCard` (pola sama dengan `pin_section.dart`), ditempatkan **paling bawah** — di bawah kartu Data — karena bukan pengaturan harian. Isinya: `AppPill` status (`success` "Aktif" · `warning` "Akan berakhir" · `danger` "Masa tenggang/Berakhir"), jenis lisensi, tanggal aktivasi, tanggal berakhir + sisa hari (lifetime menampilkan "Selamanya" tanpa tanggal), kode perangkat + tombol Salin, dan tombol "Masukkan Kode Baru".
+- **Ikon:** `Icons.verified_outlined` untuk lisensi aktif, `Icons.lock_clock` untuk kedaluwarsa, `Icons.qr_code_scanner` untuk pindai QR, `Icons.content_paste` untuk tempel.
+- **Splash → Aktivasi** tidak boleh berkedip: keadaan lisensi sudah diketahui sebelum `runApp()` (§6.3.F), sama seperti tema.
+
+### 6.7 Riset package, tata kelola kunci, keputusan & risiko
+
+#### 6.7.1 Kandidat package
+
+Diverifikasi pada 12 Agustus 2026 terhadap `pubspec.yaml` proyek ini (resolusi diuji dengan `flutter pub add --dry-run`; isi arsip paket diperiksa langsung, bukan dinilai dari deskripsi pub.dev).
+
+| Kebutuhan | Package | Versi | Hasil |
+|---|---|---|---|
+| **Tanda tangan Ed25519** | **`cryptography`** | **2.9.0** (2025-11-21) | ✅ **Dipilih.** Murni Dart (implementasi Ed25519 ada di `lib/src/dart/ed25519.dart`), Apache-2.0, 150/160 pub points, ±561k unduhan/30 hari. Resolusi bersih terhadap `pubspec.yaml` proyek (`Would change 1 dependency`). **Tidak punya modul Android sama sekali**, sehingga seluruh kelas kegagalan `namespace`/AGP yang menghantam M0 & M6 tidak berlaku. Paket yang sama dipakai aplikasi (verify) **dan** tool CLI (sign) — satu jalur kode, satu sumber bug. |
+| | `ed25519_edwards` | 0.3.1 (2021-09-17) | ➖ **Cadangan.** Murni Dart, Apache-2.0, resolusi bersih (+1 dependensi transitif `adaptive_number`). Rilis terakhir 2021 — untuk paket murni Dart tanpa kode platform ini jauh lebih ringan risikonya daripada paket plugin, tapi tetap menjadi alasan menomorduakannya. |
+| | `pointycastle` | 4.0.0 | ❌ **Tidak punya Ed25519** — diverifikasi dengan memeriksa isi arsip 4.0.0 (tidak ada berkas `ed25519`/`eddsa`). Memakainya berarti pindah ke ECDSA, menyimpang dari keputusan Ed25519 tanpa keuntungan. |
+| | `cryptography_plus` | 3.0.0 | ➖ Fork komunitas dari `cryptography`; adopsi jauh lebih kecil (±30k vs ±561k unduhan/30 hari). Kandidat pengganti **hanya bila** `cryptography` benar-benar berhenti dipelihara. |
+| **Kode perangkat (SSAID)** | **MethodChannel sendiri** | — | ✅ **Dipilih.** ±15 baris Kotlin di `MainActivity.kt` yang **sudah ada**: `Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)`. Nol dependensi platform baru — alasan yang sama persis dengan K-9.1 (tidak menambah package untuk sesuatu yang bisa ditulis sendiri dalam puluhan baris). |
+| | `android_id` | 0.5.2+1 (2026-07-06) | ➖ **Cadangan.** 160/160 pub points, terpelihara. Dipakai bila MethodChannel sendiri ternyata merepotkan; wajib lewat commit gerbang dependency yang sama. |
+| | `device_info_plus` | 13.2.0 | ❌ **Tidak menyediakan SSAID.** `androidId` dihapus sejak versi 4.0.0 (CHANGELOG-nya sendiri mengarahkan ke package `android_id`). `AndroidDeviceInfo.id` adalah `Build.ID` — **bukan** pengenal perangkat, tidak stabil, dan tidak unik. Jebakan yang mudah termakan; dicatat di sini supaya tidak dicoba dua kali. |
+| **QR (khusus tool penjual)** | `qr` + `image` | 4.0.0 + 4.3.0 | ✅ **dev_dependencies saja**, keduanya murni Dart (resolusi diuji: `Would change 2 dependencies`). Tidak ikut ke dalam APK. Pelajaran M6 tetap berlaku: **hanya paket murni Dart yang boleh masuk `dev_dependencies`**, dan `flutter build apk --release` diuji ulang setelah menambahkannya. |
+| **Pindai QR (di aplikasi)** | `mobile_scanner` | 7.4.0 | ✅ **Sudah ada** di proyek untuk barcode produk — jalur QR di layar Aktivasi me-*reuse*-nya, **tanpa dependency baru**. |
+
+**Versi yang dikunci di `pubspec.yaml`:**
+
+```yaml
+dependencies:
+  cryptography: ^2.9.0        # verifikasi Ed25519 (murni Dart, tanpa modul Android)
+
+dev_dependencies:
+  qr: ^4.0.0                  # hanya untuk tool/license_generator.dart
+  image: ^4.3.0               # menulis QR sebagai PNG
+```
+
+#### 6.7.2 Tata kelola kunci penerbit
+
+Kunci privat penerbit adalah **aset paling berharga proyek ini di luar kode sumbernya**. Aturannya tegas dan tidak boleh dilonggarkan:
+
+| Aturan | Rinciannya |
+|---|---|
+| **Tidak pernah di-commit** | Kunci hidup di `~/.kasir-warung/license_ed25519.key` (di luar repo). `.gitignore` menutup `*.key`, `*.pem`, `lisensi-terbit.csv`. Checklist rilis memuat pemeriksaan `git grep` (AC-6.19). |
+| **Cadangan minimal dua tempat luring** | Mis. USB terenkripsi di rumah + catatan tercetak/pengelola kata sandi. **Bukan** Google Drive akun kerja yang sama dengan laptop, dan bukan repositori privat. |
+| **Kalau kunci HILANG** | Kode yang sudah beredar **tetap sah selamanya** (aplikasi hanya butuh kunci publik). Yang hilang adalah kemampuan **menerbitkan kode baru**. Pemulihan: buat pasangan kunci baru, tambahkan kunci publik baru ke **daftar** kunci tepercaya (AC-6.20), rilis pembaruan aplikasi. Pelanggan lama tidak terganggu; pelanggan baru harus memakai versi aplikasi ≥ rilis itu. |
+| **Kalau kunci BOCOR** | Siapa pun bisa menerbitkan kode untuk perangkat mana pun (masih terikat per perangkat, jadi bukan "satu kode untuk semua" — tapi cukup untuk membuat *keygen*). Tanggapan: terbitkan kunci baru, **keluarkan kunci lama dari daftar tepercaya**, rilis pembaruan. Konsekuensinya diakui terus terang: seluruh pemasangan lama yang tidak pernah diperbarui tetap bisa dibobol. Karena itu aturan "tidak pernah di-commit" bukan formalitas. |
+| **Rotasi sudah disiapkan sejak awal** | Verifikator menerima **daftar** kunci publik, bukan satu kunci. Rotasi tidak butuh perubahan format token maupun alur verifikasi (AC-6.20). |
+| **Kunci uji terpisah** | Vektor uji (AC-6.8) memakai pasangan kunci **uji** yang boleh di-commit di `test/fixtures/`. Kunci uji **tidak pernah** masuk daftar tepercaya build release — diuji sebagai bagian dari AC-6.19. |
+
+#### 6.7.3 Risiko
+
+Bagian ini sengaja jujur. Sistem lisensi klien-saja punya batas yang tidak bisa ditutup dengan kepintaran apa pun, dan lebih baik batas itu tertulis di sini daripada ditemukan sebagai kejutan.
+
+| Risiko | Dampak | Mitigasi |
+|---|---|---|
+| **Satu perangkat meminta trial berkali-kali** | Pemakaian gratis tanpa henti dengan trial berantai | Kedaluwarsa trial bersifat **absolut** (tertanam di kode), sehingga memasang ulang tidak meresetnya. Yang tersisa: pembeli meminta **kode trial baru** untuk perangkat yang sama. Satu-satunya penjaganya adalah **pencatatan penjual** — `lisensi-terbit.csv` terisi otomatis dan generator **memperingatkan** bila kode perangkat itu sudah pernah dapat trial (§6.3.B). Tanpa server, tidak ada mekanisme lain; ini diterima secara sadar. |
+| **APK dibongkar (patching)** | Proteksi dilewati sepenuhnya | **Tidak ada mitigasi yang benar-benar menutupnya.** Tujuan fitur ini adalah **deterrence yang wajar untuk pasar UMKM**, bukan DRM. Pembeli target tidak membongkar APK; ia meminta kode ke penjual. R8 yang sudah aktif ([plan.md](plan.md) M6) menaikkan sedikit ongkos pembongkaran, dan verifikasi yang tersebar di beberapa titik (start, resume, gerbang router) membuat patching butuh lebih dari satu sentuhan — itu saja, dan itu memang cukup. |
+| **Kode beredar di grup WhatsApp** | Satu kode dipakai banyak orang | Terikat perangkat lewat tanda tangan atas kode perangkat (§6.3.D): kode yang sama **tidak akan lolos** di perangkat lain. Ini justru kekuatan utama desain ini. |
+| **Kode 120 karakter dianggap merepotkan** | Pembeli menyerah saat aktivasi | Tiga jalur masuk dengan pengetikan sebagai **jalan terakhir** (§6.3.A), alfabet tanpa karakter kembar, pengelompokan 5 karakter, dan CRC yang menunjukkan salah ketik sebelum menyalahkan pengguna. Metrik §11.1 mengunci ini. |
+| **Kunci privat bocor atau hilang** | Keygen beredar / tidak bisa jualan | §6.7.2 — cadangan luring, `.gitignore`, daftar kunci tepercaya yang bisa dirotasi. |
+| **Jam perangkat dimundurkan** | Trial/tahunan dipakai selamanya | Jam monoton dari tiga saksi (§6.3.G), termasuk `created_at` transaksi yang **ikut terbawa restore backup**. |
+| **SSAID berubah tak terduga** (factory reset, ganti HP, perangkat cacat) | Pembeli jujur kehilangan lisensi yang sudah dibayar | Dinyatakan terus terang di layar Aktivasi & kartu Lisensi; `lisensi-terbit.csv` menjadi bukti pembelian sehingga penjual bisa menerbitkan ulang dalam hitungan menit. Kasus SSAID cacat ditangani dengan pengenal cadangan (§6.3.C). |
+| **Lisensi sah ditolak aplikasi** (false negative) | Pembeli yang sudah membayar tidak bisa berjualan — kerusakan terparah dari fitur ini | Vektor uji tetap (AC-6.8), perintah `--verifikasi` yang menjalankan **jalur kode yang sama** dengan aplikasi untuk dukungan jarak jauh, dan metrik **0 kasus** di §11.1. Bila ragu, aplikasi **selalu memilih membiarkan pengguna bekerja** — mis. jam kacau tidak pernah mengunci selama masa berlaku belum lewat (§6.3.G). |
+| **Gerbang lisensi mengunci di tengah transaksi** | Uang pembeli sudah di tangan, transaksi hilang | Dilarang keras — §6.3.F dan AC-6.18. |
+| **Aktivasi dianggap "aplikasi jadi butuh internet"** | Melanggar janji inti produk & merusak kepercayaan | §1.4 dan §6.1: perangkat kasir tidak pernah menyentuh jaringan; pertukaran kode lewat manusia. Wajib ditulis apa adanya di materi jualan, bukan disembunyikan. |
+| **Dependency `cryptography` gagal build release** | Seluruh Tier 1 tertahan (preseden M0 & M6) | Paket murni Dart tanpa modul Android → kelas kegagalan itu tidak berlaku. Aturan tetap dijalankan: dependency masuk **commit terpisah** yang divalidasi `flutter build apk --release` sebelum kode fitur ditulis. |
+
+#### 6.7.4 Keputusan
+
+- **K-6.1** Status lisensi disimpan di **`shared_preferences`**, tidak pernah di tabel `settings`/database, sehingga tidak pernah ikut backup/restore (§6.5). Konsisten dengan K-5.2.
+- **K-6.2** **Ed25519**, kunci privat di tangan penjual, **daftar** kunci publik ditanam di aplikasi (siap rotasi). Skema simetris (HMAC dengan kunci bersama) **ditolak**: kuncinya harus ikut di dalam APK, dan satu pembongkaran menghasilkan keygen untuk semua perangkat.
+- **K-6.3** Kode aktivasi **tidak dipendekkan dengan mengorbankan keamanan.** Tanda tangan tidak dipotong (memotong Ed25519 membuat verifikasi mustahil) dan kurva/skema non-standar tidak dipakai (implementasi kripto sendiri adalah risiko yang jauh lebih besar daripada kode panjang). Panjang 120 karakter dilawan dengan **UX**: QR → tempel → ketik.
+- **K-6.4** Kode **terikat perangkat** lewat kode perangkat yang ikut ditandatangani tapi **tidak ikut dikirim** — verifier menyusun ulang pesannya sendiri.
+- **K-6.5** Kode perangkat berasal dari **SSAID yang di-hash dan dipendekkan** (45 bit + 1 karakter cek), bukan SSAID mentah (§6.3.C).
+- **K-6.6** Kode aktivasi **bukan sekali pakai**: memasukkan kode yang sama setelah pasang ulang selalu boleh. Justru inilah yang membuat trial tidak bisa direset (kedaluwarsanya absolut).
+- **K-6.7** **CRC-16 tetap dipakai** walau sudah ada tanda tangan — semata-mata agar aplikasi bisa membedakan *salah ketik* dari *kode palsu* dan memberi pesan yang benar.
+- **K-6.8** Seluruh evaluasi masa berlaku memakai **jam monoton** `waktuAcuan` (§6.3.G), bukan jam perangkat langsung; jam yang kacau **tidak pernah** dijadikan alasan mengunci selama masa berlaku belum lewat.
+- **K-6.9** Gerbang lisensi berada di **`redirect` go_router sebelum shell**, bukan di UI. Urutan gerbang bila §8 aktif: lisensi → masuk → shell.
+- **K-6.10** **Tidak pernah mengunci di tengah transaksi berjalan** (§6.3.F, AC-6.18).
+- **K-6.11** **Data tidak pernah disandera.** Kedaluwarsa tahunan menyisakan Riwayat/Laporan/Export/Backup; layar trial berakhir tetap menyediakan "Cadangkan Data".
+- **K-6.12** Generator adalah **tool CLI Dart di dalam repo** (`tool/license_generator.dart`) yang memakai **jalur verifikasi yang sama** dengan aplikasi (paket & kode bersama), sehingga tidak mungkin ada perbedaan tafsir antara yang diterbitkan dan yang diverifikasi.
+- **K-6.13** Masa tenggang **7 hari untuk lisensi tahunan, 0 untuk trial**, dan nilainya **ikut ditandatangani** di dalam muatan sehingga bisa disesuaikan per pelanggan tanpa merilis aplikasi baru.
+- **K-6.14** Perpanjangan dihitung dari **tanggal terbit kode baru**, bukan ditumpuk pada sisa lama (sederhana dan mudah dijelaskan; kompensasi sisa hari dilakukan penjual saat menerbitkan).
+- **K-6.15** **Tidak ada transfer lisensi otomatis antar perangkat.** Ganti perangkat = kode baru; keputusan memberi atau tidak adalah kebijakan komersial penjual, dibantu `lisensi-terbit.csv`.
+
+### 6.8 TIDAK termasuk
+
+- Server/backend aktivasi, akun pembeli, dasbor lisensi daring, dan **telemetri apa pun** (berapa kali aplikasi dibuka, di mana, oleh siapa).
+- Pembayaran di dalam aplikasi (IAP Play Store), pembelian lewat kartu/e-wallet, perpanjangan otomatis, atau langganan bulanan yang menagih sendiri.
+- Trial otomatis tanpa kode ("pasang, langsung 3 hari gratis") — mustahil dijaga tanpa server dan langsung mengundang reset lewat pasang ulang.
+- Transfer lisensi antar perangkat secara otomatis, atau satu lisensi untuk beberapa perangkat sekaligus.
+- Lisensi per fitur (mis. "laporan hanya untuk paket mahal") — seluruh fitur ikut dalam satu lisensi.
+- Proteksi anti-bongkar di luar R8 yang sudah aktif: tanpa deteksi root, tanpa pemeriksaan tanda tangan APK saat berjalan, tanpa obfuscation tambahan, tanpa "kill switch".
+- Penonaktifan/pencabutan lisensi dari jarak jauh (butuh server; mustahil dan tidak diinginkan).
+- Pemulihan lisensi lewat email/SMS/OTP.
+- Dukungan iOS (menyusul bersama rilis iOS; SSAID adalah konsep Android, padanannya di iOS adalah `identifierForVendor` dengan sifat yang berbeda dan harus dirancang tersendiri).
+- Harga, promo, kode voucher, dan skema diskon — itu urusan penjualan, bukan aplikasi.
+
+> **Jalur evolusi (bukan cakupan sekarang).** Format muatan §6.3.D sengaja dirancang agar backend aktivasi otomatis (mis. Supabase/serverless) bisa **ditambahkan kelak tanpa mengubah format token maupun alur verifikasi offline**: server hanya menggantikan peran penjual sebagai penerbit (menandatangani muatan yang sama dengan kunci yang sama), dan aplikasi bisa menambah satu jalur pengambilan kode otomatis di layar Aktivasi — jalur manual tetap ada dan tetap wajib bekerja tanpa internet. Byte `versi` di muatan dan **daftar** kunci publik tepercaya adalah dua kait yang membuat evolusi itu tidak memaksa perubahan yang merusak. Sekali lagi: **ini bukan pekerjaan v1.1.**
+
+---
+
+## 7. Fitur Tier 2 — Manajemen Pelanggan Lengkap (Poin & Riwayat Belanja)
+
+### 7.1 Latar & masalah pengguna
 
 Di v1.0, pelanggan hanyalah **teks bebas** di kolom `sales.customer_name`, yang diisi ketika transaksi hutang. Konsekuensinya nyata dan menjengkelkan:
 
@@ -757,7 +1173,7 @@ Di v1.0, pelanggan hanyalah **teks bebas** di kolom `sales.customer_name`, yang 
 - **Tidak ada penghargaan pelanggan setia.** Warung bersaing dengan minimarket; program poin sederhana ("belanja Rp10.000 dapat 1 poin, 10 poin bisa ditukar Rp5.000") adalah alat yang murah dan sangat khas warung.
 - **Pelanggan tunai tak terlacak sama sekali.** Nama hanya diminta pada transaksi hutang, padahal pelanggan setia justru sering membayar tunai.
 
-### 6.2 User stories
+### 7.2 User stories
 
 1. Sebagai pemilik, saya bisa menyimpan daftar pelanggan langganan (nama, no. HP, catatan) supaya tidak mengetik ulang setiap kali.
 2. Sebagai kasir, saat menagih saya bisa memilih pelanggan dari daftar dengan mengetik beberapa huruf — bukan mengetik ulang namanya.
@@ -767,11 +1183,11 @@ Di v1.0, pelanggan hanyalah **teks bebas** di kolom `sales.customer_name`, yang 
 6. Sebagai pemilik, saya bisa **menggabungkan** dua nama pelanggan yang ternyata orang yang sama, tanpa kehilangan riwayat atau poin.
 7. Sebagai pemilik lama, setelah memperbarui aplikasi, daftar hutang saya yang lama **tetap benar** dan otomatis rapi.
 
-### 6.3 Perilaku & alur detail
+### 7.3 Perilaku & alur detail
 
 #### A. Daftar & detail pelanggan
 
-Layar **Pelanggan** (letaknya di §6.6) menampilkan daftar dengan pencarian: nama, sisa hutang (bila ada), saldo poin, dan tanggal transaksi terakhir. Detail pelanggan berisi tiga bagian:
+Layar **Pelanggan** (letaknya di §7.6) menampilkan daftar dengan pencarian: nama, sisa hutang (bila ada), saldo poin, dan tanggal transaksi terakhir. Detail pelanggan berisi tiga bagian:
 - **Ringkasan** — total belanja sepanjang waktu, jumlah transaksi, sisa hutang, saldo poin.
 - **Riwayat belanja** — daftar transaksi (paginasi, pola sama dengan riwayat transaksi M3), tap untuk membuka detail transaksi yang sudah ada.
 - **Riwayat poin** — buku besar poin: kapan dapat, dari transaksi mana, kapan ditukar, saldo setelahnya.
@@ -833,30 +1249,30 @@ Saat `schemaVersion` naik 1 → 2, migrasi wajib:
 5. Mengisi `sales.customer_id` untuk semua transaksi terkait.
 6. `sales.customer_name` **tidak dihapus dan tidak diubah** — tetap menjadi snapshot historis (persis seperti `sale_items.product_name`), sehingga mengganti nama pelanggan tidak pernah mengubah struk lama.
 
-Poin **tidak** diberikan surut untuk transaksi lama (keputusan K-6.4).
+Poin **tidak** diberikan surut untuk transaksi lama (keputusan K-7.4).
 
-### 6.4 Acceptance criteria
+### 7.4 Acceptance criteria
 
 | # | Kriteria (bisa diuji) |
 |---|---|
-| AC-6.1 | Database v1 berisi transaksi hutang dengan nama `"Bu Ani"`, `"bu ani"`, `"Bu Ani "` → setelah migrasi terbentuk **satu** pelanggan dengan tiga transaksi, dan daftar hutang menampilkan satu baris dengan total gabungan. |
-| AC-6.2 | Backup v1.0 yang direstore di aplikasi v1.1 menjalankan migrasi tersebut otomatis dan menghasilkan total hutang yang **identik** dengan sebelum migrasi (uji: jumlahkan sebelum & sesudah). |
-| AC-6.3 | `sales.customer_name` pada transaksi lama tidak berubah setelah migrasi maupun setelah pelanggan di-*rename*. |
-| AC-6.4 | Transaksi hutang tanpa memilih pelanggan tetap ditolak dengan `NamaPelangganWajibException` (perilaku v1.0 dipertahankan). |
-| AC-6.5 | Alur kasir tunai tanpa memilih pelanggan tidak bertambah satu tap pun dibanding v1.0. |
-| AC-6.6 | Program poin mati (default) → tidak ada elemen poin yang muncul di layar mana pun, termasuk struk. |
-| AC-6.7 | Program poin nyala, aturan Rp10.000/poin: belanja Rp37.000 → tepat 3 poin; belanja Rp9.999 → 0 poin. |
-| AC-6.8 | Void transaksi berpoin → saldo pelanggan kembali seperti sebelum transaksi, dan buku besar poin punya entri pembatalan yang merujuk `sale_id` tersebut. |
-| AC-6.9 | Penukaran poin menghasilkan diskon transaksi yang benar, mengurangi saldo poin tepat sejumlah yang ditukar, dan tercetak/tertulis di struk. |
-| AC-6.10 | Poin tidak pernah diberikan atas nilai potongan hasil penukaran poin. |
-| AC-6.11 | Saldo poin di tabel `customers` **selalu** sama dengan jumlah seluruh entri di `customer_point_entries` (uji invarian setelah rangkaian acak: jual, void, tukar, gabung). |
-| AC-6.12 | Menggabungkan 3 pelanggan → seluruh transaksi menunjuk pelanggan hasil gabungan, saldo poin = jumlah ketiganya, tidak ada entri buku besar yang hilang. |
-| AC-6.13 | Pelanggan dengan hutang belum lunas tidak bisa dinonaktifkan; pesan menjelaskan alasannya. |
-| AC-6.14 | Pencarian pelanggan pada 2.000 pelanggan menghasilkan saran < 100 ms. |
-| AC-6.15 | Detail pelanggan dengan 5.000 transaksi tetap terbuka mulus (paginasi, bukan memuat semuanya). |
-| AC-6.16 | Export Excel mendapat sheet/berkas "Pelanggan & Poin" berisi nama, no. HP, total belanja, sisa hutang, saldo poin. |
+| AC-7.1 | Database v1 berisi transaksi hutang dengan nama `"Bu Ani"`, `"bu ani"`, `"Bu Ani "` → setelah migrasi terbentuk **satu** pelanggan dengan tiga transaksi, dan daftar hutang menampilkan satu baris dengan total gabungan. |
+| AC-7.2 | Backup v1.0 yang direstore di aplikasi v1.1 menjalankan migrasi tersebut otomatis dan menghasilkan total hutang yang **identik** dengan sebelum migrasi (uji: jumlahkan sebelum & sesudah). |
+| AC-7.3 | `sales.customer_name` pada transaksi lama tidak berubah setelah migrasi maupun setelah pelanggan di-*rename*. |
+| AC-7.4 | Transaksi hutang tanpa memilih pelanggan tetap ditolak dengan `NamaPelangganWajibException` (perilaku v1.0 dipertahankan). |
+| AC-7.5 | Alur kasir tunai tanpa memilih pelanggan tidak bertambah satu tap pun dibanding v1.0. |
+| AC-7.6 | Program poin mati (default) → tidak ada elemen poin yang muncul di layar mana pun, termasuk struk. |
+| AC-7.7 | Program poin nyala, aturan Rp10.000/poin: belanja Rp37.000 → tepat 3 poin; belanja Rp9.999 → 0 poin. |
+| AC-7.8 | Void transaksi berpoin → saldo pelanggan kembali seperti sebelum transaksi, dan buku besar poin punya entri pembatalan yang merujuk `sale_id` tersebut. |
+| AC-7.9 | Penukaran poin menghasilkan diskon transaksi yang benar, mengurangi saldo poin tepat sejumlah yang ditukar, dan tercetak/tertulis di struk. |
+| AC-7.10 | Poin tidak pernah diberikan atas nilai potongan hasil penukaran poin. |
+| AC-7.11 | Saldo poin di tabel `customers` **selalu** sama dengan jumlah seluruh entri di `customer_point_entries` (uji invarian setelah rangkaian acak: jual, void, tukar, gabung). |
+| AC-7.12 | Menggabungkan 3 pelanggan → seluruh transaksi menunjuk pelanggan hasil gabungan, saldo poin = jumlah ketiganya, tidak ada entri buku besar yang hilang. |
+| AC-7.13 | Pelanggan dengan hutang belum lunas tidak bisa dinonaktifkan; pesan menjelaskan alasannya. |
+| AC-7.14 | Pencarian pelanggan pada 2.000 pelanggan menghasilkan saran < 100 ms. |
+| AC-7.15 | Detail pelanggan dengan 5.000 transaksi tetap terbuka mulus (paginasi, bukan memuat semuanya). |
+| AC-7.16 | Export Excel mendapat sheet/berkas "Pelanggan & Poin" berisi nama, no. HP, total belanja, sisa hutang, saldo poin. |
 
-### 6.5 Dampak skema database — `schemaVersion` 1 → 2
+### 7.5 Dampak skema database — `schemaVersion` 1 → 2
 
 ```sql
 -- BARU
@@ -897,11 +1313,11 @@ CREATE INDEX idx_point_entries_customer ON customer_point_entries(customer_id, c
 
 Pengaturan tambahan di tabel `settings`: `points_enabled` (`0`/`1`, default `0`), `points_rupiah_per_point` (default `10000`), `points_value_per_point` (default `500`), `points_min_redeem` (default `10`).
 
-**Kewajiban migrasi (`onUpgrade` 1 → 2):** langkah backfill di §6.3.E dijalankan di dalam satu transaksi. Uji migrasi wajib memakai *snapshot* database v1 nyata (pola uji migrasi Drift, lihat [architecture.md §8](architecture.md)).
+**Kewajiban migrasi (`onUpgrade` 1 → 2):** langkah backfill di §7.3.E dijalankan di dalam satu transaksi. Uji migrasi wajib memakai *snapshot* database v1 nyata (pola uji migrasi Drift, lihat [architecture.md §8](architecture.md)).
 
-**Kompatibilitas backup:** mulai v1.1 Tier 2, file backup ber-`user_version = 2` **tidak bisa** dibuka aplikasi v1.0. `BackupService.validateBackupFile` saat ini membaca `PRAGMA user_version` tapi **tidak membandingkannya** — ini harus diperbaiki: bila `user_version` file lebih besar daripada `schemaVersion` aplikasi, restore ditolak dengan pesan "File backup berasal dari versi aplikasi yang lebih baru. Perbarui aplikasi ini dulu." (dicatat sebagai AC-9.2).
+**Kompatibilitas backup:** mulai v1.1 Tier 2, file backup ber-`user_version = 2` **tidak bisa** dibuka aplikasi v1.0. `BackupService.validateBackupFile` saat ini membaca `PRAGMA user_version` tapi **tidak membandingkannya** — ini harus diperbaiki: bila `user_version` file lebih besar daripada `schemaVersion` aplikasi, restore ditolak dengan pesan "File backup berasal dari versi aplikasi yang lebih baru. Perbarui aplikasi ini dulu." (dicatat sebagai AC-10.2).
 
-### 6.6 Dampak UI
+### 7.6 Dampak UI
 
 - **Letak layar Pelanggan.** Navigasi bawah **tetap 5 tab** (Kasir · Produk · Riwayat · Laporan · Pengaturan). Tab keenam akan memaksa target sentuh di bawah 48dp pada HP 5 inci — melanggar [prd.md §6](prd.md). Pelanggan diakses dari:
   1. **Tab Laporan** — kartu "Hutang Pelanggan" yang ada berkembang menjadi kartu "Pelanggan" dengan dua ringkasan (total hutang, jumlah pelanggan) dan tautan ke daftar penuh. Layar `debt_list_screen.dart` menjadi *filter* "Punya hutang" di dalam daftar pelanggan, bukan layar terpisah.
@@ -913,25 +1329,25 @@ Pengaturan tambahan di tabel `settings`: `points_enabled` (`0`/`1`, default `0`)
 - **Riwayat poin** memakai `AppDataRow` dengan tanda +/− berwarna `AppTone.success`/`AppTone.danger`.
 - Semua warna diambil dari `context.palette` (§5) — layar ini ditulis **setelah** mode gelap selesai, jadi tidak boleh ada `AppColors.*` langsung.
 
-### 6.7 Keputusan & risiko teknis
+### 7.7 Keputusan & risiko teknis
 
-- **K-6.1** `sales.customer_name` dipertahankan sebagai snapshot selamanya, berdampingan dengan `customer_id`. Konsisten dengan pola snapshot `sale_items` di v1.0.
-- **K-6.2** Poin memakai **buku besar (ledger)**, bukan sekadar kolom saldo. Saldo di `customers.points` adalah cache yang diperbarui dalam transaksi DB yang sama; kebenarannya bisa diaudit dan diperbaiki dari ledger.
-- **K-6.3** Poin berbentuk **bilangan bulat**. Tidak ada poin pecahan — lebih mudah dijelaskan ke pembeli dan tidak memunculkan galat pembulatan.
-- **K-6.4** **Tidak ada poin surut** untuk transaksi sebelum fitur menyala. Menghitung surut akan memberi saldo besar yang mengejutkan dan bisa langsung ditukar — risiko kerugian nyata bagi pemilik.
-- **K-6.5** Poin diberikan saat transaksi tersimpan (termasuk hutang), bukan saat hutang lunas. Aturan sederhana lebih penting daripada aturan yang "adil sempurna", dan void sudah menutup celah penyalahgunaan.
-- **K-6.6** Penukaran poin diwujudkan sebagai **diskon transaksi biasa**, sehingga seluruh laporan, laba kotor, dan struk yang sudah ada bekerja tanpa perubahan konsep.
-- **K-6.7** Penggabungan pelanggan bersifat **satu arah dan tidak bisa dibatalkan**; pelanggan sumber disimpan (nonaktif + `merged_into_id`) agar jejaknya tetap ada.
+- **K-7.1** `sales.customer_name` dipertahankan sebagai snapshot selamanya, berdampingan dengan `customer_id`. Konsisten dengan pola snapshot `sale_items` di v1.0.
+- **K-7.2** Poin memakai **buku besar (ledger)**, bukan sekadar kolom saldo. Saldo di `customers.points` adalah cache yang diperbarui dalam transaksi DB yang sama; kebenarannya bisa diaudit dan diperbaiki dari ledger.
+- **K-7.3** Poin berbentuk **bilangan bulat**. Tidak ada poin pecahan — lebih mudah dijelaskan ke pembeli dan tidak memunculkan galat pembulatan.
+- **K-7.4** **Tidak ada poin surut** untuk transaksi sebelum fitur menyala. Menghitung surut akan memberi saldo besar yang mengejutkan dan bisa langsung ditukar — risiko kerugian nyata bagi pemilik.
+- **K-7.5** Poin diberikan saat transaksi tersimpan (termasuk hutang), bukan saat hutang lunas. Aturan sederhana lebih penting daripada aturan yang "adil sempurna", dan void sudah menutup celah penyalahgunaan.
+- **K-7.6** Penukaran poin diwujudkan sebagai **diskon transaksi biasa**, sehingga seluruh laporan, laba kotor, dan struk yang sudah ada bekerja tanpa perubahan konsep.
+- **K-7.7** Penggabungan pelanggan bersifat **satu arah dan tidak bisa dibatalkan**; pelanggan sumber disimpan (nonaktif + `merged_into_id`) agar jejaknya tetap ada.
 
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
-| Migrasi backfill salah kelompok → hutang tampak berubah | Kepercayaan hancur (ini soal uang) | AC-6.1 & AC-6.2 dengan uji atas snapshot DB v1 nyata; migrasi dijalankan dalam satu transaksi; pengguna diminta backup sebelum update besar. |
-| Saldo poin melenceng dari ledger | Sengketa dengan pembeli | AC-6.11 invarian saldo = jumlah ledger, diuji dengan rangkaian operasi acak; fungsi "hitung ulang saldo dari ledger" tersedia di Pengaturan (aksi pemeliharaan). |
-| Nama pelanggan tetap duplikat setelah migrasi (mis. "Ani" vs "Bu Ani") | Daftar berantakan | Fitur gabung manual (§6.3.D) — sengaja manual, karena penggabungan otomatis berbasis kemiripan berisiko menyatukan dua orang berbeda. |
-| Alur kasir jadi lebih lambat | Melanggar prinsip 3 langkah | Pemilih pelanggan opsional & tidak muncul kecuali ditekan; AC-6.5 mengunci ini. |
+| Migrasi backfill salah kelompok → hutang tampak berubah | Kepercayaan hancur (ini soal uang) | AC-7.1 & AC-7.2 dengan uji atas snapshot DB v1 nyata; migrasi dijalankan dalam satu transaksi; pengguna diminta backup sebelum update besar. |
+| Saldo poin melenceng dari ledger | Sengketa dengan pembeli | AC-7.11 invarian saldo = jumlah ledger, diuji dengan rangkaian operasi acak; fungsi "hitung ulang saldo dari ledger" tersedia di Pengaturan (aksi pemeliharaan). |
+| Nama pelanggan tetap duplikat setelah migrasi (mis. "Ani" vs "Bu Ani") | Daftar berantakan | Fitur gabung manual (§7.3.D) — sengaja manual, karena penggabungan otomatis berbasis kemiripan berisiko menyatukan dua orang berbeda. |
+| Alur kasir jadi lebih lambat | Melanggar prinsip 3 langkah | Pemilih pelanggan opsional & tidak muncul kecuali ditekan; AC-7.5 mengunci ini. |
 | Unique index nama membuat impor/entri gagal | Pengguna terhalang | Index unik hanya berlaku untuk pelanggan aktif; pesan error menyarankan memilih pelanggan yang sudah ada. |
 
-### 6.8 TIDAK termasuk
+### 7.8 TIDAK termasuk
 
 - Tingkatan membership (silver/gold), kartu member fisik, atau barcode member.
 - Promo ulang tahun, kupon, voucher, promo otomatis berbasis aturan.
@@ -945,9 +1361,9 @@ Pengaturan tambahan di tabel `settings`: `points_enabled` (`0`/`1`, default `0`)
 
 ---
 
-## 7. Fitur Tier 2 — Multi-user dengan PIN per Kasir
+## 8. Fitur Tier 2 — Multi-user dengan PIN per Kasir
 
-### 7.1 Latar & masalah pengguna
+### 8.1 Latar & masalah pengguna
 
 v1.0 punya **satu PIN global** (`pin_hash` + `pin_salt` di tabel `settings`) yang melindungi Laporan, Pengaturan, dan void. Cukup untuk pemilik yang menjaga sendiri, tapi tidak cukup begitu ada karyawan:
 
@@ -956,7 +1372,7 @@ v1.0 punya **satu PIN global** (`pin_hash` + `pin_salt` di tabel `settings`) yan
 - **Semua atau tidak sama sekali.** Pemilik ingin karyawan bisa berjualan tapi tidak melihat laba dan tidak bisa membatalkan transaksi — v1.0 tidak bisa memisahkan itu selain dengan menahan PIN dari karyawan (yang berarti karyawan juga tidak bisa mengakses hal-hal wajar).
 - **Penyesuaian stok tanpa nama.** `stock_movements` mencatat apa dan kapan, tapi bukan siapa.
 
-### 7.2 User stories
+### 8.2 User stories
 
 1. Sebagai pemilik, saya bisa menambah akun kasir dengan nama dan PIN sendiri-sendiri.
 2. Sebagai pemilik, saya bisa melihat **siapa** yang melayani setiap transaksi di riwayat dan di struk.
@@ -967,7 +1383,7 @@ v1.0 punya **satu PIN global** (`pin_hash` + `pin_salt` di tabel `settings`) yan
 7. Sebagai pemilik yang lupa PIN saya sendiri, saya punya jalan pemulihan yang tidak butuh internet.
 8. Sebagai pemilik warung tanpa karyawan, saya bisa **tidak menyalakan fitur ini sama sekali** dan aplikasi tetap persis seperti sebelumnya.
 
-### 7.3 Perilaku & alur detail
+### 8.3 Perilaku & alur detail
 
 #### A. Menyalakan multi-user
 
@@ -1027,7 +1443,7 @@ Kasir yang menyentuh area terlarang mendapat pesan yang jelas ("Fitur ini hanya 
 - `stock_movements.user_id` diisi setiap penyesuaian stok.
 - Void mencatat siapa yang membatalkan (`sales.voided_by_user_id`).
 - Struk mencetak baris `Kasir: <nama>` (§3.3.D).
-- Riwayat & Laporan mendapat filter "Kasir" (dan grafik §8 mendapat filter yang sama).
+- Riwayat & Laporan mendapat filter "Kasir" (dan grafik §9 mendapat filter yang sama).
 
 #### E. Pemulihan PIN
 
@@ -1037,28 +1453,28 @@ Kasir yang menyentuh area terlarang mendapat pesan yang jelas ("Fitur ini hanya 
 | Pemilik lupa PIN, punya kode pemulihan | Layar Masuk → "Lupa PIN?" → masukkan kode pemulihan → buat PIN Pemilik baru. Kode lama hangus, kode baru diterbitkan. |
 | Pemilik lupa PIN dan kehilangan kode | **Tidak ada jalan lain** — dinyatakan terus terang di UI saat penyiapan. Data tetap bisa diselamatkan bila pengguna punya file backup (restore di pemasangan baru mengembalikan data; PIN ikut terbawa, jadi pengguna harus punya kode pemulihannya). Konsekuensi dari janji offline tanpa akun: tidak ada pihak yang bisa mereset dari luar. |
 
-### 7.4 Acceptance criteria
+### 8.4 Acceptance criteria
 
 | # | Kriteria (bisa diuji) |
 |---|---|
-| AC-7.1 | Multi-user mati (default) → aplikasi berperilaku persis seperti v1.0, termasuk PIN global untuk Laporan/Pengaturan/void; tidak ada layar masuk. |
-| AC-7.2 | Menyalakan multi-user pada aplikasi yang sudah punya PIN global → PIN itu berhasil dipakai masuk sebagai Pemilik (tidak perlu membuat PIN baru). |
-| AC-7.3 | Kode pemulihan hanya ditampilkan sekali, tersimpan sebagai hash (bukan teks polos), dan berhasil dipakai mereset PIN Pemilik. |
-| AC-7.4 | Kasir masuk → menu Laporan tidak dapat diakses; mencoba membuka rute laporan lewat deep link tetap ditolak (penjagaan di lapisan router, bukan hanya menyembunyikan tombol). |
-| AC-7.5 | Kasir masuk → tidak ada satu pun angka laba/harga modal yang tampil di layar mana pun (uji widget: cari teks label laba di seluruh layar yang bisa diakses kasir). |
-| AC-7.6 | Kasir mencoba void → ditolak dengan pesan jelas; transaksi tidak berubah. |
-| AC-7.7 | Setiap penjualan menyimpan `user_id` & `user_name` yang benar; mengganti nama pengguna tidak mengubah nama pada transaksi lama. |
-| AC-7.8 | Penyesuaian stok oleh kasir tercatat dengan `user_id` kasir tersebut. |
-| AC-7.9 | Riwayat & Laporan bisa difilter per kasir dan angkanya cocok dengan penjumlahan manual. |
-| AC-7.10 | 5 kali PIN salah → keypad terkunci 30 detik; hitungan berlanjut setelah aplikasi ditutup-buka (tidak bisa dilewati dengan restart). |
-| AC-7.11 | "Ganti Kasir" saat keranjang berisi → memunculkan konfirmasi; keranjang tidak hilang diam-diam. |
-| AC-7.12 | Kunci otomatis aktif → keranjang tetap utuh setelah membuka kunci. |
-| AC-7.13 | Mematikan multi-user tidak menghapus `user_id` pada transaksi lama; filter kasir di riwayat masih menampilkan data historis. |
-| AC-7.14 | PIN disimpan sebagai hash SHA-256 + salt **per pengguna** (reuse `PinHasher`); tidak ada PIN dalam bentuk teks polos di database maupun `shared_preferences`. |
-| AC-7.15 | Dua pengguna dengan PIN yang sama persis tetap bisa masuk ke akunnya masing-masing (karena nama dipilih lebih dulu). |
-| AC-7.16 | Backup v1.1 (schema 3) yang direstore membawa seluruh akun & perannya; aplikasi meminta masuk setelah restore. |
+| AC-8.1 | Multi-user mati (default) → aplikasi berperilaku persis seperti v1.0, termasuk PIN global untuk Laporan/Pengaturan/void; tidak ada layar masuk. |
+| AC-8.2 | Menyalakan multi-user pada aplikasi yang sudah punya PIN global → PIN itu berhasil dipakai masuk sebagai Pemilik (tidak perlu membuat PIN baru). |
+| AC-8.3 | Kode pemulihan hanya ditampilkan sekali, tersimpan sebagai hash (bukan teks polos), dan berhasil dipakai mereset PIN Pemilik. |
+| AC-8.4 | Kasir masuk → menu Laporan tidak dapat diakses; mencoba membuka rute laporan lewat deep link tetap ditolak (penjagaan di lapisan router, bukan hanya menyembunyikan tombol). |
+| AC-8.5 | Kasir masuk → tidak ada satu pun angka laba/harga modal yang tampil di layar mana pun (uji widget: cari teks label laba di seluruh layar yang bisa diakses kasir). |
+| AC-8.6 | Kasir mencoba void → ditolak dengan pesan jelas; transaksi tidak berubah. |
+| AC-8.7 | Setiap penjualan menyimpan `user_id` & `user_name` yang benar; mengganti nama pengguna tidak mengubah nama pada transaksi lama. |
+| AC-8.8 | Penyesuaian stok oleh kasir tercatat dengan `user_id` kasir tersebut. |
+| AC-8.9 | Riwayat & Laporan bisa difilter per kasir dan angkanya cocok dengan penjumlahan manual. |
+| AC-8.10 | 5 kali PIN salah → keypad terkunci 30 detik; hitungan berlanjut setelah aplikasi ditutup-buka (tidak bisa dilewati dengan restart). |
+| AC-8.11 | "Ganti Kasir" saat keranjang berisi → memunculkan konfirmasi; keranjang tidak hilang diam-diam. |
+| AC-8.12 | Kunci otomatis aktif → keranjang tetap utuh setelah membuka kunci. |
+| AC-8.13 | Mematikan multi-user tidak menghapus `user_id` pada transaksi lama; filter kasir di riwayat masih menampilkan data historis. |
+| AC-8.14 | PIN disimpan sebagai hash SHA-256 + salt **per pengguna** (reuse `PinHasher`); tidak ada PIN dalam bentuk teks polos di database maupun `shared_preferences`. |
+| AC-8.15 | Dua pengguna dengan PIN yang sama persis tetap bisa masuk ke akunnya masing-masing (karena nama dipilih lebih dulu). |
+| AC-8.16 | Backup v1.1 (schema 3) yang direstore membawa seluruh akun & perannya; aplikasi meminta masuk setelah restore. |
 
-### 7.5 Dampak skema database — `schemaVersion` 2 → 3
+### 8.5 Dampak skema database — `schemaVersion` 2 → 3
 
 ```sql
 -- BARU
@@ -1091,7 +1507,7 @@ Kunci lama `pin_hash`/`pin_salt` **dipertahankan** untuk mode single-user; saat 
 
 Sesi aktif (siapa yang sedang masuk) disimpan di `shared_preferences` (`active_user_id`) — bukan di database, karena itu keadaan perangkat, bukan data toko (alasan yang sama dengan K-5.2).
 
-### 7.6 Dampak UI
+### 8.6 Dampak UI
 
 - **Layar Masuk** (rute baru, di luar shell navigasi): kartu pengguna besar (≥64dp, avatar inisial berlatar `AppTone.primary`), lalu keypad PIN yang me-*reuse* `pin_keypad.dart` & `pin_entry_screen.dart`. Judul "Siapa yang bertugas?".
 - **Kartu "Pengguna & Akses"** di Pengaturan memakai `SettingsCard`, pola sama dengan `pin_section.dart`.
@@ -1101,25 +1517,25 @@ Sesi aktif (siapa yang sedang masuk) disimpan di `shared_preferences` (`active_u
 - **Kode pemulihan** ditampilkan dengan tipografi besar bertabular (`AppTextStyles.numeric`), latar `AppTone.warning`, dan tombol Salin/Bagikan.
 - Penjagaan izin dilakukan di **lapisan router** (`redirect` go_router) sekaligus di UI, agar rute tidak bisa diakses lewat jalur lain.
 
-### 7.7 Keputusan & risiko teknis
+### 8.7 Keputusan & risiko teknis
 
-- **K-7.1** Hanya **dua peran tetap** (Pemilik, Kasir) dengan izin yang tidak bisa dikustomisasi. Matriks izin bebas akan menjadi layar konfigurasi rumit untuk pengguna yang menurut [prd.md §2](prd.md) "gaptek ringan".
-- **K-7.2** Masuk dengan **pilih nama → PIN**, bukan PIN saja (menghindari tabrakan PIN & ambiguitas pencatatan).
-- **K-7.3** Reuse `PinHasher` (SHA-256 + salt) yang sudah ada; salt disimpan **per pengguna**, bukan satu salt global.
-- **K-7.4** **Kode pemulihan offline** wajib ada. Tanpa itu, "lupa PIN" menjadi kehilangan data total — konsekuensi tak dapat diterima dari aplikasi tanpa akun online. Kode disimpan sebagai hash, ditampilkan sekali.
-- **K-7.5** Multi-user **mati secara default**, dan seluruh perilaku v1.0 dipertahankan saat mati.
-- **K-7.6** `sales.user_name` disimpan sebagai snapshot, sejalan dengan K-6.1 dan pola `sale_items.product_name`.
-- **K-7.7** Tidak ada masuk dengan sidik jari/wajah di v1.1 (butuh dependency `local_auth` + penanganan fallback; ditunda, bukan ditolak selamanya).
+- **K-8.1** Hanya **dua peran tetap** (Pemilik, Kasir) dengan izin yang tidak bisa dikustomisasi. Matriks izin bebas akan menjadi layar konfigurasi rumit untuk pengguna yang menurut [prd.md §2](prd.md) "gaptek ringan".
+- **K-8.2** Masuk dengan **pilih nama → PIN**, bukan PIN saja (menghindari tabrakan PIN & ambiguitas pencatatan).
+- **K-8.3** Reuse `PinHasher` (SHA-256 + salt) yang sudah ada; salt disimpan **per pengguna**, bukan satu salt global.
+- **K-8.4** **Kode pemulihan offline** wajib ada. Tanpa itu, "lupa PIN" menjadi kehilangan data total — konsekuensi tak dapat diterima dari aplikasi tanpa akun online. Kode disimpan sebagai hash, ditampilkan sekali.
+- **K-8.5** Multi-user **mati secara default**, dan seluruh perilaku v1.0 dipertahankan saat mati.
+- **K-8.6** `sales.user_name` disimpan sebagai snapshot, sejalan dengan K-7.1 dan pola `sale_items.product_name`.
+- **K-8.7** Tidak ada masuk dengan sidik jari/wajah di v1.1 (butuh dependency `local_auth` + penanganan fallback; ditunda, bukan ditolak selamanya).
 
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
-| Pemilik terkunci dari datanya sendiri | Kehilangan data total, kemarahan wajar | K-7.4 kode pemulihan + peringatan tegas saat penyiapan + centang wajib "saya sudah mencatat" + dorongan backup. |
-| Izin hanya disembunyikan di UI, bisa ditembus lewat rute | Karyawan melihat laba/menghapus transaksi | AC-7.4: penjagaan di `redirect` router, diuji khusus. |
+| Pemilik terkunci dari datanya sendiri | Kehilangan data total, kemarahan wajar | K-8.4 kode pemulihan + peringatan tegas saat penyiapan + centang wajib "saya sudah mencatat" + dorongan backup. |
+| Izin hanya disembunyikan di UI, bisa ditembus lewat rute | Karyawan melihat laba/menghapus transaksi | AC-8.4: penjagaan di `redirect` router, diuji khusus. |
 | Kasir kesal karena terlalu banyak yang terkunci | Fitur dimatikan lagi | Kasir tetap punya akses penuh ke pekerjaan hariannya (jual, hutang, pelunasan, stok, cetak, riwayat hari ini). |
-| Ganti kasir menghilangkan keranjang berjalan | Transaksi hilang di depan pembeli | AC-7.11 & AC-7.12: keranjang dipertahankan; konfirmasi eksplisit. |
+| Ganti kasir menghilangkan keranjang berjalan | Transaksi hilang di depan pembeli | AC-8.11 & AC-8.12: keranjang dipertahankan; konfirmasi eksplisit. |
 | Migrasi 2→3 pada database besar | Update terasa menggantung | `ALTER TABLE ADD COLUMN` di SQLite bersifat O(1) (tidak menulis ulang tabel); pembuatan index dijalankan sekali dengan indikator progres bila > 1 detik. |
 
-### 7.8 TIDAK termasuk
+### 8.8 TIDAK termasuk
 
 - Peran & izin kustom, atau peran ketiga (mis. "supervisor").
 - Buka/tutup kas per shift, hitung fisik uang laci, selisih kas (rekonsiliasi shift).
@@ -1132,9 +1548,9 @@ Sesi aktif (siapa yang sedang masuk) disimpan di `shared_preferences` (`active_u
 
 ---
 
-## 8. Fitur Tier 2 — Grafik Penjualan di Dashboard
+## 9. Fitur Tier 2 — Grafik Penjualan di Dashboard
 
-### 8.1 Latar & masalah pengguna
+### 9.1 Latar & masalah pengguna
 
 Laporan v1.0 menjawab "**berapa**": omzet hari ini, jumlah transaksi, laba kotor, produk terlaris. Yang belum terjawab adalah "**bagaimana perkembangannya**" dan "**kapan**":
 
@@ -1144,7 +1560,7 @@ Laporan v1.0 menjawab "**berapa**": omzet hari ini, jumlah transaksi, laba kotor
 
 Deret angka tidak menunjukkan tren; batang menunjukkannya dalam sekali lihat. Data untuk semua ini **sudah ada** di `sales` — yang kurang hanya agregasi dan penyajiannya.
 
-### 8.2 User stories
+### 9.2 User stories
 
 1. Sebagai pemilik, saya bisa melihat grafik batang omzet harian untuk rentang yang saya pilih, agar tahu tren naik/turun.
 2. Sebagai pemilik, saya bisa melihat perbandingan singkat dengan periode sebelumnya ("+12% dari 7 hari sebelumnya").
@@ -1153,7 +1569,7 @@ Deret angka tidak menunjukkan tren; batang menunjukkannya dalam sekali lihat. Da
 5. Sebagai pemilik, saya bisa mengalihkan grafik tren antara **Omzet** dan **Laba**, karena keduanya bisa bergerak berlawanan.
 6. Sebagai pemilik, saya bisa menyentuh satu batang untuk melihat angka persisnya, bukan menebak dari tinggi batang.
 
-### 8.3 Perilaku & alur detail
+### 9.3 Perilaku & alur detail
 
 Grafik hidup di dalam **tab Laporan** yang sudah ada, di bawah kartu ringkasan, dan mengikuti pemilih rentang tanggal yang sudah ada (hari ini, kemarin, 7 hari, bulan ini, custom) — **tanpa pemilih rentang baru**.
 
@@ -1167,7 +1583,7 @@ Grafik hidup di dalam **tab Laporan** yang sudah ada, di bawah kartu ringkasan, 
 | 2–62 hari | per hari | 2–62 |
 | > 62 hari | per bulan | ≤ ~24 |
 
-- Peralih **Omzet / Laba** di atas grafik (`SegmentedButton`). Laba hanya tampil bila pengguna berhak melihatnya (§7).
+- Peralih **Omzet / Laba** di atas grafik (`SegmentedButton`). Laba hanya tampil bila pengguna berhak melihatnya (§8).
 - Di bawah judul: perbandingan dengan periode sebelumnya yang sama panjang — "Rp4.320.000 · +12% dari 7 hari sebelumnya", berwarna `AppTone.success`/`AppTone.danger`.
 - Tap batang → tooltip/kartu kecil: tanggal, omzet, jumlah transaksi. Tap dua kali atau tombol "Lihat transaksi" → membuka Riwayat yang sudah difilter ke rentang itu.
 - Transaksi `voided` **selalu dikecualikan**, konsisten dengan laporan v1.0.
@@ -1194,26 +1610,26 @@ Grafik hidup di dalam **tab Laporan** yang sudah ada, di bawah kartu ringkasan, 
 - **Hanya satu batang** → tetap ditampilkan, dengan sumbu Y menyesuaikan.
 - **Nilai nol semua** → sumbu Y memakai skala minimal agar grafik tidak terlihat rusak.
 
-### 8.4 Acceptance criteria
+### 9.4 Acceptance criteria
 
 | # | Kriteria (bisa diuji) |
 |---|---|
-| AC-8.1 | Jumlah batang mengikuti aturan ember di §8.3.A untuk rentang 1 hari, 7 hari, 90 hari, dan 400 hari. |
-| AC-8.2 | Jumlah seluruh batang pada grafik tren **sama persis** dengan angka omzet di kartu ringkasan untuk rentang yang sama (uji: bandingkan hasil dua query). |
-| AC-8.3 | Transaksi `voided` tidak menyumbang tinggi batang mana pun. |
-| AC-8.4 | Pengelompokan hari mengikuti **zona waktu perangkat**: transaksi pukul 23.30 WIB masuk ke hari itu, bukan hari berikutnya (uji dengan data pada batas tengah malam untuk WIB/WITA/WIT). |
-| AC-8.5 | Grafik tren dengan 100.000 transaksi di database: query + render selesai < 300 ms (agregasi di SQL, bukan di Dart). |
-| AC-8.6 | Peralih Omzet/Laba mengubah data grafik tanpa memuat ulang layar. |
-| AC-8.7 | Perbandingan periode sebelumnya benar untuk rentang 7 hari (dibandingkan dengan 7 hari tepat sebelumnya) dan menampilkan tanda +/− yang benar. |
-| AC-8.8 | Tap batang menampilkan angka persis batang tersebut; area sentuh setiap batang ≥ 48dp lebarnya (bila batang lebih sempit, area sentuhnya diperlebar tanpa mengubah gambar). |
-| AC-8.9 | Grafik terbaca di mode gelap: seluruh warna diambil dari `context.palette`, tidak ada hex tetap (uji widget di kedua tema). |
-| AC-8.10 | Setiap deret pada komposisi metode bayar punya **label teks**, tidak dibedakan hanya oleh warna. |
-| AC-8.11 | Rentang tanpa transaksi menampilkan `EmptyState`, bukan grafik kosong atau angka `NaN`. |
-| AC-8.12 | Grafik tampil benar pada HP 5 inci (batang tidak berdesakan; label sumbu X dijarangkan otomatis bila tidak muat) dan pada tablet landscape. |
-| AC-8.13 | Ukuran APK tidak bertambah lebih dari 1 MB akibat fitur ini. |
-| AC-8.14 | (Bila §7 aktif) filter "Kasir" memengaruhi seluruh grafik secara konsisten dengan kartu ringkasan. |
+| AC-9.1 | Jumlah batang mengikuti aturan ember di §9.3.A untuk rentang 1 hari, 7 hari, 90 hari, dan 400 hari. |
+| AC-9.2 | Jumlah seluruh batang pada grafik tren **sama persis** dengan angka omzet di kartu ringkasan untuk rentang yang sama (uji: bandingkan hasil dua query). |
+| AC-9.3 | Transaksi `voided` tidak menyumbang tinggi batang mana pun. |
+| AC-9.4 | Pengelompokan hari mengikuti **zona waktu perangkat**: transaksi pukul 23.30 WIB masuk ke hari itu, bukan hari berikutnya (uji dengan data pada batas tengah malam untuk WIB/WITA/WIT). |
+| AC-9.5 | Grafik tren dengan 100.000 transaksi di database: query + render selesai < 300 ms (agregasi di SQL, bukan di Dart). |
+| AC-9.6 | Peralih Omzet/Laba mengubah data grafik tanpa memuat ulang layar. |
+| AC-9.7 | Perbandingan periode sebelumnya benar untuk rentang 7 hari (dibandingkan dengan 7 hari tepat sebelumnya) dan menampilkan tanda +/− yang benar. |
+| AC-9.8 | Tap batang menampilkan angka persis batang tersebut; area sentuh setiap batang ≥ 48dp lebarnya (bila batang lebih sempit, area sentuhnya diperlebar tanpa mengubah gambar). |
+| AC-9.9 | Grafik terbaca di mode gelap: seluruh warna diambil dari `context.palette`, tidak ada hex tetap (uji widget di kedua tema). |
+| AC-9.10 | Setiap deret pada komposisi metode bayar punya **label teks**, tidak dibedakan hanya oleh warna. |
+| AC-9.11 | Rentang tanpa transaksi menampilkan `EmptyState`, bukan grafik kosong atau angka `NaN`. |
+| AC-9.12 | Grafik tampil benar pada HP 5 inci (batang tidak berdesakan; label sumbu X dijarangkan otomatis bila tidak muat) dan pada tablet landscape. |
+| AC-9.13 | Ukuran APK tidak bertambah lebih dari 1 MB akibat fitur ini. |
+| AC-9.14 | (Bila §8 aktif) filter "Kasir" memengaruhi seluruh grafik secara konsisten dengan kartu ringkasan. |
 
-### 8.5 Dampak skema database
+### 9.5 Dampak skema database
 
 **Tidak ada tabel atau kolom baru.** Yang dibutuhkan hanya query agregasi baru dan satu index.
 
@@ -1226,7 +1642,7 @@ Future<List<SalesPoint>> getSalesSeries({
   required DateTime start,
   required DateTime end,
   required SeriesBucket bucket,
-  int? userId,                      // §7; null = semua kasir
+  int? userId,                      // §8; null = semua kasir
 });
 
 Future<List<HourlyPoint>> getHourlyDistribution({
@@ -1242,7 +1658,7 @@ Catatan SQL penting: `sales.created_at` disimpan sebagai **epoch millis UTC** (k
 strftime('%Y-%m-%d', created_at / 1000, 'unixepoch', 'localtime')
 ```
 
-Tanpa `'localtime'`, batas hari akan meleset dari jam perangkat (AC-8.4). Indonesia tidak menerapkan DST, sehingga konversi ini aman sepanjang tahun.
+Tanpa `'localtime'`, batas hari akan meleset dari jam perangkat (AC-9.4). Indonesia tidak menerapkan DST, sehingga konversi ini aman sepanjang tahun.
 
 Index tambahan (dibuat pada migrasi, `CREATE INDEX IF NOT EXISTS` agar idempoten):
 
@@ -1252,7 +1668,7 @@ CREATE INDEX IF NOT EXISTS idx_sales_status_created ON sales(status, created_at)
 
 Index ini menggantikan pemakaian terpisah `idx_sales_status` + `idx_sales_created_at` pada query grafik yang selalu memfilter status **dan** rentang tanggal sekaligus.
 
-### 8.6 Dampak UI
+### 9.6 Dampak UI
 
 - Grafik ditempatkan di tab **Laporan** yang sudah ada, di bawah `summary_card.dart`, sebagai `AppCard(elevated: true)` per grafik dengan `SectionHeader` di atasnya.
 - **Judul kartu kecil, angka besar** — konsisten dengan prinsip "angka lebih penting dari labelnya": nilai total periode tampil dengan `AppTextStyles.moneyLarge` di atas grafik, grafiknya sendiri adalah pendukung.
@@ -1262,29 +1678,29 @@ Index ini menggantikan pemakaian terpisah `idx_sales_status` + `idx_sales_create
 - Animasi masuk `AppDurations.fast` (200 ms) dengan `Curves.easeOutCubic`; tidak ada animasi > 500 ms.
 - Seluruh warna dari `context.palette` (§5). Warna metode bayar memakai alias domain `tunai`/`nonTunai`/`hutang`.
 
-### 8.7 Keputusan & risiko teknis
+### 9.7 Keputusan & risiko teknis
 
-- **K-8.1 — Tidak menambah dependency grafik (mis. `fl_chart`).** Grafik yang dibutuhkan hanya **batang** (vertikal, horizontal, bertumpuk); semuanya bisa dibangun dengan `Flex`/`CustomPainter` dalam widget bersama `core/widgets/app_bar_chart.dart` (~200–300 baris). Alasannya konkret dan spesifik untuk proyek ini:
+- **K-9.1 — Tidak menambah dependency grafik (mis. `fl_chart`).** Grafik yang dibutuhkan hanya **batang** (vertikal, horizontal, bertumpuk); semuanya bisa dibangun dengan `Flex`/`CustomPainter` dalam widget bersama `core/widgets/app_bar_chart.dart` (~200–300 baris). Alasannya konkret dan spesifik untuk proyek ini:
   1. Proyek ini sudah dua kali tersandung dependency pihak ketiga (bentrok `win32` pada `file_picker`/`share_plus` di M0; kegagalan build release karena `namespace` pada `flutter_native_splash` di M6). Setiap dependency baru adalah risiko build nyata, bukan teoretis.
   2. Anggaran APK < 40 MB dan cold start < 3 detik.
   3. Pustaka grafik umum membawa gaya visualnya sendiri yang harus dilawan agar cocok dengan "Kertas & Daun" — pekerjaan penyesuaiannya sebanding dengan menulis batang sendiri.
   4. Widget sendiri otomatis sadar tema (§5) dan sadar target sentuh 48dp.
 
   **Rencana cadangan:** bila kebutuhan berkembang ke grafik garis dengan interpolasi, zoom/pan, atau sumbu ganda, `fl_chart` menjadi kandidat pertama untuk dievaluasi ulang — dengan syarat lolos uji `flutter build apk --release` di commit terpisah sebelum dipakai.
-- **K-8.2 — Tidak ada pie/donut chart.** Proporsi disajikan sebagai batang bertumpuk. Mata manusia buruk membandingkan sudut, dan potongan kecil (mis. non-tunai 4%) menjadi tak terbaca beserta labelnya di layar 5 inci.
-- **K-8.3 — Grafik selalu mengikuti pemilih rentang yang sudah ada**, tidak punya pemilih sendiri. Dua pemilih rentang di satu layar adalah sumber kebingungan.
-- **K-8.4 — Maksimum ~90 batang** dalam satu grafik. Di atas itu, ember dinaikkan (hari → bulan). Batang selebar 2px tidak menyampaikan apa pun dan tidak bisa disentuh.
-- **K-8.5 — Semua agregasi di SQL**, mengikuti aturan yang sudah ditegakkan kontrak `ReportRepository` sejak M4.
+- **K-9.2 — Tidak ada pie/donut chart.** Proporsi disajikan sebagai batang bertumpuk. Mata manusia buruk membandingkan sudut, dan potongan kecil (mis. non-tunai 4%) menjadi tak terbaca beserta labelnya di layar 5 inci.
+- **K-9.3 — Grafik selalu mengikuti pemilih rentang yang sudah ada**, tidak punya pemilih sendiri. Dua pemilih rentang di satu layar adalah sumber kebingungan.
+- **K-9.4 — Maksimum ~90 batang** dalam satu grafik. Di atas itu, ember dinaikkan (hari → bulan). Batang selebar 2px tidak menyampaikan apa pun dan tidak bisa disentuh.
+- **K-9.5 — Semua agregasi di SQL**, mengikuti aturan yang sudah ditegakkan kontrak `ReportRepository` sejak M4.
 
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
-| Salah zona waktu pada pengelompokan hari | Angka grafik beda dengan kartu ringkasan → kepercayaan hilang | AC-8.2 & AC-8.4 dengan uji khusus batas tengah malam untuk WIB/WITA/WIT. |
+| Salah zona waktu pada pengelompokan hari | Angka grafik beda dengan kartu ringkasan → kepercayaan hilang | AC-9.2 & AC-9.4 dengan uji khusus batas tengah malam untuk WIB/WITA/WIT. |
 | Query lambat pada 100k transaksi | Tab Laporan terasa menggantung | Index `(status, created_at)`, agregasi SQL, uji beban dengan data dummy besar (pola yang sudah dipakai M4). |
 | Grafik buatan sendiri jelek/tidak akurat | Malu di depan pengguna | Cakupan sengaja dibatasi pada batang; uji widget yang memeriksa tinggi batang proporsional terhadap nilai; ulasan visual di HP kecil & tablet. |
-| Grafik penuh sesak di HP 5 inci | Tidak terbaca | AC-8.12: penjarangan label otomatis, tinggi area tetap, maksimum 90 batang. |
-| Laba bocor ke kasir lewat grafik | Melanggar §7 | Peralih "Laba" hanya dirender untuk Pemilik; diuji di AC-7.5. |
+| Grafik penuh sesak di HP 5 inci | Tidak terbaca | AC-9.12: penjarangan label otomatis, tinggi area tetap, maksimum 90 batang. |
+| Laba bocor ke kasir lewat grafik | Melanggar §8 | Peralih "Laba" hanya dirender untuk Pemilik; diuji di AC-8.5. |
 
-### 8.8 TIDAK termasuk
+### 9.8 TIDAK termasuk
 
 - Grafik pie/donut.
 - Grafik garis dengan kurva halus, zoom, pan, atau *crosshair*.
@@ -1297,32 +1713,32 @@ Index ini menggantikan pemakaian terpisah `idx_sales_status` + `idx_sales_create
 
 ---
 
-## 9. Ringkasan Dampak Database & Rencana Migrasi
+## 10. Ringkasan Dampak Database & Rencana Migrasi
 
 | Tahap | Fitur | `schemaVersion` | Perubahan |
 |---|---|---|---|
 | Sekarang (v1.0) | — | **1** | 7 tabel: categories, products, sales, sale_items, stock_movements, held_carts, settings |
-| Tier 1 | §3 Printer, §4 Import, §5 Mode gelap | **1** (tetap) | Tidak ada. Hanya key baru di `settings` & `shared_preferences`. |
-| Tier 2a | §6 Pelanggan | 1 → **2** | +`customers`, +`customer_point_entries`, +`sales.customer_id`, 3 index, **backfill dari `sales.customer_name`** |
-| Tier 2b | §7 Multi-user | 2 → **3** | +`users`, +`sales.user_id`/`user_name`/`voided_by_user_id`, +`stock_movements.user_id`, 2 index |
-| Tier 2c | §8 Grafik | 3 (tetap) | +index `idx_sales_status_created` (idempoten) |
+| Tier 1 | §3 Printer, §4 Import, §5 Mode gelap, §6 Lisensi | **1** (tetap) | Tidak ada. Hanya key baru di `settings` & `shared_preferences`. **§6 sama sekali tidak menulis ke database** — statusnya hanya di `shared_preferences` supaya tidak pernah ikut backup/restore (K-6.1). |
+| Tier 2a | §7 Pelanggan | 1 → **2** | +`customers`, +`customer_point_entries`, +`sales.customer_id`, 3 index, **backfill dari `sales.customer_name`** |
+| Tier 2b | §8 Multi-user | 2 → **3** | +`users`, +`sales.user_id`/`user_name`/`voided_by_user_id`, +`stock_movements.user_id`, 2 index |
+| Tier 2c | §9 Grafik | 3 (tetap) | +index `idx_sales_status_created` (idempoten) |
 
 ### Aturan migrasi yang mengikat
 
 | # | Aturan |
 |---|---|
-| AC-9.1 | Setiap kenaikan `schemaVersion` wajib punya uji migrasi memakai *snapshot* database versi sebelumnya (bukan hanya `createAll()` dari nol), dengan data nyata secukupnya. |
-| AC-9.2 | `BackupService.validateBackupFile` wajib **membandingkan** `PRAGMA user_version` file backup dengan `schemaVersion` aplikasi. Bila file lebih baru → tolak dengan pesan "File backup berasal dari versi aplikasi yang lebih baru. Perbarui aplikasi ini terlebih dahulu." Saat ini nilai itu hanya dibaca tanpa dibandingkan — celah yang harus ditutup **sebelum** migrasi pertama dirilis. |
-| AC-9.3 | Backup v1.0 (schema 1) wajib tetap bisa direstore di aplikasi v1.1 mana pun dan termigrasi otomatis tanpa kehilangan satu baris pun. |
-| AC-9.4 | Migrasi tidak boleh destruktif: tidak ada `DROP COLUMN`, tidak ada penulisan ulang tabel, tidak ada penghapusan data historis. |
-| AC-9.5 | Seluruh langkah migrasi berjalan dalam satu transaksi; kegagalan mengembalikan database ke keadaan semula dan menampilkan pesan Bahasa Indonesia yang jelas. |
-| AC-9.6 | Sebelum merilis versi yang menaikkan `schemaVersion`, aplikasi menampilkan pengingat backup bila backup terakhir > 7 hari (memanfaatkan `last_backup_at` yang sudah ada). |
+| AC-10.1 | Setiap kenaikan `schemaVersion` wajib punya uji migrasi memakai *snapshot* database versi sebelumnya (bukan hanya `createAll()` dari nol), dengan data nyata secukupnya. |
+| AC-10.2 | `BackupService.validateBackupFile` wajib **membandingkan** `PRAGMA user_version` file backup dengan `schemaVersion` aplikasi. Bila file lebih baru → tolak dengan pesan "File backup berasal dari versi aplikasi yang lebih baru. Perbarui aplikasi ini terlebih dahulu." Saat ini nilai itu hanya dibaca tanpa dibandingkan — celah yang harus ditutup **sebelum** migrasi pertama dirilis. |
+| AC-10.3 | Backup v1.0 (schema 1) wajib tetap bisa direstore di aplikasi v1.1 mana pun dan termigrasi otomatis tanpa kehilangan satu baris pun. |
+| AC-10.4 | Migrasi tidak boleh destruktif: tidak ada `DROP COLUMN`, tidak ada penulisan ulang tabel, tidak ada penghapusan data historis. |
+| AC-10.5 | Seluruh langkah migrasi berjalan dalam satu transaksi; kegagalan mengembalikan database ke keadaan semula dan menampilkan pesan Bahasa Indonesia yang jelas. |
+| AC-10.6 | Sebelum merilis versi yang menaikkan `schemaVersion`, aplikasi menampilkan pengingat backup bila backup terakhir > 7 hari (memanfaatkan `last_backup_at` yang sudah ada). |
 
 ---
 
-## 10. Metrik Keberhasilan
+## 11. Metrik Keberhasilan
 
-### 10.1 Tier 1
+### 11.1 Tier 1
 
 | Metrik | Target |
 |---|---|
@@ -1336,11 +1752,20 @@ Index ini menggantikan pemakaian terpisah `idx_sales_status` + `idx_sales_create
 | Layar dengan teks kontras < 4.5:1 di mode gelap | **0** (dibuktikan uji otomatis, bukan penilaian mata) |
 | Layar yang masih "putih" saat mode gelap | **0** |
 | Struk yang di-share tetap berlatar putih | 100% |
+| **Aktivasi lisensi sejak kode diterima sampai aplikasi terbuka** | ≤ **30 detik** lewat pindai QR atau tempel; ≤ **2 menit** bila kode diketik manual |
+| **Lisensi sah yang ditolak aplikasi** (false negative) | **0 kasus** |
+| Kode salah ketik yang **diterima** aplikasi (false positive) | **0 kasus** |
+| Trial yang ter-reset dengan uninstall–reinstall | **0 kasus** |
+| Data pengguna yang hilang/terkunci permanen akibat lisensi berakhir | **0 baris** — export & backup selalu bisa diakses |
+| Transaksi yang gagal tersimpan karena gerbang lisensi menutup di tengah alur | **0 kasus** |
+| Waktu verifikasi kode di HP kelas menengah | < 1 detik |
+| Pertambahan ukuran APK akibat sistem lisensi | < 1 MB |
+| Kunci privat penerbit yang ter-commit ke repositori | **0** (diperiksa di checklist rilis) |
 | Ukuran APK release | tetap < 40 MB |
 | Cold start | tetap < 3 detik |
 | Regresi pada alur v1.0 | **0** (seluruh test M0–M6 lulus tanpa diubah) |
 
-### 10.2 Tier 2
+### 11.2 Tier 2
 
 | Metrik | Target |
 |---|---|
@@ -1358,9 +1783,9 @@ Index ini menggantikan pemakaian terpisah `idx_sales_status` + `idx_sales_create
 
 ---
 
-## 11. Non-Fitur yang Tetap Berlaku
+## 12. Non-Fitur yang Tetap Berlaku
 
-### 11.1 Diwarisi dari [prd.md §3.2](prd.md) — tetap DILARANG
+### 12.1 Diwarisi dari [prd.md §3.2](prd.md) — tetap DILARANG
 
 - ❌ Sinkronisasi cloud / multi-perangkat realtime
 - ❌ Login / akun online
@@ -1370,11 +1795,12 @@ Index ini menggantikan pemakaian terpisah `idx_sales_status` + `idx_sales_create
 - ❌ Manajemen supplier & purchase order lengkap
 
 Ditegaskan ulang karena fitur v1.1 menggodanya:
-- Multi-user (§7) **bukan** akun online dan **bukan** multi-toko — semua pengguna berbagi satu database di satu perangkat.
-- Poin pelanggan (§6) **bukan** program loyalitas cloud; tidak ada pengiriman notifikasi ke pelanggan.
+- Multi-user (§8) **bukan** akun online dan **bukan** multi-toko — semua pengguna berbagi satu database di satu perangkat.
+- Poin pelanggan (§7) **bukan** program loyalitas cloud; tidak ada pengiriman notifikasi ke pelanggan.
 - Cetak thermal (§3) **bukan** integrasi pembayaran; QR yang dicetak hanyalah gambar statis milik toko.
+- **Aktivasi lisensi (§6) bukan login dan bukan akun online.** Tidak ada identitas, tidak ada kata sandi, tidak ada server yang dihubungi, tidak ada data yang dikirim. Yang ada hanyalah satu kode ter-tanda-tangan yang diverifikasi di dalam perangkat. Larangan "login/akun online" tetap berlaku penuh, dan §6.8 menegaskan batasnya.
 
-### 11.2 Non-fitur baru yang ditetapkan dokumen ini
+### 12.2 Non-fitur baru yang ditetapkan dokumen ini
 
 - ❌ Printer WiFi/LAN/USB, cash drawer, printer label
 - ❌ Impor CSV / Google Sheets / sumber online mana pun
@@ -1389,10 +1815,15 @@ Ditegaskan ulang karena fitur v1.1 menggodanya:
 - ❌ Pie/donut chart, prakiraan penjualan, dashboard yang bisa disusun sendiri
 - ❌ Export grafik sebagai gambar
 - ❌ Dependency baru untuk grafik
+- ❌ Server/backend aktivasi, akun pembeli, dasbor lisensi daring, telemetri pemakaian
+- ❌ Pembayaran dalam aplikasi (IAP), langganan yang menagih sendiri, perpanjangan otomatis
+- ❌ Trial otomatis tanpa kode, transfer lisensi antar perangkat otomatis, satu lisensi untuk banyak perangkat
+- ❌ Lisensi per fitur (paket murah/mahal dengan fitur berbeda)
+- ❌ Proteksi anti-bongkar di luar R8: tanpa deteksi root, tanpa pemeriksaan tanda tangan APK saat berjalan, tanpa pencabutan lisensi jarak jauh
 
 ---
 
-## 12. Asumsi & Batasan (v1.1)
+## 13. Asumsi & Batasan (v1.1)
 
 Semua asumsi [prd.md §8](prd.md) tetap berlaku. Tambahan:
 
@@ -1400,7 +1831,11 @@ Semua asumsi [prd.md §8](prd.md) tetap berlaku. Tambahan:
 2. **Printer** adalah perangkat keras milik pengguna; aplikasi tidak menjamin kompatibilitas dengan setiap merek yang beredar. Dukungan resmi terbatas pada printer ESC/POS Bluetooth 58mm.
 3. **Poin adalah kesepakatan antara pemilik dan pembelinya**; aplikasi hanya mencatat. Tidak ada nilai uang yang dijamin dan tidak ada kewajiban hukum yang ditanggung aplikasi.
 4. **Tidak ada pihak yang bisa memulihkan PIN dari luar.** Ini konsekuensi langsung dari janji "tanpa akun, tanpa server" dan harus dikomunikasikan terus terang di UI.
-5. **Waktu tetap mengikuti jam perangkat.** Mengubah jam perangkat mundur bisa membuat urutan grafik dan nomor invoice tampak aneh; tidak ada validasi server (dan tidak akan pernah ada).
+5. **Waktu tetap mengikuti jam perangkat.** Mengubah jam perangkat mundur bisa membuat urutan grafik dan nomor invoice tampak aneh; tidak ada validasi server (dan tidak akan pernah ada). Khusus untuk masa berlaku lisensi, jam perangkat **tidak dipercaya sendirian** — dipakai nilai tertinggi yang pernah dilihat (§6.3.G) — tapi mekanisme itu hanya mencegah jam **mundur**, bukan jam yang salah sejak awal.
 6. **Zona waktu** yang dipakai pengelompokan laporan & grafik adalah zona waktu perangkat saat query dijalankan. Memindahkan perangkat antar zona waktu Indonesia dapat menggeser batas hari pada data lama.
-7. **iOS** tetap menyusul; seluruh fitur v1.1 dispesifikasikan untuk Android lebih dulu. Fitur printer kemungkinan besar butuh penyesuaian tersendiri di iOS (BLE saja, tanpa Bluetooth Klasik).
+7. **iOS** tetap menyusul; seluruh fitur v1.1 dispesifikasikan untuk Android lebih dulu. Fitur printer kemungkinan besar butuh penyesuaian tersendiri di iOS (BLE saja, tanpa Bluetooth Klasik), dan sistem lisensi butuh sumber kode perangkat tersendiri (`identifierForVendor`, yang sifatnya **tidak** sama dengan SSAID).
 8. **Foto produk** masih di luar cakupan (ditunda sejak M1) dan tidak dihidupkan oleh dokumen ini.
+9. **Lisensi terikat pada satu perangkat fisik** lewat SSAID. Factory reset, ganti HP, atau perangkat dengan SSAID cacat menghasilkan kode perangkat baru dan **membutuhkan kode aktivasi baru dari penjual**. Aplikasi tidak punya mekanisme transfer; pemberian kode pengganti adalah **kebijakan komersial penjual**, dibantu catatan penerbitan `lisensi-terbit.csv` (§6.3.B).
+10. **Sistem lisensi ini adalah deterrence yang wajar, bukan DRM.** Proteksi sisi klien pada Android bisa dibongkar pembajak yang gigih lewat *patching* APK; tidak ada klaim sebaliknya di mana pun. Sasarannya adalah pasar UMKM yang membeli karena aplikasinya berguna dan penjualnya bisa dihubungi — bukan memenangkan perlombaan melawan pembongkar (§6.7.3).
+11. **Kunci privat penerbit adalah aset paling berharga proyek ini di luar kode sumber.** Kehilangannya berarti tidak bisa menerbitkan kode baru (kode lama tetap sah); kebocorannya berarti *keygen* dan memaksa rotasi kunci + rilis baru. Tata kelolanya wajib mengikuti §6.7.2 tanpa pengecualian.
+12. **Satu perangkat hanya bisa memakai satu lisensi aktif.** Memasukkan kode baru selalu menimpa yang lama (dipakai untuk perpanjangan dan peningkatan dari trial ke berbayar).

@@ -5,13 +5,16 @@
 
 Rencana disusun sebagai **milestone berurutan lanjutan dari MVP** (M0–M6 sudah tuntas di [plan.md](plan.md)). Setiap milestone menghasilkan aplikasi yang bisa dijalankan & diuji (incremental). Checklist dicentang selama pengerjaan agar dokumen ini sekaligus menjadi tracker progres.
 
-Tiga catatan penyusunan yang mengikat:
+Empat catatan penyusunan yang mengikat:
 
-1. **Cakupan dikunci oleh [prd-v1.1.md](prd-v1.1.md).** Enam fitur, dua tier, tidak lebih. Daftar "TIDAK termasuk" di tiap bab PRD dan §11 berlaku penuh.
-2. **Tier 1 (M7–M9) tidak menyentuh skema database** — `schemaVersion` tetap **1**, sehingga backup v1.0 dan v1.1 saling kompatibel penuh. Migrasi skema baru dimulai di Tier 2 (M11: 1→2, M12: 2→3).
-3. **Penomoran rilis.** M10 merilis Tier 1 sebagai **v1.1.0**, M14 merilis Tier 2 sebagai **v1.2.0**. PRD v1.1 tetap menjadi satu dokumen sumber untuk keduanya; pemecahan nomor rilis murni keputusan pengemasan agar Tier 1 sampai ke pengguna tanpa menunggu migrasi skema — sekaligus memberi jalan agar **AC-9.2 sudah beredar sebelum `schemaVersion` pernah naik** (lihat M10).
+1. **Cakupan dikunci oleh [prd-v1.1.md](prd-v1.1.md).** Enam fitur produk + satu fitur komersial (lisensi, PRD §6), dua tier, tidak lebih. Daftar "TIDAK termasuk" di tiap bab PRD dan §12 berlaku penuh.
+2. **Tier 1 (M7–M10) tidak menyentuh skema database** — `schemaVersion` tetap **1**, sehingga backup v1.0 dan v1.1 saling kompatibel penuh. Migrasi skema baru dimulai di Tier 2 (M12: 1→2, M13: 2→3).
+3. **Penomoran rilis.** M11 merilis Tier 1 sebagai **v1.1.0**, M15 merilis Tier 2 sebagai **v1.2.0**. PRD v1.1 tetap menjadi satu dokumen sumber untuk keduanya; pemecahan nomor rilis murni keputusan pengemasan agar Tier 1 sampai ke pengguna tanpa menunggu migrasi skema — sekaligus memberi jalan agar **AC-10.2 sudah beredar sebelum `schemaVersion` pernah naik** (lihat M11).
+4. **M10 (Sistem Lisensi Offline) adalah gerbang penjualan dan syarat rilis v1.1.0.** v1.1.0 adalah rilis berbayar pertama; melepasnya tanpa gerbang aktivasi berarti melepas APK yang bebas disebarkan, dan memasang gerbang pada pengguna yang sudah terbiasa memakainya bebas jauh lebih menyakitkan daripada memasangnya sejak awal (PRD §2.2). M11 **tidak boleh** dirilis sebelum M10 tuntas.
 
-**Mode gelap (§5 PRD) dikerjakan lebih dulu di antara Tier 1** meskipun nilai bisnisnya di bawah printer & impor. Alasannya teknis, bukan preferensi: PRD §5.1 mencatat 351 pemakaian `AppColors.*` di 44 file, dan M8/M9 menambah banyak layar baru (kartu printer, sheet perangkat, wizard impor 5 langkah). Menulis layar-layar itu setelah `AppPalette` ada berarti layar baru langsung sadar-tema dan tidak perlu dimigrasi dua kali. PRD §2.4 menyatakan ketiga fitur Tier 1 paralel dan hanya mewajibkan mode gelap selesai **sebelum Tier 2** — urutan ini tidak melanggarnya, hanya memanfaatkannya.
+**Mode gelap (§5 PRD) dikerjakan lebih dulu di antara Tier 1** meskipun nilai bisnisnya di bawah printer & impor. Alasannya teknis, bukan preferensi: PRD §5.1 mencatat 351 pemakaian `AppColors.*` di 44 file, dan M8/M9/M10 menambah banyak layar baru (kartu printer, sheet perangkat, wizard impor 5 langkah, layar aktivasi & layar lisensi berakhir). Menulis layar-layar itu setelah `AppPalette` ada berarti layar baru langsung sadar-tema dan tidak perlu dimigrasi dua kali. PRD §2.4 menyatakan fitur-fitur Tier 1 paralel dan hanya mewajibkan mode gelap selesai **sebelum Tier 2** — urutan ini tidak melanggarnya, hanya memanfaatkannya.
+
+**M10 sengaja ditempatkan setelah M8/M9, bukan sebelumnya.** Gerbang aktivasi yang dipasang lebih awal akan menghalangi setiap uji manual di device fisik pada M7–M9 (setiap pemasangan APK debug menuntut kode baru), sementara nilainya baru terealisasi pada saat rilis. Yang mengikat adalah **selesai sebelum M11**, bukan dikerjakan lebih dulu.
 
 ---
 
@@ -75,91 +78,148 @@ Tiga catatan penyusunan yang mengikat:
 - [ ] Test atomisitas: error disuntikkan di baris ke-50 dari 100 → **nol** produk masuk (AC-4.15); file rusak/bukan xlsx/terenkripsi → pesan jelas tanpa crash (AC-4.14); file > 5.000 baris ditolak (AC-4.13)
 - [ ] Uji manual device fisik: file picker atas file dari WPS/Google Sheets; file 1.000 baris tampil di pratinjau ≤ 15 detik tanpa frame drop (AC-4.12); daftar Produk & badge stok menipis ter-refresh sendiri setelah impor (AC-4.16)
 
-## Milestone 10 — Polish & Rilis v1.1.0 (Tier 1)
+## Milestone 10 — Sistem Lisensi Offline (Aktivasi Wajib)
+> Hasil: aplikasi hanya bisa dipakai setelah diaktifkan dengan kode ter-tanda-tangan yang terikat perangkat — tanpa satu pun panggilan jaringan, dan tanpa pernah menyandera data pengguna.
+
+**Tool generator & tata kelola kunci**
+
+- [ ] **Commit terpisah khusus dependency:** tambah `cryptography: ^2.9.0` (dependencies) + `qr: ^4.0.0` & `image: ^4.3.0` (dev_dependencies, hanya untuk tool), lalu `flutter pub get` & **`flutter build apk --release` wajib sukses SEBELUM satu baris kode fitur ditulis**. Ketiganya **murni Dart tanpa modul Android** (PRD §6.7.1) sehingga kelas kegagalan `namespace` M0/M6 tidak berlaku — aturan commit gerbang tetap dijalankan, bukan diasumsikan
+- [ ] `tool/license_generator.dart` — CLI Dart yang dijalankan penjual, memakai **jalur kode yang sama** dengan verifier aplikasi (K-6.12): `--buat-kunci`, penerbitan (`--device --jenis --nama --catatan`), `--verifikasi <kode> --device <id>`, `--daftar`
+- [ ] `--buat-kunci`: pasangan kunci Ed25519 ditulis ke `~/.kasir-warung/license_ed25519.key` (**di luar repo**, menolak menimpa kunci yang sudah ada) dan mencetak kunci publik base64 siap tempel ke `lib/core/license/license_keys.dart`
+- [ ] Penerbitan memvalidasi **karakter cek kode perangkat lebih dulu** (salah ketik ketahuan sebelum kode diterbitkan), lalu memperingatkan bila kode perangkat itu **sudah pernah dapat trial** (baca `lisensi-terbit.csv`) — mitigasi tunggal untuk risiko trial berantai (PRD §6.7.3)
+- [ ] Keluaran penerbitan: kode teks 120 karakter terkelompok 5, berkas QR PNG (`qr` + `image`), dan satu baris di `lisensi-terbit.csv` (tanggal · kode perangkat · jenis · kedaluwarsa · nama · catatan)
+- [ ] `.gitignore` menutup `*.key`, `*.pem`, `lisensi-terbit.csv`; `docs/` atau README tool memuat tata kelola kunci PRD §6.7.2 (cadangan ≥ 2 tempat luring, akibat kunci hilang vs bocor, prosedur rotasi)
+- [ ] Aplikasi memuat **daftar** kunci publik tepercaya (`List<String>`), bukan satu kunci — rotasi tidak mengubah format token maupun alur verifikasi (AC-6.20). Kunci **uji** hanya masuk daftar saat `kDebugMode` sehingga R8 membuangnya dari build release (diverifikasi di AC-6.19)
+
+**Verifikasi & model domain**
+
+- [ ] `lib/core/license/` — **murni Dart, tanpa dependency Flutter/platform**: `LicensePayload` (9 byte, PRD §6.3.D), enkode/dekode **Crockford Base32** (terima huruf kecil, `I`/`l`→`1`, `O`→`0`, abaikan `-`/spasi, awalan `KW1-` opsional), CRC-16, dan `LicenseVerifier` (Ed25519 atas `"KASIRWARUNG-LICENSE-v1" || 0x00 || deviceId || muatan`)
+- [ ] Hasil verifikasi berupa **tipe kesalahan yang berbeda-beda**, bukan satu `false`: `salahKetik` (CRC gagal, K-6.7) · `perangkatLain` (petunjuk perangkat cocok tapi tanda tangan tidak, atau sebaliknya) · `tidakSah` · `versiTerlaluBaru` (AC-6.21) — setiap tipe punya pesan Bahasa Indonesia sendiri
+- [ ] **Vektor uji tetap** di `test/fixtures/` dengan pasangan kunci **uji** yang di-commit: ≥ 6 kode (trial/lifetime/tahunan × sah/kedaluwarsa) + kode perangkat-lain + kode versi-baru; seluruh unit test berjalan **tanpa perangkat & tanpa jaringan** (AC-6.8)
+- [ ] Unit test tabel-kasus: satu karakter diubah pada **seluruh 120 posisi** → selalu `salahKetik` (AC-6.6); muatan diubah + CRC dihitung ulang → selalu `tidakSah` (AC-6.7); normalisasi masukan (AC-6.9)
+- [ ] Kode perangkat: MethodChannel sendiri di `MainActivity.kt` yang sudah ada (`Settings.Secure.ANDROID_ID`) → `SHA-256("kasirwarung.device.v1|" + SSAID)` → 45 bit → Crockford Base32 9 karakter + **1 karakter cek berbobot posisi**, ditampilkan `KW-XXXXX-XXXXX` (K-6.5). Nol dependency platform baru; `android_id` hanya cadangan
+- [ ] Penanganan SSAID cacat/tak terbaca (`9774d56d682e549c`): pengenal acak dibangkitkan sekali & disimpan di `shared_preferences`, dengan konsekuensinya dinyatakan di UI bantuan (PRD §6.3.C)
+
+**Penyimpanan, keadaan & gerbang**
+
+- [ ] Status lisensi **hanya** di `shared_preferences` — `license_token`, `license_activated_at`, `license_last_seen_at`, `license_device_id_fallback` (K-6.1). **Dilarang** menulis apa pun ke tabel `settings`/database; `schemaVersion` tetap **1**
+- [ ] Jenis/tanggal/kedaluwarsa/masa tenggang **tidak disimpan terpisah** — diturunkan ulang dengan memverifikasi token di setiap *cold start* (satu sumber kebenaran)
+- [ ] `LicenseState` enam keadaan PRD §6.3.E (`belumAktif` · `aktif` · `akanBerakhir` · `masaTenggang` · `kedaluwarsaTahunan` · `kedaluwarsaTrial`) + `licenseStateProvider`; token dibaca & diverifikasi **sebelum `runApp()`** agar frame pertama sudah benar (pola sama dengan tema, AC-5.5)
+- [ ] Gerbang di **`redirect` go_router sebelum `StatefulShellRoute`** (K-6.9) dengan rute baru `/aktivasi` & `/lisensi-berakhir` di luar shell; urutan gerbang disiapkan untuk M13: **lisensi → masuk → shell**
+- [ ] Evaluasi ulang saat `AppLifecycleState.resumed`, dan **tidak pernah** memutus alur pembayaran yang sedang berjalan — transaksi berjalan wajib bisa diselesaikan sampai tersimpan (K-6.10, AC-6.18)
+- [ ] Trial 3 hari (kedaluwarsa absolut) · lifetime tanpa kedaluwarsa · tahunan 365 hari + **masa tenggang 7 hari** yang ikut ditandatangani di muatan (K-6.13); perpanjangan dihitung dari tanggal terbit kode baru (K-6.14); kode **bukan sekali pakai** (K-6.6)
+- [ ] **Mundur-jam:** `waktuAcuan = max(jam perangkat, license_last_seen_at, MAX(sales.created_at), license_activated_at)`; `license_last_seen_at` diperbarui saat start, resume, dan setiap penjualan tersimpan; seluruh evaluasi masa berlaku memakai `waktuAcuan` (K-6.8). Banner peringatan bila jam perangkat < acuan − 10 menit, **tanpa** mengunci aplikasi selama masa berlaku belum lewat
+- [ ] Pembacaan `MAX(sales.created_at)` dijalankan **setelah** database terbuka (di luar jalur frame pertama); penurunan keadaan yang dihasilkannya ditangani sendiri oleh `redirect`
+
+**UI (seluruhnya `context.palette` — dilarang `AppColors.*`)**
+
+- [ ] **Layar Aktivasi** `/aktivasi`: `AppIconBadge` kunci `xl` + judul, kartu kode perangkat dengan `AppTextStyles.numeric` besar, tombol "Salin" & "Kirim ke Penjual" (`share_plus` yang sudah ada, teks siap kirim berisi kode perangkat), tiga jalur masuk kode **[Pindai QR] [Tempel] [Ketik]**, satu CTA `buttonHeightLarge` 60, konten dibatasi `maxContentWidth`
+- [ ] Pindai QR me-*reuse* `mobile_scanner` yang **sudah** dipakai untuk barcode produk — tanpa dependency baru
+- [ ] Masukan manual berbentuk kelompok karakter (pola visual `pin_keypad.dart`, tapi memakai keyboard sistem: `textCapitalization: characters`, `autocorrect: false`, `enableSuggestions: false`), normalisasi karakter saat diketik, pemisah kelompok otomatis
+- [ ] Umpan balik verifikasi mengikuti `pin_entry_screen.dart`: tombol **tidak** diganti spinner (dinonaktifkan + baris status "Memeriksa kode…"), kode salah → `AppPill(tone: danger)` dengan **pesan spesifik per tipe kesalahan** + getar + `HapticFeedback.heavyImpact`
+- [ ] **Layar "Masa coba berakhir"** `/lisensi-berakhir`: `EmptyState` bernada `accent`, kalimat menenangkan ("semua data Anda masih tersimpan aman"), kode perangkat, CTA "Masukkan Kode Aktivasi", **tombol "Cadangkan Data"** yang melewati gerbang PIN bila PIN aktif (K-6.11, AC-6.15)
+- [ ] **Layar Kasir terkunci** (tahunan setelah tenggang): `EmptyState` **di dalam shell** — navigasi bawah tetap ada & berfungsi; Riwayat, Laporan, Export Excel, Backup, dan Pengaturan **tetap terbuka** (AC-6.14)
+- [ ] **Banner** `AppBanner` di layar Kasir: `warning` "berakhir N hari lagi", `danger` menetap "sisa masa tenggang N hari" + tombol "Perpanjang", `info` untuk jam mundur — tidak pernah menutupi bar keranjang atau CTA "Bayar"
+- [ ] **Kartu "Lisensi" di Pengaturan** (`SettingsCard`, ditempatkan paling bawah): `AppPill` status, jenis lisensi, tanggal aktivasi, tanggal berakhir + sisa hari ("Selamanya" untuk lifetime), kode perangkat + Salin, tombol "Masukkan Kode Baru"
+
+**Uji**
+
+- [ ] Test widget/router: seluruh rute (`/kasir`, `/produk`, `/riwayat`, `/laporan`, `/pengaturan`) dialihkan ke `/aktivasi` saat belum aktif, termasuk lewat navigasi langsung — penjagaan di router, bukan hanya UI (AC-6.1)
+- [ ] Test keadaan dengan **tanggal acuan yang disuntikkan** (bukan menunggu hari berganti): trial hari ke-1/ke-3/ke-4 (AC-6.10), tenggang tahunan hari ke-1/ke-7/ke-8 (AC-6.13, AC-6.14), jam dimundurkan 1 tahun (AC-6.16)
+- [ ] Test data: trial kedaluwarsa → aktivasi lifetime → jumlah produk/transaksi/pergerakan stok **identik** sebelum vs sesudah (AC-6.12); lisensi berakhir saat keranjang berisi → transaksi tetap tersimpan (AC-6.18)
+- [ ] Test backup: file backup dari perangkat berlisensi **tidak memuat jejak lisensi** (periksa isi tabel `settings` pada file), dan restore di perangkat lain tetap meminta aktivasi (AC-6.17)
+- [ ] Gerbang rilis: `git grep` pola kunci privat + verifikasi `.gitignore`, dan kunci uji **tidak** ada di build release (AC-6.19)
+- [ ] Uji manual device fisik: **aktivasi sukses** lewat ketiga jalur (pindai QR, tempel, ketik manual) dan waktunya diukur (≤ 30 detik QR/tempel, ≤ 2 menit ketik manual — PRD §11.1); **kode salah ketik** memberi pesan "salah ketik", bukan "tidak sah"; **kode perangkat lain** ditolak dengan pesan yang benar
+- [ ] Uji manual device fisik: **trial kedaluwarsa** (majukan tanggal HP) mengunci dengan layar ajakan beli dan "Cadangkan Data" tetap menghasilkan file yang bisa di-restore; **reinstall tidak me-reset trial** (uninstall → install APK release bertanda tangan sama → kode perangkat sama, kode trial lama tetap kedaluwarsa — AC-6.3, AC-6.11)
+- [ ] Uji manual device fisik: mundurkan jam HP 1 tahun → sisa masa berlaku tidak bertambah + banner jam mundur tampil; ukuran APK release tetap < 40 MB dan cold start < 3 detik (AC-6.22)
+
+## Milestone 11 — Polish & Rilis v1.1.0 (Tier 1)
 > Hasil: APK v1.1.0 siap dipakai, dan jalur migrasi Tier 2 sudah diamankan sebelum skema pernah naik.
 
-- [ ] **GERBANG WAJIB — AC-9.2:** `BackupService.validateBackupFile` **membandingkan** `PRAGMA user_version` file backup dengan `schemaVersion` aplikasi (saat ini nilai itu hanya dibaca). File lebih baru → restore ditolak dengan pesan "File backup berasal dari versi aplikasi yang lebih baru. Perbarui aplikasi ini terlebih dahulu." + unit test khusus. **Milestone yang menaikkan `schemaVersion` (M11) tidak boleh dimulai sebelum item ini rilis**, karena hanya versi yang sudah beredar duluan yang bisa menolak backup dari versi berikutnya
-- [ ] Verifikasi `schemaVersion` masih **1** dan backup v1.0 ↔ v1.1 saling kompatibel penuh dua arah; pengaturan printer ikut terbawa restore tanpa memblokir aplikasi bila printer tidak ada (AC-3.13, AC-9.3)
-- [ ] Sapu empty state, pesan error Bahasa Indonesia, kontras & target sentuh (≥ 48dp, CTA 52–60dp) pada seluruh layar baru M7–M9
-- [ ] Regresi manual seluruh alur PRD v1.0 (checklist §4 & §5 [prd.md](prd.md)) + tiga fitur baru, di HP kecil & tablet, pada mode terang **dan** gelap
+- [ ] **GERBANG WAJIB — AC-10.2:** `BackupService.validateBackupFile` **membandingkan** `PRAGMA user_version` file backup dengan `schemaVersion` aplikasi (saat ini nilai itu hanya dibaca). File lebih baru → restore ditolak dengan pesan "File backup berasal dari versi aplikasi yang lebih baru. Perbarui aplikasi ini terlebih dahulu." + unit test khusus. **Milestone yang menaikkan `schemaVersion` (M12) tidak boleh dimulai sebelum item ini rilis**, karena hanya versi yang sudah beredar duluan yang bisa menolak backup dari versi berikutnya
+- [ ] Verifikasi `schemaVersion` masih **1** dan backup v1.0 ↔ v1.1 saling kompatibel penuh dua arah; pengaturan printer ikut terbawa restore tanpa memblokir aplikasi bila printer tidak ada (AC-3.13, AC-10.3)
+- [ ] **GERBANG PENJUALAN — M10 wajib tuntas.** Rilis berbayar pertama tidak boleh keluar tanpa gerbang aktivasi: verifikasi sekali lagi bahwa APK release **tidak** memuat kunci uji, tidak ada bypass `kDebugMode` yang tersisa di jalur gerbang, dan alur aktivasi berjalan pada APK release yang **ditandatangani kunci rilis sebenarnya** (kode perangkat dari APK debug berbeda dengan APK release)
+- [ ] Terbitkan **kode uji-terima** untuk minimal 2 perangkat nyata lewat `tool/license_generator.dart` (satu trial, satu lifetime), jalankan seluruh alur pembelian dari sisi penjual **dan** pembeli, lalu simpan hasilnya sebagai catatan rilis
+- [ ] Sapu empty state, pesan error Bahasa Indonesia, kontras & target sentuh (≥ 48dp, CTA 52–60dp) pada seluruh layar baru M7–M10
+- [ ] Regresi manual seluruh alur PRD v1.0 (checklist §4 & §5 [prd.md](prd.md)) + empat fitur baru, di HP kecil & tablet, pada mode terang **dan** gelap
 - [ ] `flutter analyze` bersih; `flutter test` seluruhnya lulus tanpa mengubah ekspektasi test M0–M6
 - [ ] Build release APK (+ App Bundle bila ke Play Store), R8 aktif, ukuran < 40 MB, cold start < 3 detik diukur di device fisik
-- [ ] Cek metrik keberhasilan PRD §10.1 satu per satu
+- [ ] Cek metrik keberhasilan PRD §11.1 satu per satu
 - [ ] Naikkan `version:` di `pubspec.yaml` ke `1.1.0` dan tag `v1.1.0`
 
-## Milestone 11 — Pelanggan & Program Poin (`schemaVersion` 1 → 2)
+## Milestone 12 — Pelanggan & Program Poin (`schemaVersion` 1 → 2)
 > Hasil: pelanggan menjadi entitas nyata dengan riwayat & poin; daftar hutang lama otomatis rapi tanpa kehilangan sepeser pun.
 
-- [ ] **Prasyarat:** pastikan v1.1.0 (dengan AC-9.2) sudah dirilis sebelum `schemaVersion` dinaikkan
-- [ ] Tabel Drift baru `customers` & `customer_point_entries`, kolom `sales.customer_id`, plus 3 index sesuai PRD §6.5 (`idx_customers_name_nocase` parsial untuk pelanggan aktif, `idx_sales_customer`, `idx_point_entries_customer`)
-- [ ] `schemaVersion` 1 → 2 dengan `onUpgrade` **backfill** PRD §6.3.E dalam satu transaksi: `DISTINCT TRIM(customer_name)`, dikelompokkan case-insensitive, ejaan terbanyak menang (seri → paling awal), `customer_id` diisi untuk semua transaksi terkait. `sales.customer_name` **tidak dihapus & tidak diubah** (K-6.1, AC-9.4, AC-9.5)
+- [ ] **Prasyarat:** pastikan v1.1.0 (dengan AC-10.2) sudah dirilis sebelum `schemaVersion` dinaikkan
+- [ ] Tabel Drift baru `customers` & `customer_point_entries`, kolom `sales.customer_id`, plus 3 index sesuai PRD §7.5 (`idx_customers_name_nocase` parsial untuk pelanggan aktif, `idx_sales_customer`, `idx_point_entries_customer`)
+- [ ] `schemaVersion` 1 → 2 dengan `onUpgrade` **backfill** PRD §7.3.E dalam satu transaksi: `DISTINCT TRIM(customer_name)`, dikelompokkan case-insensitive, ejaan terbanyak menang (seri → paling awal), `customer_id` diisi untuk semua transaksi terkait. `sales.customer_name` **tidak dihapus & tidak diubah** (K-7.1, AC-10.4, AC-10.5)
 - [ ] Entity + kontrak `CustomerRepository` + implementasi Drift + provider; key `settings` baru: `points_enabled` (default `0`), `points_rupiah_per_point` (`10000`), `points_value_per_point` (`500`), `points_min_redeem` (`10`)
-- [ ] Buku besar poin (K-6.2) dengan tipe `earn` / `redeem` / `void_return` / `adjust` / `merge`; `customers.points` hanyalah cache yang diperbarui **di transaksi DB yang sama**; poin bilangan bulat (K-6.3); **tidak ada poin surut** (K-6.4)
-- [ ] Integrasi `SaveSaleUsecase`: poin dihitung dari total **setelah diskon** dan **tidak termasuk** potongan hasil penukaran poin (AC-6.10); berlaku untuk semua metode bayar termasuk hutang (K-6.5)
+- [ ] Buku besar poin (K-7.2) dengan tipe `earn` / `redeem` / `void_return` / `adjust` / `merge`; `customers.points` hanyalah cache yang diperbarui **di transaksi DB yang sama**; poin bilangan bulat (K-7.3); **tidak ada poin surut** (K-7.4)
+- [ ] Integrasi `SaveSaleUsecase`: poin dihitung dari total **setelah diskon** dan **tidak termasuk** potongan hasil penukaran poin (AC-7.10); berlaku untuk semua metode bayar termasuk hutang (K-7.5)
 - [ ] Integrasi `VoidSaleUsecase`: poin ditarik kembali & poin yang sempat ditukar dikembalikan, keduanya sebagai entri ledger terpisah dalam transaksi void yang sama; saldo tidak boleh negatif (dipatok 0 + entri bercatatan jelas)
-- [ ] Penukaran poin di sheet pembayaran → **diskon level transaksi** pada `sales.discount` + entri `redeem` (K-6.6); baris "Tukar poin" muncul di struk teks **dan** struk ESC/POS (M8)
-- [ ] Pemilih pelanggan menggantikan field teks bebas: bottom sheet dengan pencarian autofocus, baris ≥ 56dp, opsi "Buat pelanggan baru: <ketikan>", wajib untuk hutang (`NamaPelangganWajibException` dipertahankan, AC-6.4), dan **nol tap tambahan** bila pelanggan tidak dipilih (AC-6.5)
+- [ ] Penukaran poin di sheet pembayaran → **diskon level transaksi** pada `sales.discount` + entri `redeem` (K-7.6); baris "Tukar poin" muncul di struk teks **dan** struk ESC/POS (M8)
+- [ ] Pemilih pelanggan menggantikan field teks bebas: bottom sheet dengan pencarian autofocus, baris ≥ 56dp, opsi "Buat pelanggan baru: <ketikan>", wajib untuk hutang (`NamaPelangganWajibException` dipertahankan, AC-7.4), dan **nol tap tambahan** bila pelanggan tidak dipilih (AC-7.5)
 - [ ] Layar **Pelanggan** diakses dari tab Laporan (kartu "Hutang Pelanggan" berkembang jadi kartu "Pelanggan"); `debt_list_screen.dart` menjadi filter "Punya hutang" di dalamnya. **Navigasi bawah tetap 5 tab**
-- [ ] Detail pelanggan: ringkasan (total belanja, jumlah transaksi, sisa hutang, saldo poin), riwayat belanja berpaginasi (pola `AsyncNotifier` M3), riwayat poin (`AppDataRow` +/−); aksi ubah, nonaktifkan (ditolak bila masih berhutang, AC-6.13)
-- [ ] Gabungkan pelanggan (PRD §6.3.D): mode pilih, pratinjau dampak, satu transaksi DB, sumber ditandai nonaktif + `merged_into_id`, **satu arah & tidak bisa dibatalkan** (K-6.7)
+- [ ] Detail pelanggan: ringkasan (total belanja, jumlah transaksi, sisa hutang, saldo poin), riwayat belanja berpaginasi (pola `AsyncNotifier` M3), riwayat poin (`AppDataRow` +/−); aksi ubah, nonaktifkan (ditolak bila masih berhutang, AC-7.13)
+- [ ] Gabungkan pelanggan (PRD §7.3.D): mode pilih, pratinjau dampak, satu transaksi DB, sumber ditandai nonaktif + `merged_into_id`, **satu arah & tidak bisa dibatalkan** (K-7.7)
 - [ ] Pengaturan → kartu "Program Poin" (**default mati**, seluruh UI poin tersembunyi saat mati) + aksi pemeliharaan "hitung ulang saldo dari ledger"
 - [ ] Nama pelanggan di detail transaksi menjadi tautan ke profil pelanggan
-- [ ] Export Excel mendapat sheet/berkas "Pelanggan & Poin" (nama, no. HP, total belanja, sisa hutang, saldo poin) — AC-6.16
+- [ ] Export Excel mendapat sheet/berkas "Pelanggan & Poin" (nama, no. HP, total belanja, sisa hutang, saldo poin) — AC-7.16
 - [ ] Seluruh layar baru memakai `context.palette`; dilarang `AppColors.*`
-- [ ] **Test migrasi atas snapshot database v1 nyata** (AC-9.1): `"Bu Ani"` / `"bu ani"` / `"Bu Ani "` → satu pelanggan dengan tiga transaksi (AC-6.1); total hutang sebelum vs sesudah **identik** (AC-6.2); `customer_name` lama tidak berubah setelah rename (AC-6.3)
-- [ ] Test invarian: `customers.points` **selalu** sama dengan jumlah entri ledger setelah rangkaian acak jual/void/tukar/gabung (AC-6.11); penggabungan 3 pelanggan tidak menghilangkan entri (AC-6.12); aturan perolehan Rp37.000 → 3 poin, Rp9.999 → 0 poin (AC-6.7); program mati → nol elemen poin di layar mana pun termasuk struk (AC-6.6)
-- [ ] Test performa: pencarian pada 2.000 pelanggan < 100 ms (AC-6.14); detail pelanggan dengan 5.000 transaksi tetap mulus (AC-6.15)
+- [ ] **Test migrasi atas snapshot database v1 nyata** (AC-10.1): `"Bu Ani"` / `"bu ani"` / `"Bu Ani "` → satu pelanggan dengan tiga transaksi (AC-7.1); total hutang sebelum vs sesudah **identik** (AC-7.2); `customer_name` lama tidak berubah setelah rename (AC-7.3)
+- [ ] Test invarian: `customers.points` **selalu** sama dengan jumlah entri ledger setelah rangkaian acak jual/void/tukar/gabung (AC-7.11); penggabungan 3 pelanggan tidak menghilangkan entri (AC-7.12); aturan perolehan Rp37.000 → 3 poin, Rp9.999 → 0 poin (AC-7.7); program mati → nol elemen poin di layar mana pun termasuk struk (AC-7.6)
+- [ ] Test performa: pencarian pada 2.000 pelanggan < 100 ms (AC-7.14); detail pelanggan dengan 5.000 transaksi tetap mulus (AC-7.15)
 - [ ] Uji manual device fisik: alur kasir tunai tanpa memilih pelanggan tidak bertambah satu tap pun; **restore backup v1.0 di perangkat lain → migrasi jalan otomatis & total hutang sama persis**
 
-## Milestone 12 — Multi-User dengan PIN per Kasir (`schemaVersion` 2 → 3)
+## Milestone 13 — Multi-User dengan PIN per Kasir (`schemaVersion` 2 → 3)
 > Hasil: pemilik tahu siapa yang melayani setiap transaksi, dan kasir tidak bisa melihat laba atau membatalkan transaksi.
 
-- [ ] Tabel Drift baru `users`; `ALTER TABLE` menambah `sales.user_id`, `sales.user_name`, `sales.voided_by_user_id`, `stock_movements.user_id`; index `idx_users_name_nocase` (parsial, aktif saja) & `idx_sales_user` (PRD §7.5)
+- [ ] Tabel Drift baru `users`; `ALTER TABLE` menambah `sales.user_id`, `sales.user_name`, `sales.voided_by_user_id`, `stock_movements.user_id`; index `idx_users_name_nocase` (parsial, aktif saja) & `idx_sales_user` (PRD §8.5)
 - [ ] `schemaVersion` 2 → 3, seluruhnya `ADD COLUMN` (O(1) di SQLite, non-destruktif); indikator progres bila pembuatan index > 1 detik
 - [ ] Key `settings` baru: `multi_user_enabled` (**default `0`**), `auto_lock_minutes` (`0` = mati), `recovery_code_hash`, `recovery_code_salt`. Key lama `pin_hash`/`pin_salt` **dipertahankan** untuk mode single-user
-- [ ] `UserRepository` + reuse `PinHasher` (SHA-256) dengan **salt per pengguna** (K-7.3); tidak ada PIN teks polos di DB maupun `shared_preferences` (AC-7.14). Sesi aktif disimpan sebagai `active_user_id` di `shared_preferences`
-- [ ] Alur aktivasi (PRD §7.3.A): PIN global yang sudah ada **otomatis** menjadi PIN akun "Pemilik" (AC-7.2); bila belum ada, buat PIN Pemilik 6 digit
-- [ ] **Kode pemulihan 8 karakter** ditampilkan **sekali saja**, disimpan sebagai hash, dengan tombol Salin/Bagikan dan centang wajib "Saya sudah mencatat" (K-7.4, AC-7.3)
-- [ ] Layar **Masuk** sebagai rute di luar shell navigasi: kartu pengguna ≥ 64dp (avatar inisial) → keypad PIN me-*reuse* `pin_keypad.dart` / `pin_entry_screen.dart`; judul "Siapa yang bertugas?". Pilih nama dulu, baru PIN (K-7.2, AC-7.15)
-- [ ] Dua peran tetap (Pemilik / Kasir) dengan matriks izin PRD §7.3.C — **tidak bisa dikustomisasi** (K-7.1)
-- [ ] Penjagaan izin di **lapisan `redirect` go_router sekaligus di UI** (AC-7.4); elemen berisi laba & harga modal **disembunyikan sepenuhnya** untuk Kasir, bukan diburamkan (AC-7.5); Kasir hanya melihat Riwayat hari ini dan tidak bisa void (AC-7.6)
+- [ ] `UserRepository` + reuse `PinHasher` (SHA-256) dengan **salt per pengguna** (K-8.3); tidak ada PIN teks polos di DB maupun `shared_preferences` (AC-8.14). Sesi aktif disimpan sebagai `active_user_id` di `shared_preferences`
+- [ ] Alur aktivasi (PRD §8.3.A): PIN global yang sudah ada **otomatis** menjadi PIN akun "Pemilik" (AC-8.2); bila belum ada, buat PIN Pemilik 6 digit
+- [ ] **Kode pemulihan 8 karakter** ditampilkan **sekali saja**, disimpan sebagai hash, dengan tombol Salin/Bagikan dan centang wajib "Saya sudah mencatat" (K-8.4, AC-8.3)
+- [ ] Layar **Masuk** sebagai rute di luar shell navigasi: kartu pengguna ≥ 64dp (avatar inisial) → keypad PIN me-*reuse* `pin_keypad.dart` / `pin_entry_screen.dart`; judul "Siapa yang bertugas?". Pilih nama dulu, baru PIN (K-8.2, AC-8.15)
+- [ ] Dua peran tetap (Pemilik / Kasir) dengan matriks izin PRD §8.3.C — **tidak bisa dikustomisasi** (K-8.1)
+- [ ] Penjagaan izin di **lapisan `redirect` go_router sekaligus di UI** (AC-8.4); elemen berisi laba & harga modal **disembunyikan sepenuhnya** untuk Kasir, bukan diburamkan (AC-8.5); Kasir hanya melihat Riwayat hari ini dan tidak bisa void (AC-8.6)
 - [ ] Penolakan akses memakai pola `EmptyState` (ikon gembok + kalimat pengarah + tombol "Masuk sebagai Pemilik"), bukan dialog error telanjang
 - [ ] "Ganti Kasir" di Pengaturan dan menu ⋮ layar Kasir (satu-satunya tambahan di layar kasir) + chip pengguna aktif di AppBar yang tidak boleh lebih menonjol dari CTA "Bayar"
-- [ ] Kunci otomatis opsional (mati / 1 / 5 / 15 menit); **keranjang berjalan tidak pernah dibuang** — hanya ditutupi layar PIN (AC-7.11, AC-7.12)
-- [ ] Rate limit: 5 PIN salah → keypad terkunci 30 detik, berlipat sampai maksimal 5 menit, dan **bertahan setelah aplikasi ditutup-buka** (AC-7.10). Tidak ada penghapusan data
-- [ ] Jejak pengguna: `user_id` + `user_name` snapshot di setiap penjualan (K-7.6), `user_id` di setiap penyesuaian stok, `voided_by_user_id` saat void; baris `Kasir: <nama>` di struk teks & ESC/POS (M8)
-- [ ] Filter "Kasir" di Riwayat dan Laporan (AC-7.9)
+- [ ] Kunci otomatis opsional (mati / 1 / 5 / 15 menit); **keranjang berjalan tidak pernah dibuang** — hanya ditutupi layar PIN (AC-8.11, AC-8.12)
+- [ ] Rate limit: 5 PIN salah → keypad terkunci 30 detik, berlipat sampai maksimal 5 menit, dan **bertahan setelah aplikasi ditutup-buka** (AC-8.10). Tidak ada penghapusan data
+- [ ] Jejak pengguna: `user_id` + `user_name` snapshot di setiap penjualan (K-8.6), `user_id` di setiap penyesuaian stok, `voided_by_user_id` saat void; baris `Kasir: <nama>` di struk teks & ESC/POS (M8)
+- [ ] Filter "Kasir" di Riwayat dan Laporan (AC-8.9)
 - [ ] Reset PIN kasir oleh Pemilik; pemulihan PIN Pemilik lewat kode pemulihan (kode lama hangus, kode baru diterbitkan)
-- [ ] Mematikan multi-user: akun kasir dinonaktifkan, PIN Pemilik kembali jadi PIN global, `sales.user_id` historis **tetap dipertahankan** (AC-7.13)
-- [ ] Test migrasi 2 → 3 atas snapshot database v2 (AC-9.1); test per peran termasuk percobaan akses rute langsung; test multi-user mati = perilaku v1.0 persis (AC-7.1); test nama pengguna diganti tidak mengubah `user_name` transaksi lama (AC-7.7, AC-7.8)
-- [ ] Uji manual device fisik: ganti kasir saat keranjang berisi, kunci otomatis lalu buka kembali, rasa keypad PIN, restore backup schema 3 membawa seluruh akun & meminta masuk (AC-7.16)
+- [ ] Mematikan multi-user: akun kasir dinonaktifkan, PIN Pemilik kembali jadi PIN global, `sales.user_id` historis **tetap dipertahankan** (AC-8.13)
+- [ ] Test migrasi 2 → 3 atas snapshot database v2 (AC-10.1); test per peran termasuk percobaan akses rute langsung; test multi-user mati = perilaku v1.0 persis (AC-8.1); test nama pengguna diganti tidak mengubah `user_name` transaksi lama (AC-8.7, AC-8.8)
+- [ ] Uji manual device fisik: ganti kasir saat keranjang berisi, kunci otomatis lalu buka kembali, rasa keypad PIN, restore backup schema 3 membawa seluruh akun & meminta masuk (AC-8.16)
 
-## Milestone 13 — Grafik Penjualan di Dashboard
+## Milestone 14 — Grafik Penjualan di Dashboard
 > Hasil: pemilik melihat tren, jam ramai, dan komposisi pembayaran dalam sekali lihat — tanpa satu pun dependency baru.
 
 - [ ] Index `CREATE INDEX IF NOT EXISTS idx_sales_status_created ON sales(status, created_at)` lewat migrasi idempoten (`schemaVersion` **tetap 3**, tidak ada tabel/kolom baru)
-- [ ] `ReportRepository.getSalesSeries({start, end, bucket, userId})` & `getHourlyDistribution({start, end, userId})` — **seluruh agregasi di SQL** (K-8.5), memakai `strftime('%Y-%m-%d', created_at / 1000, 'unixepoch', 'localtime')` agar batas hari mengikuti zona perangkat
-- [ ] Widget bersama `core/widgets/app_bar_chart.dart` (`Flex`/`CustomPainter`) — **tanpa dependency grafik baru** (K-8.1); area sentuh setiap batang ≥ 48dp walau batangnya lebih sempit (AC-8.8)
-- [ ] **Grafik 1 — Tren penjualan:** ember otomatis jam / hari / bulan sesuai panjang rentang, maksimum ~90 batang (K-8.4); peralih Omzet ↔ Laba (`SegmentedButton`); perbandingan periode sebelumnya ("+12% dari 7 hari sebelumnya") berwarna success/danger; tap batang → angka persis; "Lihat transaksi" → Riwayat terfilter; transaksi `voided` **selalu** dikecualikan
+- [ ] `ReportRepository.getSalesSeries({start, end, bucket, userId})` & `getHourlyDistribution({start, end, userId})` — **seluruh agregasi di SQL** (K-9.5), memakai `strftime('%Y-%m-%d', created_at / 1000, 'unixepoch', 'localtime')` agar batas hari mengikuti zona perangkat
+- [ ] Widget bersama `core/widgets/app_bar_chart.dart` (`Flex`/`CustomPainter`) — **tanpa dependency grafik baru** (K-9.1); area sentuh setiap batang ≥ 48dp walau batangnya lebih sempit (AC-9.8)
+- [ ] **Grafik 1 — Tren penjualan:** ember otomatis jam / hari / bulan sesuai panjang rentang, maksimum ~90 batang (K-9.4); peralih Omzet ↔ Laba (`SegmentedButton`); perbandingan periode sebelumnya ("+12% dari 7 hari sebelumnya") berwarna success/danger; tap batang → angka persis; "Lihat transaksi" → Riwayat terfilter; transaksi `voided` **selalu** dikecualikan
 - [ ] **Grafik 2 — Jam ramai:** batang 0–23 atas seluruh rentang, batang tertinggi `primary` dan sisanya tonal, jam kosong tetap tampil sebagai batang nol, plus kalimat "Paling ramai: 17.00–18.00 (…)"
-- [ ] **Grafik 3 — Komposisi metode bayar:** satu batang horizontal bertumpuk dengan legenda **berlabel teks** + nominal + persentase, memakai alias domain `tunai`/`nonTunai`/`hutang`. **Tanpa pie/donut** (K-8.2, AC-8.10)
+- [ ] **Grafik 3 — Komposisi metode bayar:** satu batang horizontal bertumpuk dengan legenda **berlabel teks** + nominal + persentase, memakai alias domain `tunai`/`nonTunai`/`hutang`. **Tanpa pie/donut** (K-9.2, AC-9.10)
 - [ ] **Grafik 4 — Produk terlaris:** batang horizontal 5 teratas memakai `getTopProducts` yang sudah ada, tanpa query baru
-- [ ] Grafik hidup di tab Laporan di bawah `summary_card.dart` dan **mengikuti pemilih rentang tanggal yang sudah ada** — tanpa pemilih baru (K-8.3); judul kartu kecil, angka besar `moneyLarge`, sumbu Y hanya maksimum & nol, label sumbu X dijarangkan otomatis, animasi masuk 200 ms
-- [ ] `EmptyState` untuk rentang tanpa transaksi (bukan grafik kosong atau `NaN`); satu batang & nilai nol semua tetap tampil wajar (AC-8.11)
-- [ ] Peralih "Laba" hanya dirender untuk Pemilik saat multi-user aktif; filter "Kasir" memengaruhi seluruh grafik konsisten dengan kartu ringkasan (AC-8.14)
-- [ ] Seluruh warna diambil dari `context.palette` — tidak ada hex tetap; uji widget di kedua tema (AC-8.9)
-- [ ] Test: jumlah seluruh batang **sama persis** dengan omzet kartu ringkasan untuk rentang yang sama (AC-8.2); aturan ember untuk 1/7/90/400 hari (AC-8.1); `voided` tidak menyumbang tinggi batang (AC-8.3); batas tengah malam WIB/WITA/WIT (AC-8.4); perbandingan periode sebelumnya (AC-8.7); query + render < 300 ms @ 100.000 transaksi (AC-8.5)
-- [ ] Uji manual device fisik: keterbacaan di HP 5 inci (batang tidak berdesakan, label dijarangkan) dan tablet landscape (AC-8.12); pertambahan ukuran APK < 1 MB (AC-8.13)
+- [ ] Grafik hidup di tab Laporan di bawah `summary_card.dart` dan **mengikuti pemilih rentang tanggal yang sudah ada** — tanpa pemilih baru (K-9.3); judul kartu kecil, angka besar `moneyLarge`, sumbu Y hanya maksimum & nol, label sumbu X dijarangkan otomatis, animasi masuk 200 ms
+- [ ] `EmptyState` untuk rentang tanpa transaksi (bukan grafik kosong atau `NaN`); satu batang & nilai nol semua tetap tampil wajar (AC-9.11)
+- [ ] Peralih "Laba" hanya dirender untuk Pemilik saat multi-user aktif; filter "Kasir" memengaruhi seluruh grafik konsisten dengan kartu ringkasan (AC-9.14)
+- [ ] Seluruh warna diambil dari `context.palette` — tidak ada hex tetap; uji widget di kedua tema (AC-9.9)
+- [ ] Test: jumlah seluruh batang **sama persis** dengan omzet kartu ringkasan untuk rentang yang sama (AC-9.2); aturan ember untuk 1/7/90/400 hari (AC-9.1); `voided` tidak menyumbang tinggi batang (AC-9.3); batas tengah malam WIB/WITA/WIT (AC-9.4); perbandingan periode sebelumnya (AC-9.7); query + render < 300 ms @ 100.000 transaksi (AC-9.5)
+- [ ] Uji manual device fisik: keterbacaan di HP 5 inci (batang tidak berdesakan, label dijarangkan) dan tablet landscape (AC-9.12); pertambahan ukuran APK < 1 MB (AC-9.13)
 
-## Milestone 14 — Polish & Rilis v1.2.0 (Tier 2)
+## Milestone 15 — Polish & Rilis v1.2.0 (Tier 2)
 > Hasil: APK v1.2.0 siap dipakai dengan rantai migrasi 1→2→3 yang terbukti aman.
 
-- [ ] Pengingat backup > 7 hari ditampilkan sebelum pembaruan yang menaikkan `schemaVersion` (memanfaatkan `last_backup_at` yang sudah ada) — AC-9.6
-- [ ] Verifikasi rantai migrasi **1 → 2 → 3 dalam satu jalur** dari snapshot database v1.0 nyata: tidak ada baris hilang, tidak ada `DROP COLUMN`, kegagalan mengembalikan DB ke keadaan semula dengan pesan Bahasa Indonesia (AC-9.3, AC-9.4, AC-9.5)
-- [ ] Sapu empty state, pesan error, kontras & target sentuh pada seluruh layar baru M11–M13 di kedua tema
-- [ ] Regresi manual: multi-user mati → aplikasi berperilaku **persis** seperti v1.0/v1.1 (AC-7.1); program poin mati → nol elemen poin (AC-6.6); alur kasir inti tetap tiga langkah
-- [ ] Regresi manual seluruh alur PRD v1.0 + enam fitur v1.1 di HP kecil & tablet, mode terang & gelap
-- [ ] `flutter analyze` bersih; `flutter test` seluruhnya lulus; cek metrik keberhasilan PRD §10.2 satu per satu
+- [ ] Pengingat backup > 7 hari ditampilkan sebelum pembaruan yang menaikkan `schemaVersion` (memanfaatkan `last_backup_at` yang sudah ada) — AC-10.6
+- [ ] Verifikasi rantai migrasi **1 → 2 → 3 dalam satu jalur** dari snapshot database v1.0 nyata: tidak ada baris hilang, tidak ada `DROP COLUMN`, kegagalan mengembalikan DB ke keadaan semula dengan pesan Bahasa Indonesia (AC-10.3, AC-10.4, AC-10.5)
+- [ ] Sapu empty state, pesan error, kontras & target sentuh pada seluruh layar baru M12–M14 di kedua tema
+- [ ] Regresi manual: multi-user mati → aplikasi berperilaku **persis** seperti v1.0/v1.1 (AC-8.1); program poin mati → nol elemen poin (AC-7.6); alur kasir inti tetap tiga langkah
+- [ ] Regresi manual seluruh alur PRD v1.0 + enam fitur produk v1.1 **dan** sistem lisensi (aktivasi, masa tenggang, layar terkunci) di HP kecil & tablet, mode terang & gelap
+- [ ] `flutter analyze` bersih; `flutter test` seluruhnya lulus; cek metrik keberhasilan PRD §11.2 satu per satu
 - [ ] Build release APK (+ App Bundle), R8 aktif, ukuran < 40 MB, cold start < 3 detik di device fisik
 - [ ] Naikkan `version:` di `pubspec.yaml` ke `1.2.0` dan tag `v1.2.0`
 
@@ -171,58 +231,77 @@ Tiga catatan penyusunan yang mengikat:
 Tier 1 — schemaVersion tetap 1, backup v1.0 ↔ v1.1 kompatibel penuh
 
 M7 (Mode Gelap) ──┬──► M8 (Printer)  ──┐
-   fondasi tema   └──► M9 (Impor)    ──┴──► M10 (Rilis v1.1.0)
+   fondasi tema   ├──► M9 (Impor)    ──┤
+                  └──► M10 (Lisensi) ──┴──► M11 (Rilis v1.1.0)
 
-   M8 & M9 bisa PARALEL setelah M7 selesai — keduanya independen,
+   M8, M9 & M10 bisa PARALEL setelah M7 selesai — ketiganya independen,
    tidak berbagi file selain kartu di layar Pengaturan.
 
+   M10 ditempatkan setelah M8/M9 karena gerbang aktivasi yang terpasang
+   lebih awal menghalangi uji manual device fisik pada M7–M9. Yang
+   mengikat: M10 SELESAI SEBELUM M11, bukan dikerjakan lebih dulu.
+
                               ┃
-              GERBANG WAJIB   ┃  M10 memuat AC-9.2 (validasi user_version
-              (AC-9.2)        ┃  di BackupService). schemaVersion TIDAK BOLEH
-                              ┃  naik sebelum M10 dirilis.
+              DUA GERBANG     ┃  (1) GERBANG PENJUALAN: M10 wajib tuntas
+              WAJIB DI M11    ┃      sebelum v1.1.0 dirilis — v1.1.0 adalah
+                              ┃      rilis berbayar pertama (PRD §2.2).
+                              ┃  (2) GERBANG MIGRASI: M11 memuat AC-10.2
+                              ┃      (validasi user_version di BackupService).
+                              ┃      schemaVersion TIDAK BOLEH naik sebelum
+                              ┃      M11 dirilis.
                               ▼
 
 Tier 2 — berurutan, ada migrasi skema
 
-M10 ──► M11 (Pelanggan, 1→2) ──► M12 (Multi-user, 2→3) ──► M13 (Grafik) ──► M14 (Rilis v1.2.0)
+M11 ──► M12 (Pelanggan, 1→2) ──► M13 (Multi-user, 2→3) ──► M14 (Grafik) ──► M15 (Rilis v1.2.0)
                 │                          │                    ▲
                 │                          └── filter "Kasir" ───┘
                 │
                 └── baris "Tukar poin" & "Poin Anda" pada struk M8;
-                    M12 menambah baris "Kasir: <nama>" pada struk yang sama.
+                    M13 menambah baris "Kasir: <nama>" pada struk yang sama.
 ```
 
 Ketergantungan lintas milestone yang perlu diingat:
-- **M7 → semua milestone berikutnya:** setiap layar baru M8–M13 wajib memakai `context.palette`; gerbang grep AC-5.6 dijaga tetap hijau.
-- **M8 ↔ M11 & M12:** struk cetak adalah titik temu tiga fitur — poin dan nama kasir menambah baris pada `EscPosReceiptBuilder` yang sama.
-- **M12 → M13:** filter "per kasir" pada grafik bergantung pada `sales.user_id`; M13 sengaja ditempatkan setelah M12 agar filter itu tidak dikerjakan dua kali.
-- **M11 → M12:** urutan migrasi skema tidak boleh ditukar (1→2 lalu 2→3), karena uji migrasi memakai snapshot versi sebelumnya.
+- **M7 → semua milestone berikutnya:** setiap layar baru M8–M14 wajib memakai `context.palette`; gerbang grep AC-5.6 dijaga tetap hijau.
+- **M10 → M11:** tidak ada rilis berbayar tanpa gerbang aktivasi; alur aktivasi wajib diuji pada APK **release** yang ditandatangani kunci rilis sebenarnya, karena kode perangkat pada APK debug berbeda (SSAID terikat kunci penanda tangan).
+- **M10 → M13:** urutan gerbang router adalah **lisensi → masuk (login) → shell**; saat M13 menambahkan layar Masuk, `redirect` lisensi tetap yang paling luar (PRD §6.3.F).
+- **M8 ↔ M12 & M13:** struk cetak adalah titik temu tiga fitur — poin dan nama kasir menambah baris pada `EscPosReceiptBuilder` yang sama.
+- **M13 → M14:** filter "per kasir" pada grafik bergantung pada `sales.user_id`; M14 sengaja ditempatkan setelah M13 agar filter itu tidak dikerjakan dua kali.
+- **M12 → M13:** urutan migrasi skema tidak boleh ditukar (1→2 lalu 2→3), karena uji migrasi memakai snapshot versi sebelumnya.
 
 ## Definisi Selesai (per milestone)
 1. Semua checklist tercentang & fitur berjalan di device nyata (HP + tablet), pada mode terang **dan** gelap.
 2. Test unit/widget/DB terkait lulus (`flutter test`) dan `flutter analyze` bersih.
 3. Tidak ada regresi pada milestone sebelumnya; seluruh test M0–M6 tetap lulus **tanpa mengubah ekspektasinya**.
 4. Tidak ada `AppColors.*` baru di `lib/features/` (berlaku sejak M7 selesai).
-5. Untuk milestone yang menaikkan `schemaVersion` (M11, M12): uji migrasi memakai *snapshot* database versi sebelumnya lulus (AC-9.1), migrasi non-destruktif dan berjalan dalam satu transaksi (AC-9.4, AC-9.5).
-6. Dokumen ini diperbarui (centang + catatan bila ada perubahan keputusan) dan laporan milestone `docs/laporan-m<N>.md` ditulis mengikuti pola M0–M6.
+5. Untuk milestone yang menaikkan `schemaVersion` (M12, M13): uji migrasi memakai *snapshot* database versi sebelumnya lulus (AC-10.1), migrasi non-destruktif dan berjalan dalam satu transaksi (AC-10.4, AC-10.5).
+6. Tidak ada rahasia yang masuk repositori: kunci privat penerbit lisensi, `lisensi-terbit.csv`, dan berkas `*.key`/`*.pem` tidak pernah ter-commit (berlaku sejak M10; diperiksa dengan `git grep` di checklist rilis, AC-6.19).
+7. Dokumen ini diperbarui (centang + catatan bila ada perubahan keputusan) dan laporan milestone `docs/laporan-m<N>.md` ditulis mengikuti pola M0–M6.
 
 ## Risiko & Mitigasi
 
 | Risiko | Dampak | Mitigasi |
 |--------|--------|----------|
 | Dependency printer membuat `flutter build apk --release` gagal (preseden: `flutter_native_splash` di M6, `win32` di M0) | Seluruh Tier 1 tertahan | Dependency masuk **commit terpisah** yang divalidasi build release **sebelum** kode fitur ditulis (M8 item 1); kandidat gagal dicoret, Gradle tidak ditambal; `android.builtInKotlin=false` tidak boleh dihapus |
-| `schemaVersion` naik sebelum AC-9.2 beredar | Backup dari versi lebih baru diterima diam-diam oleh versi lama → data rusak | M10 dijadikan **gerbang wajib**: M11 tidak boleh dimulai sebelum v1.1.0 dirilis |
-| Backfill pelanggan salah kelompok saat migrasi 1→2 | Total hutang berubah — kepercayaan hancur, ini soal uang | Uji migrasi atas snapshot DB v1 nyata (AC-6.1, AC-6.2), migrasi dalam satu transaksi, pengingat backup sebelum pembaruan |
-| Saldo poin melenceng dari buku besar | Sengketa dengan pembeli di depan warung | Ledger sebagai sumber kebenaran (K-6.2), uji invarian saldo = jumlah ledger (AC-6.11), aksi "hitung ulang saldo dari ledger" di Pengaturan |
+| `schemaVersion` naik sebelum AC-10.2 beredar | Backup dari versi lebih baru diterima diam-diam oleh versi lama → data rusak | M11 dijadikan **gerbang wajib**: M12 tidak boleh dimulai sebelum v1.1.0 dirilis |
+| Backfill pelanggan salah kelompok saat migrasi 1→2 | Total hutang berubah — kepercayaan hancur, ini soal uang | Uji migrasi atas snapshot DB v1 nyata (AC-7.1, AC-7.2), migrasi dalam satu transaksi, pengingat backup sebelum pembaruan |
+| Saldo poin melenceng dari buku besar | Sengketa dengan pembeli di depan warung | Ledger sebagai sumber kebenaran (K-7.2), uji invarian saldo = jumlah ledger (AC-7.11), aksi "hitung ulang saldo dari ledger" di Pengaturan |
 | Migrasi 351 pemakaian `AppColors` membengkak | M7 molor dan menahan seluruh Tier 1 | M7 dipecah 4 langkah yang masing-masing tetap bisa dibangun & diuji; langkah 1 saja sudah memberi mode gelap yang berfungsi |
-| Layar baru M8–M13 menambah utang warna | "Pulau putih" di mode gelap | M7 dikerjakan lebih dulu + gerbang grep AC-5.6 dijaga di Definisi Selesai setiap milestone |
+| Layar baru M8–M14 menambah utang warna | "Pulau putih" di mode gelap | M7 dikerjakan lebih dulu + gerbang grep AC-5.6 dijaga di Definisi Selesai setiap milestone |
 | Fragmentasi firmware printer murah | Struk berantakan di merek tertentu | Uji ≥ 3 merek berbeda, pengaturan lebar kertas & baris feed, hindari perintah eksotis (tanpa auto-cut, tanpa QR native, tanpa raster `GS ( L`) |
 | Izin Bluetooth Android 12+ / pertanyaan Play Store soal izin lokasi | Fitur mati diam-diam di HP baru, atau rilis tertahan | Deklarasikan **hanya** `BLUETOOTH_CONNECT`; verifikasi manifest hasil merge pada build release (AC-3.11) |
 | Impor Excel masuk sebagian | Katalog rusak & sulit dipulihkan | Satu `db.transaction()` (K-4.5), baris bermasalah tersaring sebelum commit, timpa stok default mati, konfirmasi ganda + "Backup Dulu" |
-| Izin multi-user hanya disembunyikan di UI | Karyawan melihat laba atau membatalkan transaksi | Penjagaan di `redirect` go_router **dan** UI, diuji lewat percobaan akses rute langsung per peran (AC-7.4, AC-7.5) |
-| Pemilik terkunci dari datanya sendiri | Kehilangan data total | Kode pemulihan offline wajib (K-7.4), ditampilkan sekali dengan centang wajib, disimpan sebagai hash |
-| Salah zona waktu pada pengelompokan grafik | Angka grafik beda dengan kartu ringkasan | `'localtime'` eksplisit di SQL + uji batas tengah malam WIB/WITA/WIT (AC-8.2, AC-8.4) |
-| Scope membengkak di luar [prd-v1.1.md](prd-v1.1.md) | v1.1/v1.2 molor seperti risiko MVP dulu | Patuh pada daftar "TIDAK termasuk" tiap bab PRD dan §11; usulan baru masuk backlog v1.3, bukan milestone berjalan |
+| **Lisensi sah ditolak aplikasi** (false negative) | Pembeli yang sudah membayar tidak bisa berjualan — kerusakan terparah dari M10 | Vektor uji tetap yang dijalankan tiap `flutter test` (AC-6.8), perintah `--verifikasi` pada generator yang memakai **jalur kode yang sama** untuk dukungan jarak jauh, dan aturan "bila ragu, biarkan pengguna bekerja" (K-6.8). Metrik **0 kasus** di PRD §11.1 |
+| **Kunci privat penerbit ter-commit, bocor, atau hilang** | Keygen beredar / tidak bisa lagi menerbitkan kode | `.gitignore` + `git grep` di checklist rilis (AC-6.19), cadangan ≥ 2 tempat luring, dan **daftar** kunci publik tepercaya yang siap dirotasi tanpa mengubah format token (AC-6.20, PRD §6.7.2) |
+| **Kode aktivasi 120 karakter dianggap merepotkan** | Pembeli menyerah saat aktivasi — penjualan gagal di langkah terakhir | Tiga jalur masuk dengan ketik manual sebagai **jalan terakhir** (QR lewat `mobile_scanner` yang sudah ada, tempel, ketik), alfabet Crockford tanpa karakter kembar, CRC-16 yang menunjukkan salah ketik alih-alih menuduh kode palsu (K-6.3, K-6.7) |
+| **Gerbang lisensi mengunci di tengah transaksi** | Uang pembeli sudah di tangan, transaksi hilang di depan pelanggan | Dilarang keras: evaluasi hanya saat start & resume, transaksi berjalan wajib bisa diselesaikan sampai tersimpan (K-6.10, AC-6.18) |
+| **Jam perangkat dimundurkan untuk memperpanjang trial** | Aplikasi dipakai gratis selamanya | Jam monoton dari jam perangkat + tiga saksi tersimpan, termasuk `MAX(sales.created_at)` yang ikut terbawa restore backup (K-6.8, AC-6.16) |
+| **Trial berantai lewat permintaan kode trial berulang** | Pemakaian gratis tanpa henti | Kedaluwarsa trial absolut (reinstall tidak mereset, AC-6.11) + `lisensi-terbit.csv` terisi otomatis + generator memperingatkan bila perangkat itu sudah pernah dapat trial. Tanpa server tidak ada mekanisme lain — **diterima secara sadar** (PRD §6.7.3) |
+| **Gerbang aktivasi menghalangi pengembangan & uji manual** | M7–M9 melambat, atau muncul godaan menanam bypass yang ikut ke rilis | M10 dikerjakan **setelah** M8/M9; kunci **uji** hanya masuk daftar tepercaya saat `kDebugMode` (dibuang R8 di release) — bukan bypass gerbang, sehingga jalur gerbang tetap teruji di debug (diverifikasi AC-6.19 & checklist M11) |
+| Izin multi-user hanya disembunyikan di UI | Karyawan melihat laba atau membatalkan transaksi | Penjagaan di `redirect` go_router **dan** UI, diuji lewat percobaan akses rute langsung per peran (AC-8.4, AC-8.5) |
+| Pemilik terkunci dari datanya sendiri | Kehilangan data total | Kode pemulihan offline wajib (K-8.4), ditampilkan sekali dengan centang wajib, disimpan sebagai hash |
+| Salah zona waktu pada pengelompokan grafik | Angka grafik beda dengan kartu ringkasan | `'localtime'` eksplisit di SQL + uji batas tengah malam WIB/WITA/WIT (AC-9.2, AC-9.4) |
+| Scope membengkak di luar [prd-v1.1.md](prd-v1.1.md) | v1.1/v1.2 molor seperti risiko MVP dulu | Patuh pada daftar "TIDAK termasuk" tiap bab PRD dan §12; usulan baru masuk backlog v1.3, bukan milestone berjalan |
 
 ## Catatan Keputusan (diisi selama proyek)
 - _(belum ada — diisi saat pengerjaan M7 dan seterusnya, mengikuti pola catatan di [plan.md](plan.md))_
