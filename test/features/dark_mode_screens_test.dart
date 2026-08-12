@@ -9,9 +9,19 @@ import 'package:kasir_warung/core/constants/app_theme.dart';
 import 'package:kasir_warung/core/utils/date_formatter.dart';
 import 'package:kasir_warung/data/db/app_database.dart';
 import 'package:kasir_warung/data/db/database_provider.dart';
+import 'package:kasir_warung/data/repositories/customer_repository_impl.dart';
 import 'package:kasir_warung/data/repositories/sale_repository_impl.dart';
+import 'package:kasir_warung/data/repositories/settings_repository_impl.dart';
+import 'package:kasir_warung/data/repositories/user_repository_impl.dart';
+import 'package:kasir_warung/domain/entities/app_user.dart';
 import 'package:kasir_warung/domain/entities/cart_item.dart';
+import 'package:kasir_warung/domain/entities/multi_user_settings.dart';
 import 'package:kasir_warung/domain/entities/sale_result.dart';
+import 'package:kasir_warung/features/auth/providers/session_store.dart';
+import 'package:kasir_warung/features/auth/screens/access_denied_screen.dart';
+import 'package:kasir_warung/features/auth/screens/recovery_code_screen.dart';
+import 'package:kasir_warung/features/auth/screens/users_screen.dart';
+import 'package:kasir_warung/features/customers/screens/customer_detail_screen.dart';
 import 'package:kasir_warung/features/pos/screens/checkout_success_screen.dart';
 import 'package:kasir_warung/features/pos/widgets/receipt_widget.dart';
 import 'package:kasir_warung/features/products/screens/product_form_screen.dart';
@@ -409,5 +419,126 @@ void main() {
     expect(gelap, ReceiptWidget.paper);
 
     await disposeApp(tester);
+  });
+
+  /// Sapu M15 — layar baru M12/M13 yang lahir SETELAH berkas ini ditulis dan
+  /// karena itu tidak pernah ikut dijaga di sini. Tiga di antaranya hidup
+  /// **di luar shell navigasi** (Masuk, Kode Pemulihan, Akses Ditolak): tidak
+  /// ada AppBar bertema yang menutupi kesalahan, jadi satu warna terang yang
+  /// tertinggal langsung menjadi "pulau putih" seukuran layar penuh.
+  group('layar baru M12 & M13 di mode gelap (AC-5.10)', () {
+    Widget wrapDark(Widget screen) {
+      return ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          themeModeStoreProvider.overrideWithValue(
+            InMemoryThemeModeStore(ThemeMode.dark),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: ThemeMode.dark,
+          home: screen,
+        ),
+      );
+    }
+
+    void setPhoneSize(WidgetTester tester) {
+      tester.view.physicalSize = const Size(392, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    void expectDarkCanvas(WidgetTester tester) {
+      final theme = Theme.of(tester.element(find.byType(Scaffold).first));
+      expect(theme.brightness, Brightness.dark);
+      expect(theme.scaffoldBackgroundColor, darkPalette.background);
+    }
+
+    testWidgets('layar Masuk (M13) memakai palet gelap', (tester) async {
+      setPhoneSize(tester);
+      await SettingsRepositoryImpl(db).setValue(MultiUserSettings.keyEnabled, '1');
+      await UserRepositoryImpl(db).createUser(
+        name: 'Pak Budi',
+        role: UserRole.owner,
+        pin: '111111',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+            themeModeStoreProvider.overrideWithValue(
+              InMemoryThemeModeStore(ThemeMode.dark),
+            ),
+          ],
+          child: const KasirApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Siapa yang bertugas?'), findsOneWidget);
+      expectDarkCanvas(tester);
+
+      await disposeApp(tester);
+    });
+
+    testWidgets('layar Kelola Pengguna (M13) memakai palet gelap', (tester) async {
+      setPhoneSize(tester);
+      await UserRepositoryImpl(db).createUser(
+        name: 'Ani',
+        role: UserRole.cashier,
+        pin: '222222',
+      );
+
+      await tester.pumpWidget(wrapDark(const UsersScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ani'), findsOneWidget);
+      expectDarkCanvas(tester);
+
+      await disposeApp(tester);
+    });
+
+    testWidgets('layar Kode Pemulihan (M13) memakai palet gelap', (tester) async {
+      setPhoneSize(tester);
+
+      await tester.pumpWidget(wrapDark(const RecoveryCodeScreen(code: 'ABCD2345')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('ABCD'), findsWidgets);
+      expectDarkCanvas(tester);
+
+      await disposeApp(tester);
+    });
+
+    testWidgets('layar Akses Ditolak (M13) memakai palet gelap', (tester) async {
+      setPhoneSize(tester);
+
+      await tester.pumpWidget(wrapDark(const AccessDeniedScreen()));
+      await tester.pumpAndSettle();
+
+      expectDarkCanvas(tester);
+
+      await disposeApp(tester);
+    });
+
+    testWidgets('detail Pelanggan (M12) memakai palet gelap', (tester) async {
+      setPhoneSize(tester);
+      final pelanggan = await CustomerRepositoryImpl(db).create(name: 'Bu Ani');
+
+      await tester.pumpWidget(
+        wrapDark(CustomerDetailScreen(customerId: pelanggan.id)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bu Ani'), findsWidgets);
+      expectDarkCanvas(tester);
+
+      await disposeApp(tester);
+    });
   });
 }

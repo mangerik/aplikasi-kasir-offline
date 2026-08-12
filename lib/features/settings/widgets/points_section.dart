@@ -175,7 +175,10 @@ class _PointsSectionState extends ConsumerState<PointsSection> {
           ),
           const SizedBox(height: AppSizes.spaceMd),
           SizedBox(
-            height: AppSizes.minTouchTarget,
+            // `buttonHeight` (52), bukan `minTouchTarget` (48): tema sudah
+            // menetapkan 52 untuk OutlinedButton, dan SizedBox 48 justru
+            // MENGECILKAN tombol di bawah tinggi baku tombol lain.
+            height: AppSizes.buttonHeight,
             child: OutlinedButton.icon(
               onPressed: _busy ? null : _recalculate,
               icon: const Icon(Icons.calculate_outlined),

@@ -188,7 +188,7 @@ void main() {
       final pickerSearchField = find.byWidgetPredicate(
         (widget) =>
             widget is TextField &&
-            widget.decoration?.hintText == 'Ketik nama atau no. HP...',
+            widget.decoration?.hintText == 'Ketik nama atau no. HP…',
       );
       await tester.enterText(pickerSearchField, 'Budi Santoso');
       await tester.pumpAndSettle();

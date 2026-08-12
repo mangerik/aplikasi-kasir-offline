@@ -74,7 +74,15 @@ abstract final class V1DatabaseFixture {
   /// - transaksi hutang, transaksi lunas, dan satu transaksi `voided`.
   /// - `"Pak Joko"` yang hutangnya sudah lunas — tetap harus punya baris
   ///   `customers` (dia pelanggan, bukan penghutang).
-  static void create(String path) {
+  /// Nilai `settings.pin_hash`/`pin_salt` yang ditulis bila [create]
+  /// dipanggil dengan `withGlobalPin: true` — meniru warung yang sudah
+  /// memasang kunci PIN sejak v1.0 (M5). Rantai migrasi 1 → 2 → 3 wajib
+  /// mengubahnya menjadi akun **Pemilik** tanpa pemilik pernah diminta
+  /// membuat PIN baru (AC-8.2).
+  static const String globalPinHash = 'hash-pin-lama-v1';
+  static const String globalPinSalt = 'garam-pin-lama-v1';
+
+  static void create(String path, {bool withGlobalPin = false}) {
     final file = File(path);
     if (file.existsSync()) file.deleteSync();
 
@@ -182,6 +190,17 @@ abstract final class V1DatabaseFixture {
       db.execute(
         "INSERT INTO settings (key, value) VALUES ('store_name', 'Warung Lama')",
       );
+
+      if (withGlobalPin) {
+        db.execute(
+          'INSERT INTO settings (key, value) VALUES (?, ?)',
+          ['pin_hash', globalPinHash],
+        );
+        db.execute(
+          'INSERT INTO settings (key, value) VALUES (?, ?)',
+          ['pin_salt', globalPinSalt],
+        );
+      }
     } finally {
       db.close();
     }

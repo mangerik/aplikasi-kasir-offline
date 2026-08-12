@@ -154,7 +154,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 onRefresh: () => ref.read(customerListProvider.notifier).refresh(),
                 child: listAsync.when(
                   data: (state) => _buildList(state, filter, points),
-                  loading: () => const AppLoadingView(message: 'Memuat pelanggan...'),
+                  loading: () => const AppLoadingView(message: 'Memuat pelanggan…'),
                   error: (e, _) => ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
@@ -296,7 +296,7 @@ class _SearchBar extends StatelessWidget {
       child: TextField(
         controller: controller,
         decoration: const InputDecoration(
-          hintText: 'Cari nama atau no. HP...',
+          hintText: 'Cari nama atau no. HP…',
           prefixIcon: Icon(Icons.search_rounded),
         ),
         onChanged: onChanged,

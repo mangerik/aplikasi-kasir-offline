@@ -56,7 +56,12 @@ class ActiveUserChip extends ConsumerWidget {
     return Tooltip(
       message: 'Ganti kasir',
       child: SizedBox(
-        height: AppSizes.minTouchTarget - 4,
+        // Sapu M15: sebelumnya 44dp (`minTouchTarget - 4`). Chip ini bisa
+        // ditap (→ Ganti Kasir), jadi ia tunduk pada aturan ≥48dp yang sama
+        // dengan tombol mana pun — dan 48dp masih muat di AppBar 56dp tanpa
+        // membuatnya menyaingi CTA "Bayar" (§8.6): yang menahan penekanannya
+        // adalah warna `surfaceAlt` & teks sekunder, bukan tingginya.
+        height: AppSizes.minTouchTarget,
         child: AppCard(
           onTap: () => switchUser(context, ref),
           radius: AppSizes.radiusPill,
@@ -77,9 +82,13 @@ class ActiveUserChip extends ConsumerWidget {
                 ),
                 child: Text(
                   user.initials,
+                  // 11px = `labelSmall`, ukuran terkecil pada skala
+                  // tipografi (fondasi §3.1). Nilai 10px sebelumnya berada
+                  // di luar skala dan menjadi titik terlemah keterbacaan di
+                  // layar Kasir.
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     height: 1,
                     color: palette.inkSecondary,

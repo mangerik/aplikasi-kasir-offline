@@ -160,6 +160,7 @@ class UsersScreen extends ConsumerWidget {
             child: usersAsync.when(
               loading: () => const AppLoadingView(),
               error: (e, _) => AppErrorView(
+                title: 'Daftar pengguna gagal dimuat',
                 message: AppErrorMessage.from(e),
                 onRetry: () => ref.invalidate(allUsersProvider),
               ),

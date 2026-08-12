@@ -8,9 +8,29 @@ library;
 
 import '../../core/utils/currency_formatter.dart';
 
+/// Penanda "exception ini `toString()`-nya sudah berbahasa Indonesia dan
+/// siap ditampilkan apa adanya ke pengguna".
+///
+/// **Kenapa penanda, bukan daftar tipe di `AppErrorMessage`?** (sapu M15)
+/// Sampai M14, `AppErrorMessage._isDomainException` memelihara daftar
+/// `error is X || error is Y || …` yang harus diperbarui setiap kali
+/// exception baru lahir. Daftar itu tertinggal dua kali: `ImporProdukException`
+/// (M9, ditambal di M11) dan **sebelas** exception M12/M13 — sehingga
+/// "Pelanggan sudah ada", "Poin tidak cukup", dan "Pemilik terakhir tidak
+/// boleh dinonaktifkan" semuanya sampai ke pengguna sebagai "Terjadi
+/// kesalahan tak terduga. Coba lagi." Ketertinggalan itu tidak pernah
+/// membuat satu test pun gagal, karena tidak ada yang menguji exception yang
+/// belum ditulis.
+///
+/// Dengan penanda ini, exception domain baru dikenali sejak ia lahir —
+/// yang bisa dilupakan hanyalah menulis `implements DomainException`, dan
+/// itu dijaga `test/core/utils/error_message_test.dart` yang memindai
+/// berkas ini.
+abstract interface class DomainException implements Exception {}
+
 /// Dilempar saat barcode yang diisi sudah dipakai produk lain (partial
 /// unique index `idx_products_barcode_unique`, lihat app_database.dart).
-class BarcodeSudahDipakaiException implements Exception {
+class BarcodeSudahDipakaiException implements DomainException {
   const BarcodeSudahDipakaiException(this.barcode);
 
   final String barcode;
@@ -23,7 +43,7 @@ class BarcodeSudahDipakaiException implements Exception {
 
 /// Dilempar saat nama kategori yang diisi (tambah/ubah) sudah dipakai
 /// kategori lain (`categories.name` bersifat UNIQUE).
-class NamaKategoriSudahAdaException implements Exception {
+class NamaKategoriSudahAdaException implements DomainException {
   const NamaKategoriSudahAdaException(this.name);
 
   final String name;
@@ -33,7 +53,7 @@ class NamaKategoriSudahAdaException implements Exception {
 }
 
 /// Dilempar saat kategori yang ingin dihapus masih dipakai oleh produk.
-class KategoriMasihDipakaiException implements Exception {
+class KategoriMasihDipakaiException implements DomainException {
   const KategoriMasihDipakaiException(this.productCount);
 
   final int productCount;
@@ -46,7 +66,7 @@ class KategoriMasihDipakaiException implements Exception {
 
 /// Dilempar saat `SaveSaleUsecase` dipanggil dengan keranjang kosong
 /// (plan.md Milestone 2 poin 6).
-class KeranjangKosongException implements Exception {
+class KeranjangKosongException implements DomainException {
   const KeranjangKosongException();
 
   @override
@@ -55,7 +75,7 @@ class KeranjangKosongException implements Exception {
 
 /// Dilempar saat uang tunai yang diterima kurang dari total belanja
 /// (sheet pembayaran tunai, plan.md Milestone 2 poin 5).
-class UangTidakCukupException implements Exception {
+class UangTidakCukupException implements DomainException {
   const UangTidakCukupException({required this.total, required this.dibayar});
 
   final int total;
@@ -70,7 +90,7 @@ class UangTidakCukupException implements Exception {
 
 /// Dilempar saat transaksi hutang tidak menyertakan nama pelanggan (wajib
 /// — lihat architecture.md §4, kolom `sales.customer_name`).
-class NamaPelangganWajibException implements Exception {
+class NamaPelangganWajibException implements DomainException {
   const NamaPelangganWajibException();
 
   @override
@@ -79,7 +99,7 @@ class NamaPelangganWajibException implements Exception {
 
 /// Dilempar saat `customerId` yang diminta tidak ada di database (PRD
 /// v1.1 §7).
-class PelangganTidakDitemukanException implements Exception {
+class PelangganTidakDitemukanException implements DomainException {
   const PelangganTidakDitemukanException();
 
   @override
@@ -88,7 +108,7 @@ class PelangganTidakDitemukanException implements Exception {
 
 /// Dilempar saat nama pelanggan yang diisi sudah dipakai pelanggan AKTIF
 /// lain (index unik parsial `idx_customers_name_nocase`, PRD §7.5).
-class NamaPelangganSudahAdaException implements Exception {
+class NamaPelangganSudahAdaException implements DomainException {
   const NamaPelangganSudahAdaException(this.name);
 
   final String name;
@@ -101,7 +121,7 @@ class NamaPelangganSudahAdaException implements Exception {
 
 /// Dilempar saat pelanggan yang masih punya hutang belum lunas hendak
 /// dinonaktifkan (AC-7.13).
-class PelangganMasihBerhutangException implements Exception {
+class PelangganMasihBerhutangException implements DomainException {
   const PelangganMasihBerhutangException(this.totalDebt);
 
   final int totalDebt;
@@ -115,7 +135,7 @@ class PelangganMasihBerhutangException implements Exception {
 
 /// Dilempar saat poin yang hendak ditukar melebihi saldo pelanggan, atau
 /// belum memenuhi minimum penukaran (PRD §7.3.C).
-class PoinTidakCukupException implements Exception {
+class PoinTidakCukupException implements DomainException {
   const PoinTidakCukupException({required this.diminta, required this.tersedia});
 
   final int diminta;
@@ -130,7 +150,7 @@ class PoinTidakCukupException implements Exception {
 /// Dilempar saat penggabungan pelanggan diminta tanpa pelanggan sumber
 /// yang sah (mis. hanya satu pelanggan dipilih, atau target ikut menjadi
 /// sumber) — PRD §7.3.D.
-class GabungPelangganTidakValidException implements Exception {
+class GabungPelangganTidakValidException implements DomainException {
   const GabungPelangganTidakValidException(this.alasan);
 
   final String alasan;
@@ -141,7 +161,7 @@ class GabungPelangganTidakValidException implements Exception {
 
 /// Dilempar saat `saleId` yang diminta (detail/pelunasan/void) tidak ada
 /// di database (plan.md Milestone 3 poin 2 & 3).
-class TransaksiTidakDitemukanException implements Exception {
+class TransaksiTidakDitemukanException implements DomainException {
   const TransaksiTidakDitemukanException();
 
   @override
@@ -151,7 +171,7 @@ class TransaksiTidakDitemukanException implements Exception {
 /// Dilempar saat `MarkDebtPaidUsecase` dipanggil untuk transaksi yang
 /// bukan hutang belum lunas (mis. sudah lunas, atau bukan transaksi
 /// hutang sama sekali) — plan.md Milestone 3 poin 4.
-class TransaksiBukanHutangException implements Exception {
+class TransaksiBukanHutangException implements DomainException {
   const TransaksiBukanHutangException();
 
   @override
@@ -160,7 +180,7 @@ class TransaksiBukanHutangException implements Exception {
 
 /// Dilempar saat `VoidSaleUsecase` dipanggil untuk transaksi yang sudah
 /// pernah di-void sebelumnya (plan.md Milestone 3 poin 5).
-class TransaksiSudahDibatalkanException implements Exception {
+class TransaksiSudahDibatalkanException implements DomainException {
   const TransaksiSudahDibatalkanException();
 
   @override
@@ -169,7 +189,7 @@ class TransaksiSudahDibatalkanException implements Exception {
 
 /// Dilempar saat PIN yang diisi (set/ubah) BUKAN 6 digit angka (plan.md
 /// Milestone 5 poin 6).
-class PinTidakValidException implements Exception {
+class PinTidakValidException implements DomainException {
   const PinTidakValidException();
 
   @override
@@ -178,7 +198,7 @@ class PinTidakValidException implements Exception {
 
 /// Dilempar saat PIN yang diketik (verifikasi/ubah/hapus) tidak cocok
 /// dengan PIN yang tersimpan.
-class PinSalahException implements Exception {
+class PinSalahException implements DomainException {
   const PinSalahException();
 
   @override
@@ -187,7 +207,7 @@ class PinSalahException implements Exception {
 
 /// Dilempar saat `RemovePinUsecase`/`ChangePinUsecase` dipanggil padahal
 /// belum ada PIN yang aktif tersimpan.
-class PinBelumDiaturException implements Exception {
+class PinBelumDiaturException implements DomainException {
   const PinBelumDiaturException();
 
   @override
@@ -197,7 +217,7 @@ class PinBelumDiaturException implements Exception {
 /// Dilempar saat file yang dipilih untuk restore BUKAN backup database
 /// aplikasi yang valid (bukan file SQLite, atau tabel wajib tidak lengkap)
 /// — plan.md Milestone 5 poin 5.
-class FileBackupTidakValidException implements Exception {
+class FileBackupTidakValidException implements DomainException {
   const FileBackupTidakValidException(this.alasan);
 
   final String alasan;
@@ -206,10 +226,45 @@ class FileBackupTidakValidException implements Exception {
   String toString() => 'File backup tidak valid: $alasan';
 }
 
+/// Dilempar saat migrasi skema database GAGAL di tengah jalan (PRD v1.1
+/// AC-10.5).
+///
+/// Seluruh langkah migrasi berjalan dalam satu transaksi, jadi kegagalan
+/// **sudah** mengembalikan database persis ke keadaan semula — tidak ada
+/// setengah migrasi yang tertinggal. Yang belum ada sampai M15 adalah
+/// separuh kedua AC-10.5: pesan Bahasa Indonesia yang jelas. Tanpa
+/// pembungkus ini, yang naik ke layar adalah `SqliteException(1): no such
+/// column…` yang lalu diganti pesan generik oleh `AppErrorMessage` —
+/// pengguna hanya melihat "Terjadi kesalahan tak terduga" pada satu-satunya
+/// momen ia paling perlu tahu bahwa **datanya aman**.
+class MigrasiDatabaseGagalException implements DomainException {
+  const MigrasiDatabaseGagalException({
+    required this.dari,
+    required this.ke,
+    required this.penyebab,
+  });
+
+  /// Versi skema database sebelum migrasi (`PRAGMA user_version` file).
+  final int dari;
+
+  /// Versi skema yang dituju build aplikasi ini.
+  final int ke;
+
+  /// Error asli dari SQLite/Drift — disimpan untuk log & laporan bug,
+  /// TIDAK ikut ditampilkan ke pengguna.
+  final Object penyebab;
+
+  @override
+  String toString() =>
+      'Pembaruan data dari versi $dari ke versi $ke gagal. Data Anda TIDAK '
+      'berubah — semuanya kembali seperti sebelum pembaruan. Coba buka ulang '
+      'aplikasi; bila tetap gagal, pulihkan dari file backup terakhir.';
+}
+
 /// Dilempar saat `AdjustStockUsecase`/`StockRepository.adjustStock`
 /// dipanggil untuk `productId` yang tidak ada di database (plan.md
 /// Milestone 4 poin 1).
-class ProdukTidakDitemukanException implements Exception {
+class ProdukTidakDitemukanException implements DomainException {
   const ProdukTidakDitemukanException();
 
   @override
@@ -219,7 +274,7 @@ class ProdukTidakDitemukanException implements Exception {
 /// Dilempar saat jumlah penyesuaian stok tidak valid: nol/negatif untuk
 /// stok masuk & keluar, atau negatif untuk hasil opname (plan.md
 /// Milestone 4 poin 1).
-class JumlahPenyesuaianTidakValidException implements Exception {
+class JumlahPenyesuaianTidakValidException implements DomainException {
   const JumlahPenyesuaianTidakValidException();
 
   @override
@@ -229,7 +284,7 @@ class JumlahPenyesuaianTidakValidException implements Exception {
 /// Dilempar saat penyesuaian stok manual tidak menyertakan alasan/catatan
 /// (wajib — lihat architecture.md §4 `stock_movements.note`, PRD §3.1.B
 /// "dengan catatan alasan").
-class AlasanPenyesuaianWajibException implements Exception {
+class AlasanPenyesuaianWajibException implements DomainException {
   const AlasanPenyesuaianWajibException();
 
   @override
@@ -237,7 +292,7 @@ class AlasanPenyesuaianWajibException implements Exception {
 }
 
 /// Dilempar saat nama pengguna yang diisi kosong (PRD v1.1 §8).
-class NamaPenggunaWajibException implements Exception {
+class NamaPenggunaWajibException implements DomainException {
   const NamaPenggunaWajibException();
 
   @override
@@ -248,7 +303,7 @@ class NamaPenggunaWajibException implements Exception {
 /// (perbandingan case-insensitive, index `idx_users_name_nocase` §8.5).
 /// Nama harus unik justru karena layar Masuk memilih NAMA lebih dulu
 /// (K-8.2) — dua "Ani" di daftar adalah pilihan yang mustahil dibedakan.
-class NamaPenggunaSudahAdaException implements Exception {
+class NamaPenggunaSudahAdaException implements DomainException {
   const NamaPenggunaSudahAdaException(this.name);
 
   final String name;
@@ -258,7 +313,7 @@ class NamaPenggunaSudahAdaException implements Exception {
 }
 
 /// Dilempar saat akun yang dirujuk tidak ada di database (PRD v1.1 §8).
-class PenggunaTidakDitemukanException implements Exception {
+class PenggunaTidakDitemukanException implements DomainException {
   const PenggunaTidakDitemukanException();
 
   @override
@@ -269,7 +324,7 @@ class PenggunaTidakDitemukanException implements Exception {
 /// diturunkan perannya. Kalau ini diizinkan, tidak ada satu orang pun yang
 /// bisa membuka Pengaturan lagi — aplikasi terkunci dari pemiliknya sendiri
 /// (risiko utama §8.7).
-class PemilikTerakhirException implements Exception {
+class PemilikTerakhirException implements DomainException {
   const PemilikTerakhirException();
 
   @override
@@ -280,7 +335,7 @@ class PemilikTerakhirException implements Exception {
 
 /// Dilempar saat kode pemulihan yang dimasukkan tidak cocok (PRD v1.1
 /// §8.3.E).
-class KodePemulihanSalahException implements Exception {
+class KodePemulihanSalahException implements DomainException {
   const KodePemulihanSalahException();
 
   @override
@@ -290,7 +345,7 @@ class KodePemulihanSalahException implements Exception {
 /// Dilempar saat aksi yang hanya boleh dilakukan Pemilik dicoba oleh Kasir
 /// (PRD v1.1 §8.3.C). Penjagaan sesungguhnya ada di `redirect` router &
 /// repository; exception ini adalah jaring terakhir di lapisan domain.
-class AksesDitolakException implements Exception {
+class AksesDitolakException implements DomainException {
   const AksesDitolakException();
 
   @override

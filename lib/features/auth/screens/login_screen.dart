@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_message.dart';
 import '../../../core/utils/pin_throttle.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/app_user.dart';
@@ -123,7 +124,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: usersAsync.when(
               loading: () => const AppLoadingView(),
               error: (error, _) => AppErrorView(
-                message: 'Daftar pengguna gagal dimuat.',
+                title: 'Daftar pengguna gagal dimuat',
+                message: AppErrorMessage.from(error),
                 onRetry: () => ref.invalidate(activeUsersProvider),
               ),
               data: (users) => _selected == null

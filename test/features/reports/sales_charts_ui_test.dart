@@ -268,6 +268,14 @@ void main() {
     expect(find.text('Belum ada jam ramai'), findsOneWidget);
     expect(find.byType(AppBarChart), findsNothing);
     expect(tester.takeException(), isNull);
+
+    // Sapu M15: grafik komposisi pembayaran dulu MENGHILANG seluruhnya pada
+    // rentang kosong — judul section-nya sekalian — sehingga rentang tanpa
+    // transaksi terasa seperti bug render, bukan jawaban. Sekarang ia
+    // menjelaskan diri sendiri seperti dua grafik di atasnya.
+    await scrollTo(tester, find.text('Komposisi Pembayaran'));
+    expect(find.text('Komposisi Pembayaran'), findsOneWidget);
+    expect(find.text('Belum ada pembayaran pada rentang ini'), findsOneWidget);
   });
 
   testWidgets('"Lihat transaksi" membuka Riwayat dengan filter rentang '

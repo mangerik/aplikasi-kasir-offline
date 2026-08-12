@@ -127,7 +127,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
       ),
       body: customerAsync.when(
         data: (customer) => _buildBody(customer, points),
-        loading: () => const AppLoadingView(message: 'Memuat pelanggan...'),
+        loading: () => const AppLoadingView(message: 'Memuat pelanggan…'),
         error: (e, _) => AppErrorView(
           title: 'Pelanggan gagal dimuat',
           message: AppErrorMessage.from(e),

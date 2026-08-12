@@ -6,9 +6,12 @@
 /// (AC-4.14: "pesan Bahasa Indonesia yang jelas, aplikasi tidak crash").
 library;
 
+import 'repository_exceptions.dart' show DomainException;
+
 /// Induk seluruh kegagalan impor. `AppErrorMessage.from` cukup mengenali
-/// tipe ini saja, bukan satu per satu turunannya.
-abstract class ImporProdukException implements Exception {
+/// tipe ini saja, bukan satu per satu turunannya — dan sejak M15 bahkan
+/// itu pun tidak perlu: [DomainException] adalah penanda tunggalnya.
+abstract class ImporProdukException implements DomainException {
   const ImporProdukException();
 }
 

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../../domain/repositories/repository_exceptions.dart';
 import 'tables/categories_table.dart';
 import 'tables/customer_point_entries_table.dart';
 import 'tables/customers_table.dart';
@@ -85,14 +86,29 @@ class AppDatabase extends _$AppDatabase {
           // gagal di tengah jalan mengembalikan database persis ke keadaan
           // semula. AC-10.4: tidak ada DROP/penulisan ulang tabel, hanya
           // CREATE TABLE, ADD COLUMN, CREATE INDEX, dan UPDATE backfill.
-          await transaction(() async {
-            if (from < 2) {
-              await _upgradeToV2(m);
-            }
-            if (from < 3) {
-              await _upgradeToV3(m);
-            }
-          });
+          //
+          // Transaksinya membungkus SELURUH rantai (1 → 2 → 3), bukan tiap
+          // langkah sendiri-sendiri: database v1.0 yang gagal di langkah
+          // kedua harus kembali menjadi v1.0 utuh, bukan tertinggal sebagai
+          // v2 setengah jadi yang tidak dikenali versi aplikasi mana pun.
+          try {
+            await transaction(() async {
+              if (from < 2) {
+                await _upgradeToV2(m);
+              }
+              if (from < 3) {
+                await _upgradeToV3(m);
+              }
+            });
+          } catch (e, s) {
+            // Separuh kedua AC-10.5: pesan Bahasa Indonesia yang jelas.
+            // Rollback-nya dikerjakan SQLite; yang dikerjakan di sini adalah
+            // memastikan yang sampai ke layar bukan `SqliteException(1)`.
+            Error.throwWithStackTrace(
+              MigrasiDatabaseGagalException(dari: from, ke: to, penyebab: e),
+              s,
+            );
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

@@ -465,27 +465,48 @@ class _PaymentMixCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(dailySummaryProvider);
 
-    return summaryAsync.maybeWhen(
-      orElse: () => const SizedBox.shrink(),
-      data: (summary) {
-        final segments = _segments(context, summary);
-        if (segments.isEmpty) return const SizedBox.shrink();
+    // Sapu M15: sebelumnya seluruh kartu ini — judul section sekalian —
+    // menghilang diam-diam saat memuat, saat gagal, dan saat rentangnya
+    // kosong (`SizedBox.shrink()`). Rentang tanpa transaksi jadi terasa
+    // seperti bug render, dan kegagalan provider tidak pernah sampai ke
+    // pengguna. Sekarang polanya sama persis dengan dua grafik di atasnya:
+    // judul selalu ada, isinya memuat / error / kosong / data.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader(
+          title: 'Komposisi Pembayaran',
+          subtitle: 'Proporsi omzet per metode dalam satu batang',
+        ),
+        summaryAsync.when(
+          loading: () => const AppLoadingView(compact: true),
+          error: (error, stack) => AppErrorView(
+            compact: true,
+            title: 'Gagal memuat komposisi pembayaran',
+            message: AppErrorMessage.from(error),
+            onRetry: () => ref.invalidate(dailySummaryProvider),
+          ),
+          data: (summary) {
+            final segments = _segments(context, summary);
+            if (segments.isEmpty) {
+              // AC-9.11: rentang kosong dijelaskan, bukan dihilangkan.
+              return const EmptyState(
+                compact: true,
+                icon: Icons.pie_chart_outline_rounded,
+                title: 'Belum ada pembayaran pada rentang ini',
+                message: 'Setelah ada transaksi, perbandingan tunai, '
+                    'non-tunai, dan hutang muncul di sini.',
+              );
+            }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SectionHeader(
-              title: 'Komposisi Pembayaran',
-              subtitle: 'Proporsi omzet per metode dalam satu batang',
-            ),
-            AppCard(
+            return AppCard(
               elevated: true,
               padding: const EdgeInsets.all(AppSizes.spaceMd),
               child: AppStackedBar(segments: segments),
-            ),
-          ],
-        );
-      },
+            );
+          },
+        ),
+      ],
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_message.dart';
 import '../../../core/utils/recovery_code.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/app_user.dart';
@@ -90,7 +91,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = AppErrorMessage.from(e));
     }
   }
 

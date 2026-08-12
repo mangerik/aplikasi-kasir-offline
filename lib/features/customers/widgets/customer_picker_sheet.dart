@@ -128,7 +128,7 @@ class _CustomerPickerSheetState extends ConsumerState<CustomerPickerSheet> {
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
                     decoration: const InputDecoration(
-                      hintText: 'Ketik nama atau no. HP...',
+                      hintText: 'Ketik nama atau no. HP…',
                       prefixIcon: Icon(Icons.search_rounded),
                     ),
                     onChanged: (value) => setState(() => _query = value),
