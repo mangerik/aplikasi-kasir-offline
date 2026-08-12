@@ -49,6 +49,16 @@ dependencies:
   share_plus: ^13.3.0
   crypto: ^3.0.7
   sqlite3: ^3.5.1
+  # Printer thermal Bluetooth 58mm (prd-v1.1.md §3.7.1 — versi dikunci hasil
+  # riset + uji build APK release; JANGAN diganti tanpa mengulang uji itu).
+  # `print_bluetooth_thermal` = transport Bluetooth Klasik (SPP); hanya
+  # membaca perangkat yang SUDAH dipasangkan (bonded) sehingga aplikasi tidak
+  # pernah butuh izin memindai maupun izin lokasi (AC-3.11).
+  print_bluetooth_thermal: ^1.2.2
+  # Generator byte ESC/POS murni Dart (tanpa kode platform) — dipakai
+  # `EscPosReceiptBuilder`. Profil kapabilitas printer dimuat dari asset
+  # yang di-bundle, bukan jaringan (prinsip 100% offline, prd.md §1).
+  esc_pos_utils_plus: ^2.0.4
 
 dev_dependencies:
   flutter_test:

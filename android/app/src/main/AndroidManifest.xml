@@ -1,7 +1,35 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
+
+    <!-- ================= Printer thermal Bluetooth (PRD v1.1 §3, M8) =========
+         Aplikasi HANYA menyambung ke printer yang SUDAH dipasangkan (bonded)
+         lewat Pengaturan Bluetooth Android (K-3.9). Karena itu izin yang
+         dideklarasikan sengaja MINIMAL:
+           - BLUETOOTH_CONNECT  : Android 12+ (API 31+), untuk membuka soket
+                                  SPP ke printer yang sudah dipasangkan.
+           - BLUETOOTH / _ADMIN : hanya untuk Android 11 ke bawah
+                                  (maxSdkVersion=30), diabaikan di HP baru.
+         TIDAK ADA BLUETOOTH_SCAN dan TIDAK ADA izin lokasi (AC-3.11) —
+         keduanya tidak dibutuhkan dan memicu pertanyaan Play Store. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30"/>
+
+    <!-- Manifest bawaan `print_bluetooth_thermal` ikut mendeklarasikan
+         BLUETOOTH_SCAN walau kode Dart yang dipakai aplikasi ini tidak pernah
+         memindai. Baris di bawah MENCABUTNYA dari manifest hasil merge supaya
+         AC-3.11 tetap hijau. Verifikasi:
+         `build/app/outputs/logs/manifest-merger-release-report.txt`.
+         (Izin INTERNET yang juga dibawa package itu dicabut khusus di
+         `src/release/AndroidManifest.xml` — build debug tetap butuh INTERNET
+         untuk hot reload.) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        tools:node="remove"/>
     <application
         android:label="Kasir Warung"
         android:name="${applicationName}"

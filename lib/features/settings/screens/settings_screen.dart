@@ -7,6 +7,7 @@ import '../widgets/backup_restore_section.dart';
 import '../widgets/export_section.dart';
 import '../widgets/low_stock_default_section.dart';
 import '../widgets/pin_section.dart';
+import '../widgets/printer_section.dart';
 import '../widgets/store_profile_section.dart';
 
 /// Layar Pengaturan (plan.md Milestone 5) — profil toko, threshold stok
@@ -81,6 +82,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Kapan sebuah barang dianggap mulai menipis.',
             ),
             const LowStockDefaultSection(),
+
+            const SizedBox(height: AppSizes.spaceXl),
+            const SectionHeader(
+              eyebrow: 'PERANGKAT',
+              title: 'Printer Struk',
+              subtitle: 'Secarik kertas di tangan pembeli, dalam hitungan detik.',
+            ),
+            const PrinterSection(),
 
             const SizedBox(height: AppSizes.spaceXl),
             const SectionHeader(

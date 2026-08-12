@@ -1,0 +1,16 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Kasir Warung berjanji 100% OFFLINE (prd.md §1): tidak ada satu pun
+         fitur yang memanggil jaringan. Package `print_bluetooth_thermal`
+         membawa `android.permission.INTERNET` di manifest bawaannya walau
+         jalur kode yang dipakai aplikasi ini murni Bluetooth SPP — izin itu
+         akan tampil di halaman Play Store dan mematahkan janji tersebut di
+         mata pengguna.
+
+         Pencabutan sengaja dipasang di manifest BUILD TYPE `release` saja,
+         bukan di `src/main`: build DEBUG tetap membutuhkan INTERNET agar
+         Flutter tool bisa memasang breakpoint & hot reload
+         (lihat `src/debug/AndroidManifest.xml`). -->
+    <uses-permission android:name="android.permission.INTERNET"
+        tools:node="remove"/>
+</manifest>

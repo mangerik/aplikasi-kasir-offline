@@ -12,7 +12,9 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../pos/providers/sale_providers.dart';
+import '../../pos/widgets/print_receipt_button.dart';
 import '../../pos/widgets/receipt_widget.dart';
+import '../../settings/providers/printer_providers.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../providers/history_providers.dart';
 import '../utils/pin_gate.dart';
@@ -39,6 +41,17 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
   final GlobalKey _receiptKey = GlobalKey();
   bool _sharing = false;
   bool _processing = false;
+
+  /// Kunci job cetak layar ini — per transaksi, supaya status "Tercetak ✓"
+  /// tidak ikut terbawa saat pengguna membuka struk lain.
+  String get _jobKey => 'sale-${widget.saleId}';
+
+  /// Cetak ulang struk (PRD v1.1 §3.3.C). SELALU bertanda
+  /// `** CETAK ULANG **` — dua lembar kertas yang tampak identik di laci
+  /// adalah cara termudah menghitung omzet dua kali.
+  Future<void> _reprint(SaleResult sale) async {
+    await ref.read(printJobProvider(_jobKey).notifier).printSale(sale, reprint: true);
+  }
 
   Future<Uint8List?> _captureReceipt() async {
     final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -287,9 +300,11 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
         _ActionBar(
           sale: sale,
           busy: _sharing || _processing,
+          printJob: ref.watch(printJobProvider(_jobKey)),
           onShareText: () => _shareAsText(sale),
           onShareImage: () => _shareAsImage(sale),
           onMarkPaid: () => _markPaid(sale),
+          onReprint: () => _reprint(sale),
         ),
       ],
     );
@@ -552,16 +567,20 @@ class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.sale,
     required this.busy,
+    required this.printJob,
     required this.onShareText,
     required this.onShareImage,
     required this.onMarkPaid,
+    required this.onReprint,
   });
 
   final SaleResult sale;
   final bool busy;
+  final PrintJobState printJob;
   final VoidCallback onShareText;
   final VoidCallback onShareImage;
   final VoidCallback onMarkPaid;
+  final VoidCallback onReprint;
 
   @override
   Widget build(BuildContext context) {
@@ -590,8 +609,18 @@ class _ActionBar extends StatelessWidget {
                   AppSizes.spaceXs,
                   AppSizes.spaceSm,
                 ),
-                child: Text('BAGIKAN STRUK KE PELANGGAN', style: context.textStyles.eyebrow),
+                child: Text('STRUK UNTUK PELANGGAN', style: context.textStyles.eyebrow),
               ),
+              // Cetak ulang berdiri sendiri di atas dua tombol bagikan:
+              // inilah aksi yang dicari orang saat struk pertama hilang atau
+              // kertasnya macet — bukan aksi ketiga yang harus dicari.
+              PrintReceiptButton(
+                job: printJob,
+                onPressed: onReprint,
+                idleLabel: 'Cetak Ulang',
+                reprintLabel: 'Cetak Ulang',
+              ),
+              const SizedBox(height: AppSizes.spaceSm),
               Row(
                 children: [
                   Expanded(

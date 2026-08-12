@@ -10,7 +10,9 @@ import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../data/services/receipt_service.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../settings/providers/printer_providers.dart';
 import '../../settings/providers/settings_providers.dart';
+import '../widgets/print_receipt_button.dart';
 import '../widgets/receipt_widget.dart';
 
 /// Layar sukses transaksi (plan.md Milestone 2 poin 7): ringkasan + struk
@@ -34,6 +36,40 @@ class CheckoutSuccessScreen extends ConsumerStatefulWidget {
 class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
   final GlobalKey _receiptKey = GlobalKey();
   bool _sharing = false;
+
+  /// Kunci job cetak layar ini. Dipisah per layar supaya status tombol di
+  /// sini tidak tertukar dengan status "Cetak Ulang" di Detail Transaksi.
+  static const String _jobKey = 'checkout';
+
+  /// `true` bila struk sudah pernah keluar di layar ini — mengubah label
+  /// tombol jadi "Cetak Ulang" (PRD v1.1 §3.3.B).
+  bool _printedOnce = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cetak otomatis (PRD §3.3.B). Dijalankan setelah frame pertama supaya
+    // layar sukses — momen puncak aplikasi — tetap tampil seketika; kertas
+    // menyusul. Yang penting dan sengaja: penjualan SUDAH tersimpan sebelum
+    // layar ini dibangun, jadi apa pun yang terjadi pada printer di sini
+    // tidak punya satu pun jalur untuk menyentuh data (K-3.4, AC-3.6).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoPrint());
+  }
+
+  Future<void> _maybeAutoPrint() async {
+    if (!mounted) return;
+    final settings = await ref.read(printerSettingsProvider.future);
+    if (!mounted || !settings.autoPrint || !settings.isConfigured) return;
+    await _print();
+  }
+
+  Future<void> _print() async {
+    final ok = await ref
+        .read(printJobProvider(_jobKey).notifier)
+        .printSale(widget.sale, reprint: _printedOnce);
+    if (!mounted) return;
+    if (ok) setState(() => _printedOnce = true);
+  }
 
   Future<Uint8List?> _captureReceipt() async {
     final boundary =
@@ -143,6 +179,16 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
                 ),
               ),
               const SizedBox(height: AppSizes.spaceMd),
+              // Tiga aksi sekunder setara — sengaja `OutlinedButton` semua
+              // dan tingginya biasa: satu-satunya tombol yang boleh menonjol
+              // di layar ini adalah "Transaksi Baru" di bawah (prinsip
+              // "satu titik fokus per layar", ui-redesign-foundation.md §1).
+              PrintReceiptButton(
+                job: ref.watch(printJobProvider(_jobKey)),
+                printedOnce: _printedOnce,
+                onPressed: _print,
+              ),
+              const SizedBox(height: AppSizes.spaceSm),
               Row(
                 children: [
                   Expanded(
