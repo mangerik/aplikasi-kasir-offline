@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_widgets.dart';
+import '../../license/providers/license_providers.dart';
+import '../../license/widgets/license_banner.dart';
 import '../providers/held_cart_providers.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/cart_summary_bar.dart';
@@ -30,6 +32,12 @@ class PosScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final heldCount = ref.watch(heldCartListProvider).value?.length ?? 0;
+    // Lisensi tahunan yang lewat masa tenggang mengunci KEMAMPUAN BERJUALAN,
+    // bukan datanya (PRD v1.1 §6.3.E, AC-6.14). Gerbangnya sengaja di sini,
+    // bukan di `SaveSaleUsecase`: sheet pembayaran hidup di route DI ATAS
+    // layar ini, sehingga transaksi yang sedang berjalan tetap boleh
+    // diselesaikan sampai tersimpan — K-6.10, AC-6.18.
+    final canSell = ref.watch(licenseStatusProvider).state.canSell;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,33 +49,51 @@ class PosScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         top: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isTablet = constraints.maxWidth >= AppSizes.tabletBreakpoint;
-            if (isTablet) {
-              return Row(
-                children: [
-                  Expanded(flex: 3, child: ProductGrid()),
-                  VerticalDivider(width: AppSizes.hairline),
-                  SizedBox(
-                    width: _cartPanelWidth,
-                    child: ColoredBox(
-                      color: context.palette.surface,
-                      child: CartPanel(),
+        child: canSell ? const _PosBody() : const PosLockedView(),
+      ),
+    );
+  }
+}
+
+/// Isi layar Kasir saat lisensi masih mengizinkan berjualan.
+class _PosBody extends StatelessWidget {
+  const _PosBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const LicenseBanner(),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isTablet =
+                  constraints.maxWidth >= AppSizes.tabletBreakpoint;
+              if (isTablet) {
+                return Row(
+                  children: [
+                    Expanded(flex: 3, child: ProductGrid()),
+                    VerticalDivider(width: AppSizes.hairline),
+                    SizedBox(
+                      width: PosScreen._cartPanelWidth,
+                      child: ColoredBox(
+                        color: context.palette.surface,
+                        child: CartPanel(),
+                      ),
                     ),
-                  ),
+                  ],
+                );
+              }
+              return const Column(
+                children: [
+                  Expanded(child: ProductGrid()),
+                  CartSummaryBar(),
                 ],
               );
-            }
-            return const Column(
-              children: [
-                Expanded(child: ProductGrid()),
-                CartSummaryBar(),
-              ],
-            );
-          },
+            },
+          ),
         ),
-      ),
+      ],
     );
   }
 }

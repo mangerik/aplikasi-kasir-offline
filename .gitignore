@@ -49,3 +49,15 @@ app.*.map.json
 # lint/R8 di android/build/reports).
 /android/build/
 /android/app/build/
+
+# --- Sistem Lisensi Offline (PRD v1.1 §6.7.2) ---------------------------
+# Kunci PRIVAT penerbit adalah aset paling berharga proyek ini di luar kode
+# sumbernya. Ia hidup di ~/.kasir-warung/ (DI LUAR repo) — baris di bawah
+# adalah jaring pengaman kedua, bukan yang pertama: kalau sebuah kunci
+# pernah sampai ke folder repo, sesuatu sudah salah sejak awal.
+# Buku penerbitan penjual juga tidak boleh ikut ter-commit: isinya nama &
+# nomor WhatsApp pembeli.
+*.key
+*.pem
+lisensi-terbit.csv
+lisensi-*.png

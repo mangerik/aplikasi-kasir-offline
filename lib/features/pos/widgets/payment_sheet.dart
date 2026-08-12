@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/sale_result.dart';
+import '../../license/providers/license_providers.dart';
 import '../providers/cart_provider.dart';
 import '../providers/sale_providers.dart';
 
@@ -135,6 +138,12 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
         note: note,
       );
       ref.read(cartProvider.notifier).clear();
+      // Saksi jam monoton (PRD v1.1 §6.3.G): setiap penjualan yang tersimpan
+      // memajukan `license_last_seen_at`, sehingga memundurkan jam HP tidak
+      // pernah menambah sisa masa berlaku. Sengaja dijalankan SETELAH
+      // transaksi tersimpan & tanpa `await` — lisensi tidak boleh pernah
+      // memutus alur pembayaran (K-6.10, AC-6.18).
+      unawaited(ref.read(licenseStatusProvider.notifier).revalidate());
       if (mounted) Navigator.of(context).pop(result);
     } catch (e) {
       if (mounted) setState(() => _errorMessage = AppErrorMessage.from(e));

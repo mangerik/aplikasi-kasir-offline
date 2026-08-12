@@ -59,6 +59,7 @@ dependencies:
   # `EscPosReceiptBuilder`. Profil kapabilitas printer dimuat dari asset
   # yang di-bundle, bukan jaringan (prinsip 100% offline, prd.md §1).
   esc_pos_utils_plus: ^2.0.4
+  cryptography: ^2.9.0
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,8 @@ dev_dependencies:
   drift_dev: ^2.34.5
   build_runner: ^2.15.1
   path_provider_platform_interface: ^2.1.3
+  qr: ^4.0.0
+  image: ^4.3.0
   # flutter_launcher_icons & flutter_native_splash SENGAJA TIDAK dipertahankan
   # sebagai dev_dependency permanen (plan.md Milestone 6 poin 4) — keduanya
   # cuma alat code-gen sekali pakai (ikon & splash sudah digenerate & di-

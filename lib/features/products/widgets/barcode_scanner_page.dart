@@ -20,7 +20,19 @@ import '../../../core/widgets/app_widgets.dart';
 /// tersilau. Warnanya tetap datang dari `context.palette`, bukan dari nilai
 /// mentah.
 class BarcodeScannerPage extends StatefulWidget {
-  const BarcodeScannerPage({super.key});
+  const BarcodeScannerPage({
+    super.key,
+    this.title = 'Arahkan ke barcode produk',
+    this.subtitle = 'Kode akan terisi otomatis begitu terbaca.',
+  });
+
+  /// Judul kartu petunjuk di bawah. Layar ini dipakai ulang oleh gerbang
+  /// aktivasi lisensi (M10) untuk memindai QR kode aktivasi — kamera,
+  /// bingkai bidik, dan lampu senternya sama persis, hanya kalimatnya yang
+  /// berbeda. Menulis layar pemindai kedua hanya demi dua baris teks adalah
+  /// duplikasi yang tidak dibayar oleh apa pun.
+  final String title;
+  final String subtitle;
 
   @override
   State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
@@ -122,14 +134,14 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Arahkan ke barcode produk',
+                              widget.title,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 color: palette.ink,
                               ),
                             ),
                             const SizedBox(height: AppSizes.spaceXs),
                             Text(
-                              'Kode akan terisi otomatis begitu terbaca.',
+                              widget.subtitle,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: palette.inkSecondary,
                               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/app_widgets.dart';
+import '../../license/widgets/license_section.dart';
 import '../widgets/appearance_section.dart';
 import '../widgets/backup_reminder_banner.dart';
 import '../widgets/backup_restore_section.dart';
@@ -108,6 +109,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Batasi siapa yang boleh melihat uang & membatalkan.',
             ),
             const PinSection(),
+
+            const SizedBox(height: AppSizes.spaceXl),
+            const SectionHeader(
+              eyebrow: 'LISENSI',
+              title: 'Aktivasi Aplikasi',
+              subtitle: 'Sekali diaktifkan, jalan terus tanpa internet.',
+            ),
+            const LicenseSection(),
 
             const SizedBox(height: AppSizes.space2xl),
             const _SettingsFooter(),

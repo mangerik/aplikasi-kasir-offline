@@ -8,6 +8,7 @@ import 'core/constants/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'data/db/database_provider.dart';
 import 'data/services/seed_data_service.dart';
+import 'features/license/providers/license_providers.dart';
 import 'features/settings/providers/theme_providers.dart';
 
 /// Root widget aplikasi: `MaterialApp.router` + tema + navigasi
@@ -19,15 +20,44 @@ class KasirApp extends ConsumerStatefulWidget {
   ConsumerState<KasirApp> createState() => _KasirAppState();
 }
 
-class _KasirAppState extends ConsumerState<KasirApp> {
+class _KasirAppState extends ConsumerState<KasirApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Seed data contoh hanya berjalan di kDebugMode dan hanya jika tabel
     // produk masih kosong (lihat SeedDataService). Dijalankan di
     // background, tidak memblokir frame pertama.
     final db = ref.read(databaseProvider);
     SeedDataService(db).seedIfNeeded();
+
+    // Evaluasi ulang lisensi SETELAH frame pertama: di sini database sudah
+    // terbuka, sehingga saksi `MAX(sales.created_at)` untuk mitigasi
+    // mundur-jam ikut dihitung (PRD v1.1 §6.3.F/G). Bila hasilnya menurunkan
+    // keadaan lisensi, `redirect` router bereaksi sendiri lewat
+    // `refreshListenable`.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(licenseStatusProvider.notifier).revalidate();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Menangkap kasus aplikasi menginap semalam melewati tanggal
+    // kedaluwarsa. Tidak pernah memutus alur pembayaran yang sedang berjalan:
+    // gerbangnya ada di layar Kasir, sedangkan sheet pembayaran hidup di
+    // route DI ATAS layar itu (K-6.10, AC-6.18).
+    if (state == AppLifecycleState.resumed) {
+      ref.read(licenseStatusProvider.notifier).revalidate();
+    }
   }
 
   @override
@@ -42,7 +72,7 @@ class _KasirAppState extends ConsumerState<KasirApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      routerConfig: appRouter,
+      routerConfig: ref.watch(appRouterProvider),
       // Status bar & tombol navigasi sistem ikut dibalik (AC-5.9).
       // `AppBarTheme.systemOverlayStyle` hanya berlaku di layar yang PUNYA
       // AppBar; pembungkus di sini menutup sisanya (layar PIN, layar sukses
