@@ -112,7 +112,7 @@ class _DiscountDialogContentState extends State<_DiscountDialogContent> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppCard(
-              color: AppColors.surfaceAlt,
+              color: context.palette.surfaceAlt,
               radius: AppSizes.radiusMd,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.spaceMd,
@@ -138,7 +138,7 @@ class _DiscountDialogContentState extends State<_DiscountDialogContent> {
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-              style: AppTextStyles.moneyLarge,
+              style: context.textStyles.moneyLarge,
               decoration: InputDecoration(
                 labelText: _mode == _DiscountMode.nominal ? 'Diskon (Rp)' : 'Diskon (%)',
                 prefixText: _mode == _DiscountMode.nominal ? 'Rp ' : null,
@@ -148,8 +148,8 @@ class _DiscountDialogContentState extends State<_DiscountDialogContent> {
             ),
             const SizedBox(height: AppSizes.spaceMd),
             AppCard(
-              color: AppColors.primary50,
-              borderColor: AppColors.primary100,
+              color: context.palette.primary50,
+              borderColor: context.palette.primary100,
               radius: AppSizes.radiusMd,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.spaceMd,
@@ -163,13 +163,13 @@ class _DiscountDialogContentState extends State<_DiscountDialogContent> {
                         ? '-${CurrencyFormatter.format(previewNominal)}'
                         : CurrencyFormatter.format(0),
                     valueColor: previewNominal > 0
-                        ? AppColors.dangerText
-                        : AppColors.inkSecondary,
+                        ? context.palette.dangerText
+                        : context.palette.inkSecondary,
                   ),
                   AppKeyValueRow(
                     label: 'Jadi bayar',
                     value: CurrencyFormatter.format(afterDiscount),
-                    valueColor: AppColors.primary,
+                    valueColor: context.palette.primary,
                   ),
                 ],
               ),

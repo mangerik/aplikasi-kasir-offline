@@ -67,10 +67,10 @@ class ReportsScreen extends ConsumerWidget {
             const SizedBox(height: AppSizes.spaceSm),
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.event_outlined,
                   size: AppSizes.iconSm,
-                  color: AppColors.inkSecondary,
+                  color: context.palette.inkSecondary,
                 ),
                 const SizedBox(width: AppSizes.spaceXs + 2),
                 Expanded(
@@ -245,7 +245,7 @@ class _PaymentMethodRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tone = paymentMethodTone(entry.method);
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
 
     return Column(
       children: [
@@ -305,8 +305,8 @@ class _DebtShortcut extends ConsumerWidget {
         return Padding(
           padding: const EdgeInsets.only(top: AppSizes.spaceMd),
           child: AppCard(
-            color: AppColors.accent50,
-            borderColor: AppColors.accent100,
+            color: context.palette.accent50,
+            borderColor: context.palette.accent100,
             padding: const EdgeInsets.all(AppSizes.spaceMd),
             onTap: () => Navigator.of(
               context,
@@ -323,11 +323,11 @@ class _DebtShortcut extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('PERLU DITAGIH', style: AppTextStyles.eyebrow),
+                      Text('PERLU DITAGIH', style: context.textStyles.eyebrow),
                       const SizedBox(height: AppSizes.spaceXs),
                       AppMoneyText(
                         CurrencyFormatter.format(total),
-                        color: AppColors.accentText,
+                        color: context.palette.accentText,
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -337,9 +337,9 @@ class _DebtShortcut extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
-                  color: AppColors.accentText,
+                  color: context.palette.accentText,
                 ),
               ],
             ),
@@ -467,7 +467,7 @@ class _PresetChip extends StatelessWidget {
             : Icon(
                 icon,
                 size: AppSizes.iconSm,
-                color: selected ? AppColors.primary : AppColors.inkSecondary,
+                color: selected ? context.palette.primary : context.palette.inkSecondary,
               ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.spaceMs,

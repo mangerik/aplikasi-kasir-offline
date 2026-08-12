@@ -27,7 +27,7 @@ class StockMovementTile extends StatelessWidget {
         : isPositive
         ? AppTone.success
         : AppTone.danger;
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
     final sign = isPositive ? '+' : '';
 
     return AppCard(
@@ -66,7 +66,7 @@ class StockMovementTile extends StatelessWidget {
                 children: [
                   Text(
                     '$sign${_formatNum(movement.qtyChange)} $unit',
-                    style: AppTextStyles.numeric.copyWith(
+                    style: context.textStyles.numeric.copyWith(
                       fontSize: 17,
                       color: c.fg,
                     ),
@@ -93,7 +93,7 @@ class StockMovementTile extends StatelessWidget {
               if (movement.referenceInvoiceNumber != null)
                 const SizedBox(height: AppSizes.spaceSm),
               AppCard(
-                color: AppColors.surfaceAlt,
+                color: context.palette.surfaceAlt,
                 radius: AppSizes.radiusMd,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.spaceMs,
@@ -102,10 +102,10 @@ class StockMovementTile extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.sticky_note_2_outlined,
                       size: AppSizes.iconSm,
-                      color: AppColors.inkSecondary,
+                      color: context.palette.inkSecondary,
                     ),
                     const SizedBox(width: AppSizes.spaceSm),
                     Expanded(

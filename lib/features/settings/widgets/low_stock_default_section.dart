@@ -103,7 +103,7 @@ class _LowStockFormState extends ConsumerState<_LowStockForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Pilihan cepat', style: AppTextStyles.eyebrow),
+        Text('Pilihan cepat', style: context.textStyles.eyebrow),
         const SizedBox(height: AppSizes.spaceSm),
         Wrap(
           spacing: AppSizes.spaceSm,

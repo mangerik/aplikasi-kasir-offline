@@ -267,10 +267,10 @@ class _CategoryChips extends StatelessWidget {
               label: Text(isAll ? 'Semua' : category!.name),
               selected: selected,
               avatar: selected
-                  ? const Icon(
+                  ? Icon(
                       Icons.check_rounded,
                       size: AppSizes.iconSm,
-                      color: AppColors.primary,
+                      color: context.palette.primary,
                     )
                   : null,
               onSelected: (_) => onSelect(isAll ? null : category!.id),

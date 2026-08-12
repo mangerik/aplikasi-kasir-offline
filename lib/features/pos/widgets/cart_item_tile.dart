@@ -51,7 +51,7 @@ class CartItemTile extends StatelessWidget {
               controller: controller,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: AppTextStyles.moneyLarge,
+              style: context.textStyles.moneyLarge,
               decoration: InputDecoration(
                 labelText: 'Qty (${item.unit})',
                 suffixText: item.unit,
@@ -170,12 +170,12 @@ class CartItemTile extends StatelessWidget {
                 onPressed: () => _editDiscount(context),
                 icon: Icon(
                   Icons.local_offer_outlined,
-                  color: hasDiscount ? AppColors.accentText : AppColors.inkSecondary,
+                  color: hasDiscount ? context.palette.accentText : context.palette.inkSecondary,
                 ),
               ),
               IconButton(
                 tooltip: 'Hapus dari keranjang',
-                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+                icon: Icon(Icons.delete_outline_rounded, color: context.palette.danger),
                 onPressed: onRemove,
               ),
             ],
@@ -208,8 +208,8 @@ class _QtyStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      color: AppColors.surfaceAlt,
-      borderColor: AppColors.border,
+      color: context.palette.surfaceAlt,
+      borderColor: context.palette.border,
       radius: AppSizes.radiusMd,
       padding: EdgeInsets.zero,
       child: SizedBox(
@@ -233,7 +233,7 @@ class _QtyStepper extends StatelessWidget {
                   '$qtyLabel $unit',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.numeric,
+                  style: context.textStyles.numeric,
                 ),
               ),
             ),
@@ -265,7 +265,7 @@ class _StepButton extends StatelessWidget {
         child: SizedBox(
           width: _QtyStepper._height,
           height: _QtyStepper._height,
-          child: Icon(icon, size: AppSizes.iconMd, color: AppColors.primary),
+          child: Icon(icon, size: AppSizes.iconMd, color: context.palette.primary),
         ),
       ),
     );

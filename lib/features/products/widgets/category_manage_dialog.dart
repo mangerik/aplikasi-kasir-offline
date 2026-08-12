@@ -158,7 +158,10 @@ class CategoryManageDialog extends ConsumerWidget {
           // Satu-satunya override warna tombol yang diizinkan fondasi §7.3:
           // konfirmasi aksi merusak.
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.palette.danger,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Hapus'),
           ),
@@ -193,7 +196,7 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      color: AppColors.surfaceAlt,
+      color: context.palette.surfaceAlt,
       radius: AppSizes.radiusMd,
       padding: const EdgeInsets.fromLTRB(
         AppSizes.spaceMs,
@@ -220,7 +223,7 @@ class _CategoryRow extends StatelessWidget {
           IconButton(
             tooltip: 'Hapus',
             iconSize: AppSizes.iconSm,
-            style: IconButton.styleFrom(foregroundColor: AppColors.dangerText),
+            style: IconButton.styleFrom(foregroundColor: context.palette.dangerText),
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline_rounded),
           ),

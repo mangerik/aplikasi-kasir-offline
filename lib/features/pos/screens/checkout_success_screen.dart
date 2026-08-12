@@ -166,7 +166,7 @@ class _CheckoutSuccessScreenState extends ConsumerState<CheckoutSuccessScreen> {
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                  boxShadow: AppShadows.primaryGlow,
+                  boxShadow: AppShadows.of(context).primaryGlow,
                 ),
                 child: SizedBox(
                   height: AppSizes.buttonHeightLarge,
@@ -231,15 +231,15 @@ class _HeroAmount extends StatelessWidget {
         : 'TOTAL DIBAYAR';
     final heroValue = isCash ? sale.changeAmount : sale.total;
     final heroColor = isCash
-        ? AppColors.successText
+        ? context.palette.successText
         : isDebt
-        ? AppColors.accentText
-        : AppColors.ink;
+        ? context.palette.accentText
+        : context.palette.ink;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(heroLabel, style: AppTextStyles.eyebrow, textAlign: TextAlign.center),
+        Text(heroLabel, style: context.textStyles.eyebrow, textAlign: TextAlign.center),
         const SizedBox(height: AppSizes.spaceXs),
         FittedBox(
           fit: BoxFit.scaleDown,
@@ -251,7 +251,7 @@ class _HeroAmount extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.spaceMd),
         AppCard(
-          color: AppColors.surfaceAlt,
+          color: context.palette.surfaceAlt,
           radius: AppSizes.radiusMd,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSizes.spaceMd,

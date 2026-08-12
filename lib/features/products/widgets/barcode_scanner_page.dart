@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../core/constants/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 
 /// Halaman scan barcode via kamera (plan.md Milestone 1 poin 4).
@@ -10,9 +11,14 @@ import '../../../core/widgets/app_widgets.dart';
 ///
 /// Layar ini sengaja TIDAK memakai `AppBar` bertema kertas: di atas gambar
 /// kamera, pita krem justru memotong bidang pandang. Sebagai gantinya
-/// kontrol mengambang di atas permukaan gelap ([AppColors.surfaceDark]) —
-/// satu-satunya konteks gelap di area Produk, dan tetap memakai token warna
-/// fondasi.
+/// kontrol mengambang di atas permukaan gelap.
+///
+/// Sejak mode gelap (PRD v1.1 §5), layar ini **dipaksa memakai
+/// `AppTheme.dark()`** di kedua mode aplikasi — bukan pengecualian, justru
+/// penerapan aturannya: pratinjau kamera selalu gelap, jadi chrome di
+/// atasnya wajib gelap supaya kontrolnya terbaca dan bidang pandang tidak
+/// tersilau. Warnanya tetap datang dari `context.palette`, bukan dari nilai
+/// mentah.
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
 
@@ -40,10 +46,18 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
   @override
   Widget build(BuildContext context) {
+    return Theme(
+      data: AppTheme.dark(),
+      child: Builder(builder: _buildScanner),
+    );
+  }
+
+  Widget _buildScanner(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = context.palette;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: palette.background,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -90,15 +104,15 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.spaceMd),
                 child: AppCard(
-                  color: AppColors.surfaceDark,
-                  borderColor: AppColors.inkSecondary,
+                  color: palette.surface,
+                  borderColor: palette.borderStrong,
                   padding: const EdgeInsets.all(AppSizes.spaceMs),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.qr_code_scanner_rounded,
-                        color: AppColors.primary200,
+                        color: palette.primary,
                         size: AppSizes.iconMd,
                       ),
                       const SizedBox(width: AppSizes.spaceMs),
@@ -110,14 +124,14 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                             Text(
                               'Arahkan ke barcode produk',
                               style: theme.textTheme.titleSmall?.copyWith(
-                                color: AppColors.onDark,
+                                color: palette.ink,
                               ),
                             ),
                             const SizedBox(height: AppSizes.spaceXs),
                             Text(
                               'Kode akan terisi otomatis begitu terbaca.',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.primary200,
+                                color: palette.inkSecondary,
                               ),
                             ),
                           ],
@@ -153,7 +167,7 @@ class _ScanFrame extends StatelessWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.onDark),
+                border: Border.all(color: context.palette.ink),
                 borderRadius: BorderRadius.circular(AppSizes.radiusXl),
               ),
             ),
@@ -191,13 +205,13 @@ class _Corner extends StatelessWidget {
         width: _ScanFrame._corner,
         height: _ScanFrame._corner,
         decoration: BoxDecoration(
-          border: const Border(
+          border: Border(
             top: BorderSide(
-              color: AppColors.primary200,
+              color: context.palette.primary,
               width: _ScanFrame._thickness,
             ),
             left: BorderSide(
-              color: AppColors.primary200,
+              color: context.palette.primary,
               width: _ScanFrame._thickness,
             ),
           ),
@@ -231,8 +245,12 @@ class _OverlayIconButton extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon),
       style: IconButton.styleFrom(
-        backgroundColor: active ? AppColors.primary : AppColors.surfaceDark,
-        foregroundColor: AppColors.onDark,
+        backgroundColor: active
+            ? context.palette.primary
+            : context.palette.surface,
+        foregroundColor: active
+            ? context.palette.onPrimary
+            : context.palette.ink,
         minimumSize: const Size.square(AppSizes.minTouchTarget),
         shape: const CircleBorder(),
       ),

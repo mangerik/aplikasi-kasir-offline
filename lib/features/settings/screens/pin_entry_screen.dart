@@ -108,7 +108,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                   Text(
                     widget.subtitle ?? 'Masukkan 6 digit PIN kamu.',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.inkSecondary),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: context.palette.inkSecondary),
                   ),
                   const SizedBox(height: AppSizes.spaceXl),
                   PinKeypad(onCompleted: _onCompleted, errorText: _errorText, enabled: !_checking),
@@ -131,10 +131,10 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.shield_outlined,
                                 size: AppSizes.iconSm,
-                                color: AppColors.inkSecondary,
+                                color: context.palette.inkSecondary,
                               ),
                               const SizedBox(width: AppSizes.spaceXs + 2),
                               Flexible(

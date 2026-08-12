@@ -118,8 +118,8 @@ class _CustomerTotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       elevated: true,
-      color: AppColors.accent50,
-      borderColor: AppColors.accent100,
+      color: context.palette.accent50,
+      borderColor: context.palette.accent100,
       padding: const EdgeInsets.all(AppSizes.spaceMl),
       child: Row(
         children: [
@@ -134,12 +134,12 @@ class _CustomerTotalCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('SISA HUTANG', style: AppTextStyles.eyebrow),
+                Text('SISA HUTANG', style: context.textStyles.eyebrow),
                 const SizedBox(height: AppSizes.spaceXs),
                 AppMoneyText(
                   CurrencyFormatter.format(total),
                   size: AppMoneySize.lg,
-                  color: AppColors.accentText,
+                  color: context.palette.accentText,
                 ),
                 const SizedBox(height: AppSizes.spaceXs),
                 Text(

@@ -167,7 +167,10 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
             child: const Text('Batal'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.palette.danger,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(confirmLabel),
           ),
@@ -230,10 +233,10 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
+            Icon(
               Icons.info_outline_rounded,
               size: AppSizes.iconSm,
-              color: AppColors.inkSecondary,
+              color: context.palette.inkSecondary,
             ),
             const SizedBox(width: AppSizes.spaceSm),
             Expanded(
@@ -264,7 +267,7 @@ class _LastBackupPanel extends StatelessWidget {
     final tone = stale ? AppTone.warning : AppTone.success;
 
     return AppCard(
-      color: AppColors.surfaceAlt,
+      color: context.palette.surfaceAlt,
       radius: AppSizes.radiusMd,
       padding: const EdgeInsets.all(AppSizes.spaceMs),
       child: Row(
@@ -280,7 +283,7 @@ class _LastBackupPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('BACKUP TERAKHIR', style: AppTextStyles.eyebrow),
+                Text('BACKUP TERAKHIR', style: context.textStyles.eyebrow),
                 const SizedBox(height: AppSizes.spaceXs),
                 Text(
                   lastBackup == null ? 'Belum pernah' : DateFormatter.formatDateTime(lastBackup!),

@@ -167,8 +167,8 @@ class _ExportProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      color: AppColors.primary50,
-      borderColor: AppColors.primary100,
+      color: context.palette.primary50,
+      borderColor: context.palette.primary100,
       radius: AppSizes.radiusMd,
       padding: const EdgeInsets.all(AppSizes.spaceMs),
       child: Row(
@@ -210,7 +210,7 @@ class _ExportTile extends StatelessWidget {
     final enabled = onTap != null;
     return AppCard(
       onTap: onTap,
-      color: AppColors.surfaceAlt,
+      color: context.palette.surfaceAlt,
       radius: AppSizes.radiusMd,
       padding: const EdgeInsets.all(AppSizes.spaceMs),
       child: Row(
@@ -229,7 +229,7 @@ class _ExportTile extends StatelessWidget {
                 Text(
                   title,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: enabled ? AppColors.ink : AppColors.inkSecondary,
+                    color: enabled ? context.palette.ink : context.palette.inkSecondary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -238,10 +238,10 @@ class _ExportTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.spaceSm),
-          const Icon(
+          Icon(
             Icons.chevron_right_rounded,
             size: AppSizes.iconMd,
-            color: AppColors.inkTertiary,
+            color: context.palette.inkTertiary,
           ),
         ],
       ),

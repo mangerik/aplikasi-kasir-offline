@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_sizes.dart';
 import 'empty_state.dart';
 
@@ -119,7 +120,7 @@ class AppBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceMs),
@@ -150,7 +151,7 @@ class AppBanner extends StatelessWidget {
                 Text(
                   message,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.inkSecondary,
+                    color: context.palette.inkSecondary,
                   ),
                 ),
                 if (actionLabel != null && onAction != null)

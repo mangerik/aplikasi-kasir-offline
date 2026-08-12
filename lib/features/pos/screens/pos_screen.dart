@@ -45,14 +45,14 @@ class PosScreen extends ConsumerWidget {
           builder: (context, constraints) {
             final isTablet = constraints.maxWidth >= AppSizes.tabletBreakpoint;
             if (isTablet) {
-              return const Row(
+              return Row(
                 children: [
                   Expanded(flex: 3, child: ProductGrid()),
                   VerticalDivider(width: AppSizes.hairline),
                   SizedBox(
                     width: _cartPanelWidth,
                     child: ColoredBox(
-                      color: AppColors.surface,
+                      color: context.palette.surface,
                       child: CartPanel(),
                     ),
                   ),
@@ -104,22 +104,22 @@ class _HeldCartsAction extends StatelessWidget {
         child: AppCard(
           onTap: open,
           radius: AppSizes.radiusPill,
-          color: AppColors.accent50,
-          borderColor: AppColors.accent100,
+          color: context.palette.accent50,
+          borderColor: context.palette.accent100,
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.spaceMs),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.pause_circle_filled_rounded,
                 size: AppSizes.iconSm,
-                color: AppColors.accentText,
+                color: context.palette.accentText,
               ),
               const SizedBox(width: AppSizes.spaceXs + 2),
               Text(
                 '$count ditahan',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.accentText,
+                  color: context.palette.accentText,
                 ),
               ),
             ],

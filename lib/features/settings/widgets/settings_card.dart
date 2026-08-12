@@ -56,7 +56,7 @@ class SettingsCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle!,
-                        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.inkSecondary),
+                        style: theme.textTheme.bodySmall?.copyWith(color: context.palette.inkSecondary),
                       ),
                     ],
                   ],

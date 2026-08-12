@@ -139,7 +139,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                 ),
 
                 // --- Kapan.
-                Text('RENTANG TANGGAL', style: AppTextStyles.eyebrow),
+                Text('RENTANG TANGGAL', style: context.textStyles.eyebrow),
                 const SizedBox(height: AppSizes.spaceSm),
                 Wrap(
                   spacing: AppSizes.spaceSm,
@@ -173,7 +173,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                 const SizedBox(height: AppSizes.spaceSm),
                 AppCard(
                   onTap: _pickDateRange,
-                  color: AppColors.surfaceAlt,
+                  color: context.palette.surfaceAlt,
                   radius: AppSizes.radiusMd,
                   padding: const EdgeInsets.all(AppSizes.spaceMs),
                   child: Row(
@@ -193,7 +193,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                           style: _hasDateRange
                               ? theme.textTheme.titleSmall
                               : theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.inkSecondary,
+                                  color: context.palette.inkSecondary,
                                 ),
                         ),
                       ),
@@ -208,9 +208,9 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                           }),
                         )
                       else
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
-                          color: AppColors.inkSecondary,
+                          color: context.palette.inkSecondary,
                         ),
                     ],
                   ),
@@ -218,7 +218,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                 const SizedBox(height: AppSizes.spaceLg),
 
                 // --- Dibayar pakai apa.
-                Text('METODE BAYAR', style: AppTextStyles.eyebrow),
+                Text('METODE BAYAR', style: context.textStyles.eyebrow),
                 const SizedBox(height: AppSizes.spaceSm),
                 Wrap(
                   spacing: AppSizes.spaceSm,
@@ -241,7 +241,7 @@ class _HistoryFilterSheetState extends ConsumerState<HistoryFilterSheet> {
                 const SizedBox(height: AppSizes.spaceLg),
 
                 // --- Keadaan transaksi.
-                Text('STATUS', style: AppTextStyles.eyebrow),
+                Text('STATUS', style: context.textStyles.eyebrow),
                 const SizedBox(height: AppSizes.spaceSm),
                 Wrap(
                   spacing: AppSizes.spaceSm,
@@ -320,7 +320,7 @@ class _FilterChip extends StatelessWidget {
           : Icon(
               icon,
               size: AppSizes.iconSm,
-              color: selected ? AppColors.primary : AppColors.inkSecondary,
+              color: selected ? context.palette.primary : context.palette.inkSecondary,
             ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spaceMs,

@@ -40,8 +40,8 @@ class CartPanel extends ConsumerWidget {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: AppColors.onDark,
+              backgroundColor: context.palette.danger,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Kosongkan'),
@@ -70,7 +70,7 @@ class CartPanel extends ConsumerWidget {
               'Keranjang diparkir dulu supaya kamu bisa melayani pembeli '
               'lain. Beri label agar mudah dikenali.',
               style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
-                color: AppColors.inkSecondary,
+                color: context.palette.inkSecondary,
               ),
             ),
             const SizedBox(height: AppSizes.spaceMd),
@@ -241,7 +241,7 @@ class _CheckoutBar extends StatelessWidget {
     final hasDiscount = transactionDiscount > 0;
 
     return Container(
-      decoration: AppDecorations.floating(radius: AppSizes.radius2xl),
+      decoration: AppDecorations.floating(context, radius: AppSizes.radius2xl),
       margin: const EdgeInsets.fromLTRB(
         AppSizes.spaceMs,
         0,
@@ -256,7 +256,7 @@ class _CheckoutBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppCard(
-              color: AppColors.surfaceAlt,
+              color: context.palette.surfaceAlt,
               radius: AppSizes.radiusMd,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.spaceMd,
@@ -278,8 +278,8 @@ class _CheckoutBar extends StatelessWidget {
                           ? '-${CurrencyFormatter.format(transactionDiscount)}'
                           : 'Atur',
                       valueColor: hasDiscount
-                          ? AppColors.dangerText
-                          : AppColors.primary,
+                          ? context.palette.dangerText
+                          : context.palette.primary,
                     ),
                   ),
                   const Divider(),
@@ -342,7 +342,7 @@ class _PayCta extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        boxShadow: AppShadows.primaryGlow,
+        boxShadow: AppShadows.of(context).primaryGlow,
       ),
       child: button,
     );

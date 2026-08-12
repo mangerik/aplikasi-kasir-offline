@@ -163,11 +163,11 @@ class _ProductSummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('STOK KINI', style: AppTextStyles.eyebrow),
+              Text('STOK KINI', style: context.textStyles.eyebrow),
               const SizedBox(height: AppSizes.spaceXs),
               Text(
                 '${_formatNum(product.stock)} ${product.unit}',
-                style: AppTextStyles.numeric.copyWith(fontSize: 17),
+                style: context.textStyles.numeric.copyWith(fontSize: 17),
               ),
             ],
           ),

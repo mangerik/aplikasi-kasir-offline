@@ -131,8 +131,8 @@ class _TotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       elevated: true,
-      color: AppColors.accent50,
-      borderColor: AppColors.accent100,
+      color: context.palette.accent50,
+      borderColor: context.palette.accent100,
       padding: const EdgeInsets.all(AppSizes.spaceMl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +146,7 @@ class _TotalCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.spaceSm),
               Expanded(
-                child: Text('TOTAL HUTANG BERJALAN', style: AppTextStyles.eyebrow),
+                child: Text('TOTAL HUTANG BERJALAN', style: context.textStyles.eyebrow),
               ),
             ],
           ),
@@ -154,7 +154,7 @@ class _TotalCard extends StatelessWidget {
           AppMoneyText(
             CurrencyFormatter.format(total),
             size: AppMoneySize.lg,
-            color: AppColors.accentText,
+            color: context.palette.accentText,
           ),
           const SizedBox(height: AppSizes.spaceXs),
           Text(
@@ -211,7 +211,7 @@ class _DebtTile extends StatelessWidget {
               const SizedBox(width: AppSizes.spaceSm),
               AppMoneyText(
                 CurrencyFormatter.format(debt.totalDebt),
-                color: AppColors.accentText,
+                color: context.palette.accentText,
               ),
             ],
           ),
@@ -221,8 +221,8 @@ class _DebtTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
               child: LinearProgressIndicator(
                 value: share.clamp(0, 1),
-                color: AppColors.accent,
-                backgroundColor: AppColors.accent100,
+                color: context.palette.accent,
+                backgroundColor: context.palette.accent100,
               ),
             ),
           ],

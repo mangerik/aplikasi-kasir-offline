@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_sizes.dart';
 import 'app_pill.dart';
 
@@ -88,7 +89,7 @@ class EmptyState extends StatelessWidget {
                   message!,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.inkSecondary,
+                    color: context.palette.inkSecondary,
                   ),
                 ),
               ],

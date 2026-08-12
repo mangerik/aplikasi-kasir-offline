@@ -62,8 +62,8 @@ class HeldCartsScreen extends ConsumerWidget {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: AppColors.onDark,
+              backgroundColor: context.palette.danger,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Hapus'),
@@ -167,7 +167,7 @@ class _HeldCartCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: hasLabel ? AppColors.ink : AppColors.inkSecondary,
+                    color: hasLabel ? context.palette.ink : context.palette.inkSecondary,
                   ),
                 ),
                 const SizedBox(height: AppSizes.spaceXs),
@@ -193,7 +193,7 @@ class _HeldCartCard extends StatelessWidget {
           const SizedBox(width: AppSizes.spaceSm),
           IconButton(
             tooltip: 'Hapus',
-            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+            icon: Icon(Icons.delete_outline_rounded, color: context.palette.danger),
             onPressed: onDelete,
           ),
         ],

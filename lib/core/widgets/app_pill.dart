@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_sizes.dart';
 
 /// Label status kecil berbentuk pill (lunas, hutang, batal, stok menipis,
@@ -59,8 +60,8 @@ class AppPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = tone.colors;
-    final fg = filled ? _onFilled(tone) : c.fg;
+    final c = tone.colorsOf(context);
+    final fg = filled ? _onFilled(context, tone) : c.fg;
     final bg = filled ? c.fg : c.bg;
 
     final text = Text(
@@ -119,8 +120,16 @@ class AppPill extends StatelessWidget {
     return pill;
   }
 
-  static Color _onFilled(AppTone tone) =>
-      tone == AppTone.neutral ? AppColors.surface : AppColors.onDark;
+  /// Warna teks/ikon di atas pill berisi penuh.
+  ///
+  /// Di mode gelap `c.fg` justru warna TERANG, jadi tulisan di atasnya wajib
+  /// gelap — kalau tidak, pill "lunas" jadi hijau muda bertulis putih dan
+  /// hilang sama sekali (PRD v1.1 AC-5.11).
+  static Color _onFilled(BuildContext context, AppTone tone) {
+    final p = context.palette;
+    if (p.isDark) return p.background;
+    return tone == AppTone.neutral ? p.surface : p.onDark;
+  }
 }
 
 /// Ikon di dalam kotak bernada lembut (squircle).
@@ -150,7 +159,7 @@ class AppIconBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
     final box = switch (size) {
       AppIconBadgeSize.sm => 32.0,
       AppIconBadgeSize.md => 40.0,
@@ -180,7 +189,7 @@ class AppIconBadge extends StatelessWidget {
       child: Icon(
         icon,
         size: iconSize,
-        color: filled ? AppColors.onDark : c.fg,
+        color: filled ? AppPill._onFilled(context, tone) : c.fg,
       ),
     );
   }

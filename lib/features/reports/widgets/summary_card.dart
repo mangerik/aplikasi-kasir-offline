@@ -40,7 +40,7 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
 
     return AppCard(
       onTap: onTap,
@@ -58,14 +58,14 @@ class SummaryCard extends StatelessWidget {
                   label.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.eyebrow,
+                  style: context.textStyles.eyebrow,
                 ),
               ),
               if (onTap != null)
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: AppSizes.iconSm,
-                  color: AppColors.inkSecondary,
+                  color: context.palette.inkSecondary,
                 ),
             ],
           ),

@@ -184,12 +184,16 @@ enum AppTone {
   info,
 }
 
-/// Resolver trio warna untuk sebuah [AppTone].
+/// Resolver trio warna untuk sebuah [AppTone] — **versi palet terang saja**.
 ///
-/// ```dart
-/// final c = tone.colors;      // c.fg, c.bg, c.border
-/// ```
+/// Dipertahankan selama masa migrasi mode gelap (PRD v1.1 K-5.6) supaya kode
+/// lama tetap terkompilasi. Kode baru WAJIB memakai `tone.colorsOf(context)`
+/// dari `app_palette.dart` yang mengikuti tema aktif.
 extension AppToneColorsX on AppTone {
+  @Deprecated(
+    'Tidak sadar tema — selalu mengembalikan palet terang. '
+    'Pakai tone.colorsOf(context) dari app_palette.dart.',
+  )
   AppToneColors get colors => switch (this) {
     AppTone.neutral => const AppToneColors(
       fg: AppColors.inkSecondary,

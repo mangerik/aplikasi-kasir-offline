@@ -43,7 +43,7 @@ class CartSummaryBar extends ConsumerWidget {
           AppSizes.spaceSm,
         ),
         child: Container(
-          decoration: AppDecorations.floating(),
+          decoration: AppDecorations.floating(context),
           clipBehavior: Clip.antiAlias,
           child: Material(
             type: MaterialType.transparency,
@@ -83,7 +83,7 @@ class CartSummaryBar extends ConsumerWidget {
                             child: AppMoneyText(
                               CurrencyFormatter.format(cart.total),
                               size: AppMoneySize.lg,
-                              color: isEmpty ? AppColors.inkTertiary : AppColors.ink,
+                              color: isEmpty ? context.palette.inkTertiary : context.palette.ink,
                             ),
                           ),
                         ],
@@ -126,7 +126,7 @@ class _PayButton extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        boxShadow: AppShadows.primaryGlow,
+        boxShadow: AppShadows.of(context).primaryGlow,
       ),
       child: button,
     );

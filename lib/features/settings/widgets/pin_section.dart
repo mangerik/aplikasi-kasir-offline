@@ -168,7 +168,7 @@ class _PinBody extends StatelessWidget {
           active
               ? 'Area di bawah ini minta PIN sebelum bisa dibuka:'
               : 'Aktifkan supaya area di bawah ini tidak bisa dibuka orang lain:',
-          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.inkSecondary),
+          style: theme.textTheme.bodyMedium?.copyWith(color: context.palette.inkSecondary),
         ),
         const SizedBox(height: AppSizes.spaceMs),
         Wrap(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/constants/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/sale_result.dart';
 import '../../../domain/entities/store_profile.dart';
@@ -24,10 +25,24 @@ import '../../settings/providers/settings_providers.dart';
 /// fallback ke `'KASIR WARUNG'` tanpa alamat/telp bila profil belum diisi
 /// (perilaku identik dengan sebelum M5, tidak ada breaking change untuk
 /// struk lama).
+///
+/// **Dipaksa tema TERANG** (PRD v1.1 K-5.3 / AC-5.7): struk keluar dari
+/// aplikasi — di-capture jadi gambar lalu dibagikan, dan nanti dicetak di
+/// kertas termal. Kertas tidak punya mode gelap. Widget ini karena itu
+/// membungkus dirinya sendiri dengan `Theme(data: AppTheme.light(), ...)`
+/// dan memakai konstanta kertas/tinta di bawah, sehingga hasilnya identik
+/// baik aplikasi sedang terang maupun gelap.
 class ReceiptWidget extends ConsumerWidget {
   const ReceiptWidget({super.key, required this.sale});
 
   final SaleResult sale;
+
+  /// Kertas struk. ALLOWLIST AC-5.6: nilai mentah, BUKAN token palet —
+  /// justru karena ia tidak boleh ikut tema.
+  static const Color paper = Color(0xFFFFFFFF);
+
+  /// Tinta struk. Sama alasannya dengan [paper].
+  static const Color inkOnPaper = Color(0xFF000000);
 
   /// Lebar render struk. 340 (bukan lebar penuh) supaya proporsinya mirip
   /// kertas 58mm dan tetap muat di dalam kartu layar sukses pada HP 360dp.
@@ -37,14 +52,14 @@ class ReceiptWidget extends ConsumerWidget {
     fontFamily: 'monospace',
     fontSize: 12,
     height: 1.45,
-    color: Colors.black,
+    color: inkOnPaper,
   );
   static const TextStyle _bold = TextStyle(
     fontFamily: 'monospace',
     fontSize: 12,
     height: 1.45,
     fontWeight: FontWeight.bold,
-    color: Colors.black,
+    color: inkOnPaper,
   );
   static const TextStyle _title = TextStyle(
     fontFamily: 'monospace',
@@ -52,23 +67,33 @@ class ReceiptWidget extends ConsumerWidget {
     height: 1.2,
     fontWeight: FontWeight.bold,
     letterSpacing: 1,
-    color: Colors.black,
+    color: inkOnPaper,
   );
   static const TextStyle _total = TextStyle(
     fontFamily: 'monospace',
     fontSize: 15,
     height: 1.3,
     fontWeight: FontWeight.bold,
-    color: Colors.black,
+    color: inkOnPaper,
   );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(storeProfileProvider).value ?? const StoreProfile();
 
+    // Tema terang dipaksa di sini, bukan di pemanggil: setiap layar yang
+    // menampilkan struk (sukses transaksi, detail transaksi, nanti
+    // pratinjau cetak) otomatis ikut benar tanpa perlu mengingat aturan.
+    return Theme(
+      data: AppTheme.light(),
+      child: _paperSheet(profile),
+    );
+  }
+
+  Widget _paperSheet(StoreProfile profile) {
     return Container(
       width: width,
-      color: Colors.white,
+      color: paper,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spaceMd,
         vertical: AppSizes.spaceMl,

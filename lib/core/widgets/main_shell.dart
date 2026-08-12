@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/inventory/providers/stock_providers.dart';
 import '../../features/transactions/utils/pin_gate.dart';
-import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_shadows.dart';
 import '../constants/app_sizes.dart';
 import '../constants/app_typography.dart';
@@ -86,11 +86,12 @@ class MainShell extends ConsumerWidget {
     // poin 3) — stream reaktif, otomatis ter-update tiap ada perubahan stok.
     final lowStockCount = ref.watch(lowStockCountProvider).value ?? 0;
     final currentIndex = navigationShell.currentIndex;
+    final palette = context.palette;
 
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(color: AppColors.background),
+        decoration: BoxDecoration(color: palette.background),
         child: SafeArea(
           top: false,
           child: Padding(
@@ -104,10 +105,10 @@ class MainShell extends ConsumerWidget {
               key: dockKey,
               height: AppSizes.navDockHeight,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: palette.surface,
                 borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-                border: Border.all(color: AppColors.border),
-                boxShadow: AppShadows.level2,
+                border: Border.all(color: palette.border),
+                boxShadow: AppShadows.of(context).level2,
               ),
               child: Row(
                 children: [
@@ -163,7 +164,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : AppColors.inkSecondary;
+    final palette = context.palette;
+    final color = selected ? palette.primary : palette.inkSecondary;
 
     Widget icon = AnimatedSwitcher(
       duration: AppDurations.fast,
@@ -190,8 +192,8 @@ class _NavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        splashColor: AppColors.primary.withValues(alpha: 0.07),
-        highlightColor: AppColors.primary.withValues(alpha: 0.04),
+        splashColor: palette.primary.withValues(alpha: 0.07),
+        highlightColor: palette.primary.withValues(alpha: 0.04),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -202,7 +204,7 @@ class _NavItem extends StatelessWidget {
               width: selected ? 44 : 34,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: selected ? AppColors.primary50 : Colors.transparent,
+                color: selected ? palette.primary50 : Colors.transparent,
                 borderRadius: BorderRadius.circular(AppSizes.radiusPill),
               ),
               child: icon,

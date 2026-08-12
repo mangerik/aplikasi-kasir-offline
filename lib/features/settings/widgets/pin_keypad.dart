@@ -196,7 +196,7 @@ class _PinDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = hasError ? AppColors.danger : AppColors.primary;
+    final active = hasError ? context.palette.danger : context.palette.primary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
@@ -209,8 +209,8 @@ class _PinDots extends StatelessWidget {
           height: isFilled ? 16 : 12,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isFilled ? active : AppColors.surface,
-            border: Border.all(color: isFilled ? active : AppColors.borderStrong, width: 1.5),
+            color: isFilled ? active : context.palette.surface,
+            border: Border.all(color: isFilled ? active : context.palette.borderStrong, width: 1.5),
           ),
         );
       }),
@@ -266,15 +266,17 @@ class _KeypadButtonState extends State<_KeypadButton> {
         decoration: BoxDecoration(
           color: widget.muted
               ? Colors.transparent
-              : (_pressed ? AppColors.primary50 : AppColors.surface),
+              : (_pressed ? context.palette.primary50 : context.palette.surface),
           borderRadius: borderRadius,
           border: widget.muted
               ? null
               : Border.all(
-                  color: _pressed ? AppColors.primary200 : AppColors.border,
+                  color: _pressed ? context.palette.primary200 : context.palette.border,
                   width: AppSizes.hairline,
                 ),
-          boxShadow: widget.muted || _pressed ? AppShadows.level0 : AppShadows.level1,
+          boxShadow: widget.muted || _pressed
+              ? AppShadows.level0
+              : AppShadows.of(context).level1,
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -284,19 +286,19 @@ class _KeypadButtonState extends State<_KeypadButton> {
             onTapUp: (_) => _setPressed(false),
             onTapCancel: () => _setPressed(false),
             borderRadius: borderRadius,
-            splashColor: AppColors.primary.withValues(alpha: 0.06),
-            highlightColor: AppColors.primary.withValues(alpha: 0.04),
+            splashColor: context.palette.primary.withValues(alpha: 0.06),
+            highlightColor: context.palette.primary.withValues(alpha: 0.04),
             child: Center(
               child: widget.icon != null
                   ? Icon(
                       widget.icon,
                       size: AppSizes.iconLg,
-                      color: enabled ? AppColors.inkSecondary : AppColors.inkTertiary,
+                      color: enabled ? context.palette.inkSecondary : context.palette.inkTertiary,
                     )
                   : Text(
                       widget.label!,
                       style: theme.textTheme.headlineLarge?.copyWith(
-                        color: enabled ? AppColors.ink : AppColors.inkTertiary,
+                        color: enabled ? context.palette.ink : context.palette.inkTertiary,
                         fontFeatures: AppTypography.tabularFigures,
                       ),
                     ),

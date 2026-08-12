@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_shadows.dart';
 import '../constants/app_sizes.dart';
 
@@ -50,12 +50,15 @@ class AppCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-  /// Override warna permukaan (mis. [AppColors.surfaceAlt] untuk sub-panel).
+  /// Override warna permukaan (mis. `context.palette.surfaceAlt` untuk
+  /// sub-panel).
   final Color? color;
   final Color? borderColor;
   final double radius;
 
-  /// `true` → memakai [AppShadows.level1] (kartu terasa mengambang).
+  /// `true` → memakai shadow level 1 (kartu terasa mengambang). Di mode
+  /// gelap shadow-nya nyaris tak terlihat — kedalaman dibawa oleh tangga
+  /// permukaan, sesuai PRD v1.1 §5.4.
   /// Pakai hemat: kartu di dalam list panjang sebaiknya tetap datar.
   final bool elevated;
 
@@ -67,11 +70,13 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final shadows = AppShadows.of(context);
     final borderRadius = BorderRadius.circular(radius);
     final effectiveBorder =
-        borderColor ?? (selected ? AppColors.primary200 : AppColors.border);
+        borderColor ?? (selected ? palette.primary200 : palette.border);
     final effectiveColor =
-        color ?? (selected ? AppColors.primary50 : AppColors.surface);
+        color ?? (selected ? palette.primary50 : palette.surface);
 
     return Container(
       width: width,
@@ -83,7 +88,7 @@ class AppCard extends StatelessWidget {
           color: effectiveBorder,
           width: selected ? 1.5 : AppSizes.hairline,
         ),
-        boxShadow: elevated ? AppShadows.level1 : AppShadows.level0,
+        boxShadow: elevated ? shadows.level1 : AppShadows.level0,
       ),
       clipBehavior: clipBehavior,
       child: Material(
@@ -92,8 +97,8 @@ class AppCard extends StatelessWidget {
           onTap: onTap,
           onLongPress: onLongPress,
           borderRadius: borderRadius,
-          splashColor: AppColors.primary.withValues(alpha: 0.06),
-          highlightColor: AppColors.primary.withValues(alpha: 0.04),
+          splashColor: palette.primary.withValues(alpha: 0.06),
+          highlightColor: palette.primary.withValues(alpha: 0.04),
           child: Padding(padding: padding, child: child),
         ),
       ),

@@ -139,7 +139,10 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
             child: const Text('Tidak'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.palette.danger,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Batalkan'),
           ),
@@ -220,14 +223,14 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
               if (sale.note != null && sale.note!.trim().isNotEmpty) ...[
                 const SizedBox(height: AppSizes.spaceMd),
                 AppCard(
-                  color: AppColors.surfaceAlt,
+                  color: context.palette.surfaceAlt,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.sticky_note_2_outlined,
                         size: AppSizes.iconSm,
-                        color: AppColors.inkSecondary,
+                        color: context.palette.inkSecondary,
                       ),
                       const SizedBox(width: AppSizes.spaceSm),
                       Expanded(
@@ -246,7 +249,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                 subtitle: 'Tampilan yang dikirim ke pelanggan',
               ),
               AppCard(
-                color: AppColors.surfaceAlt,
+                color: context.palette.surfaceAlt,
                 padding: const EdgeInsets.all(AppSizes.spaceMs),
                 child: Center(
                   child: FittedBox(
@@ -262,8 +265,8 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                 const SizedBox(height: AppSizes.spaceLg),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.dangerText,
-                    side: const BorderSide(color: AppColors.danger),
+                    foregroundColor: context.palette.dangerText,
+                    side: BorderSide(color: context.palette.danger),
                     minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
                   ),
                   onPressed: _processing ? null : () => _voidSale(sale),
@@ -360,7 +363,7 @@ class _HeaderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('NO. STRUK', style: AppTextStyles.eyebrow),
+                    Text('NO. STRUK', style: context.textStyles.eyebrow),
                     const SizedBox(height: AppSizes.spaceXs),
                     Text(sale.invoiceNumber, style: theme.textTheme.titleMedium),
                   ],
@@ -371,21 +374,21 @@ class _HeaderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.spaceMd),
-          Text('TOTAL BELANJA', style: AppTextStyles.eyebrow),
+          Text('TOTAL BELANJA', style: context.textStyles.eyebrow),
           const SizedBox(height: AppSizes.spaceXs),
           AppMoneyText(
             CurrencyFormatter.format(sale.total),
             size: AppMoneySize.lg,
             strikethrough: isVoided,
-            color: isVoided ? null : AppColors.primary,
+            color: isVoided ? null : context.palette.primary,
           ),
           const SizedBox(height: AppSizes.spaceMd),
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.schedule_outlined,
                 size: AppSizes.iconSm,
-                color: AppColors.inkSecondary,
+                color: context.palette.inkSecondary,
               ),
               const SizedBox(width: AppSizes.spaceXs + 2),
               Expanded(
@@ -406,10 +409,10 @@ class _HeaderCard extends StatelessWidget {
               ),
               if (sale.customerName != null && sale.customerName!.trim().isNotEmpty) ...[
                 const SizedBox(width: AppSizes.spaceMs),
-                const Icon(
+                Icon(
                   Icons.person_outline,
                   size: AppSizes.iconSm,
-                  color: AppColors.inkSecondary,
+                  color: context.palette.inkSecondary,
                 ),
                 const SizedBox(width: AppSizes.spaceXs),
                 Flexible(
@@ -470,7 +473,7 @@ class _ItemsCard extends StatelessWidget {
                           Text(
                             'Diskon ${CurrencyFormatter.format(sale.items[i].discount)}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.accentText,
+                              color: context.palette.accentText,
                             ),
                           ),
                       ],
@@ -518,7 +521,7 @@ class _SummaryCard extends StatelessWidget {
             AppKeyValueRow(
               label: 'Diskon transaksi',
               value: '-${CurrencyFormatter.format(sale.discount)}',
-              valueColor: AppColors.accentText,
+              valueColor: context.palette.accentText,
             ),
           const Divider(height: AppSizes.spaceMd),
           AppKeyValueRow(
@@ -535,7 +538,7 @@ class _SummaryCard extends StatelessWidget {
             AppKeyValueRow(
               label: 'Kembalian',
               value: CurrencyFormatter.format(sale.changeAmount),
-              valueColor: AppColors.successText,
+              valueColor: context.palette.successText,
             ),
           ],
         ],
@@ -574,7 +577,7 @@ class _ActionBar extends StatelessWidget {
           AppSizes.spaceMs,
         ),
         child: Container(
-          decoration: AppDecorations.floating(),
+          decoration: AppDecorations.floating(context),
           padding: const EdgeInsets.all(AppSizes.spaceMs),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -587,7 +590,7 @@ class _ActionBar extends StatelessWidget {
                   AppSizes.spaceXs,
                   AppSizes.spaceSm,
                 ),
-                child: Text('BAGIKAN STRUK KE PELANGGAN', style: AppTextStyles.eyebrow),
+                child: Text('BAGIKAN STRUK KE PELANGGAN', style: context.textStyles.eyebrow),
               ),
               Row(
                 children: [

@@ -68,7 +68,7 @@ class ProductListTile extends StatelessWidget {
                 Text(
                   product.name,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: inactive ? AppColors.inkSecondary : AppColors.ink,
+                    color: inactive ? context.palette.inkSecondary : context.palette.ink,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -83,9 +83,9 @@ class ProductListTile extends StatelessWidget {
                   children: [
                     Text(
                       '${_formatStock(product.stock)} ${product.unit}',
-                      style: AppTextStyles.numeric.copyWith(
+                      style: context.textStyles.numeric.copyWith(
                         fontSize: 13,
-                        color: stockTone.colors.fg,
+                        color: stockTone.colorsOf(context).fg,
                       ),
                     ),
                     if (isOut || isLow)
@@ -111,7 +111,7 @@ class ProductListTile extends StatelessWidget {
           const SizedBox(width: AppSizes.spaceMs),
           AppMoneyText(
             CurrencyFormatter.format(product.sellPrice),
-            color: inactive ? AppColors.inkSecondary : AppColors.primary,
+            color: inactive ? context.palette.inkSecondary : context.palette.primary,
           ),
         ],
       ),

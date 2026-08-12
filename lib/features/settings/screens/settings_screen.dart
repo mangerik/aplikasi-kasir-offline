@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/app_widgets.dart';
+import '../widgets/appearance_section.dart';
 import '../widgets/backup_reminder_banner.dart';
 import '../widgets/backup_restore_section.dart';
 import '../widgets/export_section.dart';
@@ -15,7 +16,8 @@ import '../widgets/store_profile_section.dart';
 /// (architecture.md §5.4) bila kunci sudah diaktifkan.
 ///
 /// Struktur visual (docs/ui-redesign-foundation.md §5.2): setelan dipecah
-/// jadi empat GRUP bernama — Identitas, Operasional, Data, Keamanan —
+/// jadi lima GRUP bernama — Tampilan, Identitas, Operasional, Data,
+/// Keamanan —
 /// masing-masing dibuka [SectionHeader] ber-eyebrow dan diisi satu/dua
 /// [SettingsCard]. Grup membuat layar panjang ini bisa dipindai sekilas
 /// alih-alih jadi tumpukan kartu seragam.
@@ -57,6 +59,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             BackupReminderBanner(onBackup: _scrollToBackup),
 
+            const SectionHeader(
+              eyebrow: 'TAMPILAN',
+              title: 'Mata Kamu',
+              subtitle: 'Terang untuk siang, gelap untuk warung malam.',
+            ),
+            const AppearanceSection(),
+
+            const SizedBox(height: AppSizes.spaceXl),
             const SectionHeader(
               eyebrow: 'IDENTITAS',
               title: 'Toko Kamu',
@@ -120,7 +130,7 @@ class _SettingsFooter extends StatelessWidget {
         Text(
           'Semua data tersimpan di HP ini dan tetap jalan tanpa internet.',
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.inkSecondary),
+          style: theme.textTheme.bodySmall?.copyWith(color: context.palette.inkSecondary),
         ),
       ],
     );

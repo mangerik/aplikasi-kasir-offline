@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_sizes.dart';
 import '../constants/app_typography.dart';
 
@@ -17,7 +17,7 @@ import '../constants/app_typography.dart';
 ///   value: CurrencyFormatter.format(total),
 ///   emphasized: true,
 /// ),
-/// AppKeyValueRow(label: 'Diskon', value: '-Rp2.000', valueColor: AppColors.dangerText),
+/// AppKeyValueRow(label: 'Diskon', value: '-Rp2.000', valueColor: context.palette.dangerText),
 /// ```
 class AppKeyValueRow extends StatelessWidget {
   const AppKeyValueRow({
@@ -42,14 +42,15 @@ class AppKeyValueRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = context.palette;
+    final styles = context.textStyles;
     final labelStyle = emphasized
         ? theme.textTheme.titleMedium
-        : theme.textTheme.bodyMedium?.copyWith(color: AppColors.inkSecondary);
-    final valueStyle =
-        (emphasized ? AppTextStyles.moneyLarge : AppTextStyles.money).copyWith(
-          fontSize: emphasized ? 22 : 15,
-          color: valueColor ?? AppColors.ink,
-        );
+        : theme.textTheme.bodyMedium?.copyWith(color: palette.inkSecondary);
+    final valueStyle = (emphasized ? styles.moneyLarge : styles.money).copyWith(
+      fontSize: emphasized ? 22 : 15,
+      color: valueColor ?? palette.ink,
+    );
 
     return Padding(
       padding: padding,
@@ -57,7 +58,7 @@ class AppKeyValueRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: AppSizes.iconSm, color: AppColors.inkSecondary),
+            Icon(icon, size: AppSizes.iconSm, color: palette.inkSecondary),
             const SizedBox(width: AppSizes.spaceSm),
           ],
           Expanded(child: Text(label, style: labelStyle)),
@@ -96,22 +97,24 @@ class AppMoneyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final styles = context.textStyles;
     final base = switch (size) {
-      AppMoneySize.sm => AppTextStyles.money.copyWith(
+      AppMoneySize.sm => styles.money.copyWith(
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      AppMoneySize.md => AppTextStyles.money,
-      AppMoneySize.lg => AppTextStyles.moneyLarge,
-      AppMoneySize.hero => AppTextStyles.moneyHero,
+      AppMoneySize.md => styles.money,
+      AppMoneySize.lg => styles.moneyLarge,
+      AppMoneySize.hero => styles.moneyHero,
     };
 
     return Text(
       text,
       style: base.copyWith(
-        color: color ?? (strikethrough ? AppColors.inkTertiary : base.color),
+        color: color ?? (strikethrough ? palette.inkTertiary : base.color),
         decoration: strikethrough ? TextDecoration.lineThrough : null,
-        decorationColor: AppColors.inkTertiary,
+        decorationColor: palette.inkTertiary,
       ),
     );
   }

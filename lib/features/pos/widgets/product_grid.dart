@@ -220,13 +220,13 @@ class _ToolButton extends StatelessWidget {
         width: _size,
         padding: EdgeInsets.zero,
         radius: AppSizes.radiusMd,
-        color: AppColors.primary50,
-        borderColor: AppColors.primary100,
+        color: context.palette.primary50,
+        borderColor: context.palette.primary100,
         onTap: onTap,
         child: SizedBox(
           height: _size,
           child: Center(
-            child: Icon(icon, size: AppSizes.iconMd, color: AppColors.primary),
+            child: Icon(icon, size: AppSizes.iconMd, color: context.palette.primary),
           ),
         ),
       ),
@@ -287,7 +287,7 @@ class _ProductCard extends ConsumerWidget {
           const Spacer(),
           AppMoneyText(
             CurrencyFormatter.format(product.sellPrice),
-            color: AppColors.primary,
+            color: context.palette.primary,
           ),
           const SizedBox(height: AppSizes.spaceXs + 2),
           if (isOutOfStock)
@@ -339,15 +339,15 @@ class _Monogram extends StatelessWidget {
       width: _size,
       padding: EdgeInsets.zero,
       radius: AppSizes.radiusSm,
-      color: onSelectedCard ? AppColors.surface : AppColors.primary50,
-      borderColor: onSelectedCard ? AppColors.primary100 : AppColors.primary50,
+      color: onSelectedCard ? context.palette.surface : context.palette.primary50,
+      borderColor: onSelectedCard ? context.palette.primary100 : context.palette.primary50,
       child: SizedBox(
         height: _size,
         child: Center(
           child: Text(
             initial,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.primary,
+              color: context.palette.primary,
             ),
           ),
         ),

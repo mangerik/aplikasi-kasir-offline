@@ -21,20 +21,20 @@ Empat catatan penyusunan yang mengikat:
 ## Milestone 7 — Mode Gelap & Fondasi Tema Sadar-Konteks
 > Hasil: seluruh aplikasi bisa Terang / Gelap / Ikuti Sistem tanpa "pulau putih", dan seluruh layar berikutnya lahir sudah sadar-tema.
 
-- [ ] `AppPalette extends ThemeExtension<AppPalette>` di `core/constants/`: seluruh token (netral, brand, aksen, trio semantik, alias domain) sebagai field instance, dengan `const AppPalette.light()` & `const AppPalette.dark()` memakai nilai usulan PRD §5.4 (K-5.1)
-- [ ] Daftarkan palet di `ThemeData.extensions` pada `AppTheme.light()` + tulis `AppTheme.dark()`; akses lewat extension `context.palette`
-- [ ] `AppTone.colorsOf(context)` sadar-tema; getter lama `AppTone.colors` dipertahankan `@Deprecated` (mengembalikan palet terang) selama masa migrasi (K-5.6)
-- [ ] `AppShadows` varian gelap (alpha jauh lebih rendah, dekoratif) & `AppDecorations` mengambil warna dari `context.palette`
-- [ ] `themeModeProvider` + persistensi `theme_mode` di **`shared_preferences`**, bukan tabel `settings` (K-5.2) — nilai dibaca di `main()` **sebelum `runApp()`** agar frame pertama sudah bertema benar (AC-5.5)
-- [ ] `MaterialApp.router` menerima `theme` / `darkTheme` / `themeMode`; `SystemUiOverlayStyle` status bar ikut dibalik (AC-5.9)
-- [ ] Pengaturan → kartu baru **"Tampilan"** di ATAS kartu "Profil Toko": `SegmentedButton` Terang/Gelap/Ikuti Sistem (tinggi ≥ 48dp) + kalimat keterangan; default **Terang**
-- [ ] Migrasi langkah 2 — `core/widgets/` (`app_card`, `app_pill`, `app_data_row`, `empty_state`, `section_header`, `app_state_views`, `main_shell`)
-- [ ] Migrasi langkah 3 — layar per fitur berurutan: `pos` → `products` → `transactions` → `reports` → `settings` → `inventory`
-- [ ] `ReceiptWidget` dipaksa tema terang lewat `Theme(data: AppTheme.light(), child: ...)` saat dirender & di-capture (K-5.3)
-- [ ] Sapu bersih: tidak ada lagi `AppColors.*` di `lib/features/`, tidak ada `Colors.white`/`Colors.black` telanjang di `lib/features` & `lib/core/widgets` kecuali allowlist berkomentar alasan (AC-5.6)
-- [ ] Test kontras otomatis: setiap pasangan (teks, latar) di `AppPalette` terang & gelap ≥ 4.5:1 (≥ 3:1 untuk teks ≥18px/ikon), dengan daftar pengecualian eksplisit mis. `inkTertiary` (AC-5.8)
-- [ ] Test widget: pump setiap layar utama dengan `AppTheme.dark()` (AC-5.10); struk yang di-capture tetap berlatar putih di kedua tema (AC-5.7); seluruh test M0–M6 lulus **tanpa diubah** (AC-5.12)
-- [ ] Uji manual device fisik: tidak ada kedip putih saat cold start mode gelap, "Ikuti Sistem" mengikuti perubahan tema Android tanpa restart, keterbacaan angka & pill status di HP kecil pada ruangan gelap (AC-5.1–5.3, AC-5.11)
+- [x] `AppPalette extends ThemeExtension<AppPalette>` di `core/constants/`: seluruh token (netral, brand, aksen, trio semantik, alias domain) sebagai field instance, dengan `const AppPalette.light()` & `const AppPalette.dark()` memakai nilai usulan PRD §5.4 (K-5.1)
+- [x] Daftarkan palet di `ThemeData.extensions` pada `AppTheme.light()` + tulis `AppTheme.dark()`; akses lewat extension `context.palette`
+- [x] `AppTone.colorsOf(context)` sadar-tema; getter lama `AppTone.colors` dipertahankan `@Deprecated` (mengembalikan palet terang) selama masa migrasi (K-5.6)
+- [x] `AppShadows` varian gelap (alpha jauh lebih rendah, dekoratif) & `AppDecorations` mengambil warna dari `context.palette`
+- [x] `themeModeProvider` + persistensi `theme_mode` di **`shared_preferences`**, bukan tabel `settings` (K-5.2) — nilai dibaca di `main()` **sebelum `runApp()`** agar frame pertama sudah bertema benar (AC-5.5)
+- [x] `MaterialApp.router` menerima `theme` / `darkTheme` / `themeMode`; `SystemUiOverlayStyle` status bar ikut dibalik (AC-5.9)
+- [x] Pengaturan → kartu baru **"Tampilan"** di ATAS kartu "Profil Toko": `SegmentedButton` Terang/Gelap/Ikuti Sistem (tinggi ≥ 48dp) + kalimat keterangan; default **Terang**
+- [x] Migrasi langkah 2 — `core/widgets/` (`app_card`, `app_pill`, `app_data_row`, `empty_state`, `section_header`, `app_state_views`, `main_shell`)
+- [x] Migrasi langkah 3 — layar per fitur berurutan: `pos` → `products` → `transactions` → `reports` → `settings` → `inventory`
+- [x] `ReceiptWidget` dipaksa tema terang lewat `Theme(data: AppTheme.light(), child: ...)` saat dirender & di-capture (K-5.3)
+- [x] Sapu bersih: tidak ada lagi `AppColors.*` di `lib/features/`, tidak ada `Colors.white`/`Colors.black` telanjang di `lib/features` & `lib/core/widgets` kecuali allowlist berkomentar alasan (AC-5.6)
+- [x] Test kontras otomatis: setiap pasangan (teks, latar) di `AppPalette` terang & gelap ≥ 4.5:1 (≥ 3:1 untuk teks ≥18px/ikon), dengan daftar pengecualian eksplisit mis. `inkTertiary` (AC-5.8)
+- [x] Test widget: pump setiap layar utama dengan `AppTheme.dark()` (AC-5.10); struk yang di-capture tetap berlatar putih di kedua tema (AC-5.7); seluruh test M0–M6 lulus **tanpa diubah** (AC-5.12)
+- [ ] Uji manual device fisik: tidak ada kedip putih saat cold start mode gelap, "Ikuti Sistem" mengikuti perubahan tema Android tanpa restart, keterbacaan angka & pill status di HP kecil pada ruangan gelap (AC-5.1–5.3, AC-5.11) — **butuh uji manual device**
 
 ## Milestone 8 — Cetak Struk ke Printer Thermal Bluetooth 58mm
 > Hasil: struk keluar di kertas dalam hitungan detik, dan kegagalan printer tidak pernah menyentuh data penjualan.
@@ -304,4 +304,13 @@ Ketergantungan lintas milestone yang perlu diingat:
 | Scope membengkak di luar [prd-v1.1.md](prd-v1.1.md) | v1.1/v1.2 molor seperti risiko MVP dulu | Patuh pada daftar "TIDAK termasuk" tiap bab PRD dan §12; usulan baru masuk backlog v1.3, bukan milestone berjalan |
 
 ## Catatan Keputusan (diisi selama proyek)
-- _(belum ada — diisi saat pengerjaan M7 dan seterusnya, mengikuti pola catatan di [plan.md](plan.md))_
+
+### Milestone 7 — Mode Gelap
+
+- **K-5.7 (baru) — preferensi tema dibaca lewat abstraksi `ThemeModeStore`, bukan `SharedPreferences` mentah.** PRD K-5.2 hanya menetapkan *di mana* nilainya disimpan. Menyuntikkan `SharedPreferences` langsung sebagai provider memaksa setiap widget test menyiapkannya, yang berarti **mengubah 12 test M0–M6** — persis yang dilarang AC-5.12. Providernya karena itu menyediakan `ThemeModeStore`: `SharedPrefsThemeModeStore` di `main()` (nilai sudah dimuat sebelum `runApp()`, AC-5.5) dan `InMemoryThemeModeStore` sebagai default. Efek samping yang disengaja: kalau `main()` lupa meng-override, aplikasi tetap jalan bertema Terang alih-alih crash.
+- **Token `onPrimary`, `onAccent`, dan `onSurfaceDark` ditambahkan ke `AppPalette`.** PRD §5.4 menyebut aturannya di catatan tabel ("teks di atasnya = `#06281B`, bukan putih") tapi tidak memberi token. Tanpa token, setiap layar harus mengingat aturan itu sendiri — sumber "pulau putih" berikutnya. `onSurfaceDark` khususnya menutup jebakan halus: `surfaceDark` adalah permukaan **inversi**, jadi teks di atasnya harus ikut terbalik; memakai `ink` di sana menghasilkan SnackBar terang-di-atas-terang di mode gelap.
+- **`dangerBorder` & `infoBorder` dipromosikan jadi token palet.** Di v1.0 keduanya nilai mentah yang ditanam di dalam `AppToneColorsX`; mode gelap membutuhkan pasangannya, dan token setengah jalan tidak bisa diuji kontras.
+- **Layar pemindai barcode dipaksa `AppTheme.dark()` di KEDUA mode aplikasi.** Chrome-nya mengambang di atas pratinjau kamera yang selalu gelap. Ini bukan pengecualian terhadap mode gelap melainkan penerapannya: warnanya tetap dari `context.palette`, cuma paletnya yang dipilih tetap.
+- **Ambang uji kontras (AC-5.8) memuat dua pengecualian eksplisit, bukan satu.** Selain `inkTertiary` yang sudah disebut PRD (ambang dipakai 2.8:1 karena nilai terangnya `#8A928B` = 2.86:1 berasal dari v1.0 dan tidak boleh digeser oleh AC-5.12), `accent` `#D97E27` juga di bawah 3:1 di atas kertas sejak v1.0. Keduanya diselesaikan lewat **aturan pemakaian** yang ikut diuji — `accent` hanya boleh jadi isi, pasangan teksnya `accentText` yang wajib lolos 4.5:1.
+- **`AppShadows` diakses lewat `AppShadows.of(context)`; konstanta lamanya ditandai `@Deprecated`** dan pemakaiannya ikut dijaga gerbang otomatis, sejalan dengan K-5.6 untuk `AppTone.colors`.
+- **Gerbang AC-5.6 dijadikan test, bukan grep manual.** `test/core/constants/no_hardcoded_colors_test.dart` memindai `lib/features` & `lib/core/widgets` setiap `flutter test`, dengan allowlist berkomentar (saat ini hanya `receipt_widget.dart`) yang panjangnya sendiri dibatasi test. Alasannya: M8–M14 masih menambah banyak layar baru, dan gerbang yang bergantung pada ingatan orang akan bocor.

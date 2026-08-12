@@ -94,7 +94,7 @@ class _FreeItemDialogContentState extends State<_FreeItemDialogContent> {
                 'Untuk barang yang belum terdaftar — dicatat sekali pakai, '
                 'tanpa memengaruhi stok.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.inkSecondary,
+                  color: context.palette.inkSecondary,
                 ),
               ),
               const SizedBox(height: AppSizes.spaceMd),
@@ -150,7 +150,7 @@ class _FreeItemDialogContentState extends State<_FreeItemDialogContent> {
               ),
               const SizedBox(height: AppSizes.spaceMd),
               AppCard(
-                color: AppColors.surfaceAlt,
+                color: context.palette.surfaceAlt,
                 radius: AppSizes.radiusMd,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.spaceMd,

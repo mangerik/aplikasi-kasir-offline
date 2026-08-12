@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_palette.dart';
 
 /// Tipografi aplikasi — **satu keluarga huruf saja: Plus Jakarta Sans**.
 ///
@@ -26,9 +27,13 @@ abstract final class AppTypography {
   ];
 
   /// Skala tipografi lengkap. Semua ukuran dalam logical pixel.
-  static TextTheme textTheme() {
-    const c = AppColors.ink;
-    return const TextTheme(
+  ///
+  /// [palette] menentukan warna tinta — dipanggil sekali per tema oleh
+  /// `AppTheme.light()` / `AppTheme.dark()`, sehingga seluruh `textTheme`
+  /// ikut gelap tanpa satu pun layar perlu tahu.
+  static TextTheme textTheme([AppPalette palette = const AppPalette.light()]) {
+    final c = palette.ink;
+    return TextTheme(
       // --- Display: angka besar (total belanja, kembalian). Jarang dipakai.
       displayLarge: TextStyle(
         fontSize: 40,
@@ -114,7 +119,7 @@ abstract final class AppTypography {
         fontSize: 12,
         height: 1.45,
         fontWeight: FontWeight.w500,
-        color: AppColors.inkSecondary,
+        color: palette.inkSecondary,
       ),
 
       // --- Label: tombol, chip, nav, eyebrow.
@@ -137,7 +142,7 @@ abstract final class AppTypography {
         height: 1.2,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.6,
-        color: AppColors.inkSecondary,
+        color: palette.inkSecondary,
       ),
     ).apply(fontFamily: fontFamily);
   }
@@ -146,6 +151,11 @@ abstract final class AppTypography {
 /// Gaya teks siap pakai di luar skala Material — khusus kebutuhan kasir.
 ///
 /// Pakai ini alih-alih menyusun [TextStyle] manual di layar.
+///
+/// Konstanta di sini memakai tinta **palet terang**. Sejak mode gelap
+/// (PRD v1.1 §5), layar WAJIB memakai versi sadar-tema lewat
+/// `context.textStyles.money` — bentuk & ukurannya identik, hanya warnanya
+/// yang mengikuti tema.
 abstract final class AppTextStyles {
   /// Label kecil di atas sebuah nilai/section ("RINGKASAN HARI INI").
   /// Tulis teksnya dalam huruf kapital.
@@ -200,4 +210,36 @@ abstract final class AppTextStyles {
     color: AppColors.ink,
     fontFeatures: AppTypography.tabularFigures,
   );
+
+  /// Versi sadar-tema dari seluruh gaya di atas.
+  static AppTextStyleSet resolve(AppPalette palette) =>
+      AppTextStyleSet(palette);
+}
+
+/// Gaya teks kasir yang tintanya mengikuti tema aktif.
+///
+/// ```dart
+/// Text(rupiah, style: context.textStyles.moneyLarge)
+/// ```
+@immutable
+class AppTextStyleSet {
+  const AppTextStyleSet(this._p);
+
+  final AppPalette _p;
+
+  TextStyle get eyebrow =>
+      AppTextStyles.eyebrow.copyWith(color: _p.inkSecondary);
+
+  TextStyle get money => AppTextStyles.money.copyWith(color: _p.ink);
+
+  TextStyle get moneyLarge => AppTextStyles.moneyLarge.copyWith(color: _p.ink);
+
+  TextStyle get moneyHero => AppTextStyles.moneyHero.copyWith(color: _p.ink);
+
+  TextStyle get numeric => AppTextStyles.numeric.copyWith(color: _p.ink);
+}
+
+/// Akses gaya teks kasir sadar-tema: `context.textStyles.money`.
+extension AppTextStylesContextX on BuildContext {
+  AppTextStyleSet get textStyles => AppTextStyleSet(palette);
 }

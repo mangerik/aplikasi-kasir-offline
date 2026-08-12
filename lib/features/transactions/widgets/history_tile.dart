@@ -84,7 +84,7 @@ class HistoryTile extends StatelessWidget {
               AppMoneyText(
                 CurrencyFormatter.format(sale.total),
                 strikethrough: isVoided,
-                color: isDebt ? AppColors.accentText : null,
+                color: isDebt ? context.palette.accentText : null,
               ),
               if (sale.status != 'completed') ...[
                 const SizedBox(height: AppSizes.spaceXs),

@@ -71,7 +71,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             // Ikon filled = filter sedang aktif (foundation §7.1 poin 13).
             icon: Icon(
               filter.isActive ? Icons.filter_alt : Icons.filter_alt_outlined,
-              color: filter.isActive ? AppColors.primary : null,
+              color: filter.isActive ? context.palette.primary : null,
             ),
             onPressed: () => HistoryFilterSheet.show(context),
           ),
@@ -252,7 +252,7 @@ class _DayHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(_label(day), style: AppTextStyles.eyebrow),
+          Text(_label(day), style: context.textStyles.eyebrow),
           const SizedBox(width: AppSizes.spaceMs),
           const Expanded(child: Divider()),
         ],

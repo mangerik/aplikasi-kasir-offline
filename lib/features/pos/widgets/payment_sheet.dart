@@ -168,18 +168,18 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
               Text('Pembayaran', style: theme.textTheme.headlineSmall),
               const SizedBox(height: AppSizes.spaceMd),
               AppCard(
-                color: AppColors.primary50,
-                borderColor: AppColors.primary100,
+                color: context.palette.primary50,
+                borderColor: context.palette.primary100,
                 padding: const EdgeInsets.all(AppSizes.spaceMl),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('TOTAL BELANJA', style: AppTextStyles.eyebrow),
+                    Text('TOTAL BELANJA', style: context.textStyles.eyebrow),
                     const SizedBox(height: AppSizes.spaceXs),
                     AppMoneyText(
                       CurrencyFormatter.format(total),
                       size: AppMoneySize.lg,
-                      color: AppColors.primary,
+                      color: context.palette.primary,
                     ),
                     const SizedBox(height: AppSizes.spaceXs),
                     Text(
@@ -263,7 +263,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     final change = paid - total;
     final isEnough = paid >= total;
     final tone = isEnough ? AppTone.success : AppTone.danger;
-    final toneColors = tone.colors;
+    final toneColors = tone.colorsOf(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -273,7 +273,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
           autofocus: true,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: AppTextStyles.moneyLarge,
+          style: context.textStyles.moneyLarge,
           decoration: const InputDecoration(
             labelText: 'Uang diterima',
             prefixText: 'Rp ',
@@ -434,7 +434,7 @@ class _MethodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = value == selected;
-    final fg = isSelected ? AppColors.primary : AppColors.inkSecondary;
+    final fg = isSelected ? context.palette.primary : context.palette.inkSecondary;
 
     return AppCard(
       selected: isSelected,
@@ -479,7 +479,7 @@ class _QuickButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
     return AppCard(
       onTap: onTap,
       radius: AppSizes.radiusMd,
@@ -530,12 +530,12 @@ class _ConfirmButton extends StatelessWidget {
       child: FilledButton(
         onPressed: enabled ? onPressed : null,
         child: saving
-            ? const SizedBox(
+            ? SizedBox(
                 width: AppSizes.iconMd,
                 height: AppSizes.iconMd,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: AppColors.onDark,
+                  color: context.palette.onPrimary,
                 ),
               )
             : const Text('Selesaikan Pembayaran'),
@@ -546,7 +546,7 @@ class _ConfirmButton extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        boxShadow: AppShadows.primaryGlow,
+        boxShadow: AppShadows.of(context).primaryGlow,
       ),
       child: button,
     );

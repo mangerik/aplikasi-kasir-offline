@@ -181,11 +181,11 @@ class _StockAdjustmentScreenState extends ConsumerState<StockAdjustmentScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: AppSizes.spaceXs),
-                          Text('STOK SEKARANG', style: AppTextStyles.eyebrow),
+                          Text('STOK SEKARANG', style: context.textStyles.eyebrow),
                           const SizedBox(height: AppSizes.spaceXs),
                           Text(
                             '${_formatNum(widget.product.stock)} $unit',
-                            style: AppTextStyles.moneyLarge.copyWith(
+                            style: context.textStyles.moneyLarge.copyWith(
                               fontSize: 26,
                             ),
                           ),
@@ -289,7 +289,7 @@ class _StockAdjustmentScreenState extends ConsumerState<StockAdjustmentScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        decoration: AppDecorations.floating(radius: AppSizes.radius2xl),
+        decoration: AppDecorations.floating(context, radius: AppSizes.radius2xl),
         padding: const EdgeInsets.fromLTRB(
           AppSizes.spaceMd,
           AppSizes.spaceMs,
@@ -303,12 +303,12 @@ class _StockAdjustmentScreenState extends ConsumerState<StockAdjustmentScreen> {
             child: FilledButton.icon(
               onPressed: _saving ? null : _submit,
               icon: _saving
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: AppSizes.iconSm,
                       height: AppSizes.iconSm,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.onDark,
+                        color: context.palette.onPrimary,
                       ),
                     )
                   : const Icon(Icons.check_rounded),
@@ -339,13 +339,13 @@ class _PreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
 
     return AnimatedContainer(
       duration: AppDurations.fast,
       curve: Curves.easeOutCubic,
       padding: const EdgeInsets.all(AppSizes.spaceMs),
-      decoration: AppDecorations.tonal(tone, radius: AppSizes.radiusMd),
+      decoration: AppDecorations.tonal(context, tone, radius: AppSizes.radiusMd),
       child: Row(
         children: [
           Expanded(
@@ -353,12 +353,12 @@ class _PreviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('SEBELUM', style: AppTextStyles.eyebrow),
+                Text('SEBELUM', style: context.textStyles.eyebrow),
                 const SizedBox(height: AppSizes.spaceXs),
                 Text(
                   before,
-                  style: AppTextStyles.numeric.copyWith(
-                    color: AppColors.inkSecondary,
+                  style: context.textStyles.numeric.copyWith(
+                    color: context.palette.inkSecondary,
                   ),
                 ),
               ],
@@ -373,7 +373,7 @@ class _PreviewCard extends StatelessWidget {
               children: [
                 Text(
                   'STOK JADI',
-                  style: AppTextStyles.eyebrow.copyWith(color: c.fg),
+                  style: context.textStyles.eyebrow.copyWith(color: c.fg),
                 ),
                 const SizedBox(height: AppSizes.spaceXs),
                 Text(

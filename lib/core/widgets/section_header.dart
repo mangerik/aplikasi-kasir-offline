@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
+import '../constants/app_palette.dart';
 import '../constants/app_sizes.dart';
 import '../constants/app_typography.dart';
 
@@ -77,7 +77,7 @@ class SectionHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (eyebrow != null) ...[
-                  Text(eyebrow!, style: AppTextStyles.eyebrow),
+                  Text(eyebrow!, style: context.textStyles.eyebrow),
                   const SizedBox(height: AppSizes.spaceXs),
                 ],
                 Text(title, style: theme.textTheme.titleMedium),
@@ -86,7 +86,7 @@ class SectionHeader extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.inkSecondary,
+                      color: context.palette.inkSecondary,
                     ),
                   ),
                 ],

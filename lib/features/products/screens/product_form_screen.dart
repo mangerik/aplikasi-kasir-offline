@@ -378,7 +378,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                         if (_profitPreview != null) ...[
                           const SizedBox(height: AppSizes.spaceMs),
                           AppCard(
-                            color: AppColors.surfaceAlt,
+                            color: context.palette.surfaceAlt,
                             radius: AppSizes.radiusMd,
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSizes.spaceMs,
@@ -389,8 +389,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                               label: 'Untung per ${_unitLabel()}',
                               value: CurrencyFormatter.format(_profitPreview!),
                               valueColor: _profitPreview! < 0
-                                  ? AppColors.dangerText
-                                  : AppColors.successText,
+                                  ? context.palette.dangerText
+                                  : context.palette.successText,
                             ),
                           ),
                         ],
@@ -578,14 +578,14 @@ class _ScanButton extends StatelessWidget {
         width: _fieldHeight,
         height: _fieldHeight,
         child: Material(
-          color: AppColors.primary50,
+          color: context.palette.primary50,
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
           child: InkWell(
             onTap: onPressed,
             borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            child: const Icon(
+            child: Icon(
               Icons.qr_code_scanner_rounded,
-              color: AppColors.primary,
+              color: context.palette.primary,
               size: AppSizes.iconLg,
             ),
           ),
@@ -635,7 +635,7 @@ class _SaveBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: AppDecorations.floating(radius: AppSizes.radius2xl),
+      decoration: AppDecorations.floating(context, radius: AppSizes.radius2xl),
       padding: const EdgeInsets.fromLTRB(
         AppSizes.spaceMd,
         AppSizes.spaceMs,
@@ -649,12 +649,12 @@ class _SaveBar extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: onPressed,
             icon: saving
-                ? const SizedBox(
+                ? SizedBox(
                     width: AppSizes.iconSm,
                     height: AppSizes.iconSm,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.onDark,
+                      color: context.palette.onPrimary,
                     ),
                   )
                 : const Icon(Icons.check_rounded),

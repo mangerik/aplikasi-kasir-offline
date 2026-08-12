@@ -106,7 +106,7 @@ class _LowStockCard extends StatelessWidget {
     final threshold = product.lowStockThreshold ?? defaultThreshold;
     final isOut = product.stock <= 0;
     final tone = isOut ? AppTone.danger : AppTone.warning;
-    final c = tone.colors;
+    final c = tone.colorsOf(context);
     final ratio = threshold <= 0
         ? 0.0
         : (product.stock / threshold).clamp(0.0, 1.0).toDouble();
@@ -147,7 +147,7 @@ class _LowStockCard extends StatelessWidget {
                             isOut
                                 ? 'Habis'
                                 : 'Sisa ${_formatNum(product.stock)} ${product.unit}',
-                            style: AppTextStyles.numeric.copyWith(color: c.fg),
+                            style: context.textStyles.numeric.copyWith(color: c.fg),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -169,7 +169,7 @@ class _LowStockCard extends StatelessWidget {
               AppMoneyText(
                 CurrencyFormatter.format(product.sellPrice),
                 size: AppMoneySize.sm,
-                color: AppColors.inkSecondary,
+                color: context.palette.inkSecondary,
               ),
             ],
           ),
