@@ -1,3 +1,4 @@
+import '../../domain/repositories/import_exceptions.dart';
 import '../../domain/repositories/repository_exceptions.dart';
 
 /// Menerjemahkan objek `error`/`exception` APA PUN menjadi pesan Bahasa
@@ -34,6 +35,17 @@ abstract final class AppErrorMessage {
         error is FileBackupTidakValidException ||
         error is ProdukTidakDitemukanException ||
         error is JumlahPenyesuaianTidakValidException ||
-        error is AlasanPenyesuaianWajibException;
+        error is AlasanPenyesuaianWajibException ||
+        // Seluruh kegagalan impor Excel (M9) lewat satu induk — persis
+        // seperti yang dijanjikan doc `import_exceptions.dart`. Tanpa baris
+        // ini, pesan spesifik seperti "Kolom wajib hilang: harga_jual"
+        // berubah jadi pesan generik begitu ia lewat jalur error umum.
+        error is ImporProdukException;
   }
 }
+
+// Catatan sengaja: `PrinterException` (M8) TIDAK terdaftar di atas. Ia hidup
+// di `data/services/printing/`, dan `core/` dilarang mengimpor `data/`
+// (architecture.md §3). Konsekuensinya sudah ditanggung di tempatnya: setiap
+// pemanggil printer menangkap `PrinterException` secara eksplisit dan membaca
+// `.message` — lihat `printer_providers.dart` & `printer_device_sheet.dart`.

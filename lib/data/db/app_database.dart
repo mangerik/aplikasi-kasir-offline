@@ -11,6 +11,16 @@ import 'tables/stock_movements_table.dart';
 
 part 'app_database.g.dart';
 
+/// Versi skema database yang dipahami build aplikasi ini — **satu-satunya
+/// sumber kebenaran**. Dipakai [AppDatabase.schemaVersion] (yang menuliskannya
+/// ke `PRAGMA user_version`) **dan** `BackupService.validateBackupFile`, yang
+/// membandingkannya dengan `user_version` file backup untuk menolak backup
+/// dari aplikasi yang lebih baru (PRD v1.1 AC-10.2).
+///
+/// Menaikkan angka ini WAJIB dibarengi `MigrationStrategy.onUpgrade` dan uji
+/// migrasi atas snapshot database versi sebelumnya (AC-10.1).
+const int kAppSchemaVersion = 1;
+
 /// Database aplikasi (SQLite via Drift). Lihat architecture.md §4.
 ///
 /// - Mode **WAL** diaktifkan saat koneksi dibuka (ketahanan crash & baca
@@ -39,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
   static const String _dbName = 'kasir_warung';
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => kAppSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

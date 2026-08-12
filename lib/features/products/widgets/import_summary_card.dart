@@ -84,7 +84,7 @@ class _StatBlock extends StatelessWidget {
       children: [
         Text(
           '${stat.value}',
-          style: AppTextStyles.moneyLarge.copyWith(color: color),
+          style: context.textStyles.moneyLarge.copyWith(color: color),
         ),
         const SizedBox(height: 2),
         Text(

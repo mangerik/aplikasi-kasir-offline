@@ -124,8 +124,8 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen> {
       if (!mounted) return;
       setState(() {
         _fileError =
-            'File tidak bisa dibaca (${AppErrorMessage.from(e)}). Pastikan '
-            'filenya benar-benar .xlsx dan tidak sedang dibuka aplikasi lain.';
+            'File tidak bisa dibaca. Pastikan filenya benar-benar .xlsx dan '
+            'tidak sedang dibuka aplikasi lain.';
         _step = _WizardStep.pilihFile;
       });
     }
@@ -258,10 +258,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen> {
     } on ImporProdukException catch (e) {
       _showError(e.toString());
     } catch (e) {
-      _showError(
-        'Impor dibatalkan dan tidak ada produk yang tersimpan '
-        '(${AppErrorMessage.from(e)}).',
-      );
+      _showError('Impor dibatalkan dan tidak ada produk yang tersimpan. Coba lagi.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

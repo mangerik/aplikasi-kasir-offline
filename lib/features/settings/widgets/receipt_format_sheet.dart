@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../domain/entities/printer_settings.dart';
 import '../../../domain/entities/sale_result.dart';
@@ -72,10 +73,14 @@ class _ReceiptFormatSheetState extends ConsumerState<ReceiptFormatSheet> {
     await ref.read(printerSettingsStoreProvider).save(value);
     ref.invalidate(printerSettingsProvider);
     if (!mounted) return;
+    // Messenger & navigator diambil SEBELUM pop: sesudah sheet ditutup,
+    // `context` milik sheet sudah dilepas dari pohon dan pencarian
+    // ancestor-nya tidak lagi dijamin berhasil.
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Tampilan struk disimpan.')));
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Tampilan struk disimpan.')),
+    );
   }
 
   @override
@@ -99,9 +104,17 @@ class _ReceiptFormatSheetState extends ConsumerState<ReceiptFormatSheet> {
               padding: EdgeInsets.symmetric(vertical: AppSizes.space2xl),
               child: AppLoadingView(compact: true),
             ),
+            // Sheet ini tidak punya jalan keluar lain selain ditutup, jadi
+            // cabang error WAJIB menawarkan "Coba Lagi" — sama seperti
+            // `printer_section.dart`. Teks telanjang membuat sheet-nya buntu.
             error: (e, _) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSizes.spaceXl),
-              child: Text('Pengaturan gagal dimuat: $e'),
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.spaceMd),
+              child: AppErrorView(
+                title: 'Pengaturan struk gagal dimuat',
+                message: AppErrorMessage.from(e),
+                compact: true,
+                onRetry: () => ref.invalidate(printerSettingsProvider),
+              ),
             ),
             data: (loaded) {
               _ensureDraft(loaded);

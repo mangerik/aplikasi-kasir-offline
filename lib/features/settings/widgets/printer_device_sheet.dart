@@ -33,15 +33,22 @@ class PrinterDeviceSheet extends ConsumerWidget {
     );
   }
 
-  /// Pintasan ke layar Pengaturan Bluetooth Android. Gagal membukanya
-  /// bukan alasan menampilkan error teknis — panduan tiga langkahnya sudah
-  /// cukup untuk dikerjakan manual.
-  static Future<void> openAndroidBluetoothSettings() async {
-    const channel = MethodChannel('kasir_warung/system');
+  /// Channel platform milik aplikasi ini — penerimanya `MainActivity.kt`
+  /// (lihat `android/app/src/main/kotlin/.../MainActivity.kt`).
+  static const MethodChannel systemChannel = MethodChannel('kasir_warung/system');
+
+  /// Pintasan ke layar Pengaturan Bluetooth Android (AC-3.16).
+  ///
+  /// Mengembalikan `true` bila layarnya benar-benar terbuka. Gagal
+  /// membukanya bukan alasan menampilkan error teknis — panduan tiga
+  /// langkahnya sudah cukup untuk dikerjakan manual, jadi seluruh kegagalan
+  /// (ROM tanpa layar itu, platform non-Android, handler tidak terpasang)
+  /// diringkas jadi `false` yang diam.
+  static Future<bool> openAndroidBluetoothSettings() async {
     try {
-      await channel.invokeMethod<void>('openBluetoothSettings');
+      return await systemChannel.invokeMethod<bool>('openBluetoothSettings') ?? false;
     } catch (_) {
-      // Sengaja diam.
+      return false;
     }
   }
 

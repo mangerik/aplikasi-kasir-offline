@@ -72,10 +72,18 @@ abstract final class BackupService {
     );
   }
 
+  /// Pesan penolakan backup dari aplikasi versi lebih baru (PRD v1.1
+  /// AC-10.2). Dikonstankan supaya test menguji kalimat yang persis sama
+  /// dengan yang dilihat pengguna.
+  static const String versiLebihBaruMessage =
+      'File backup berasal dari versi aplikasi yang lebih baru. '
+      'Perbarui aplikasi ini terlebih dahulu.';
+
   /// Validasi file [path] sebagai backup database yang SAH: bisa dibuka
-  /// sebagai SQLite dan memuat seluruh [_requiredTables]. Melempar
-  /// `FileBackupTidakValidException` (pesan Bahasa Indonesia siap tampil)
-  /// bila tidak valid — TIDAK PERNAH mengubah database aktif.
+  /// sebagai SQLite, memuat seluruh [_requiredTables], dan `PRAGMA
+  /// user_version`-nya TIDAK lebih tinggi daripada [kAppSchemaVersion].
+  /// Melempar `FileBackupTidakValidException` (pesan Bahasa Indonesia siap
+  /// tampil) bila tidak valid — TIDAK PERNAH mengubah database aktif.
   static Future<void> validateBackupFile(String path) async {
     final file = File(path);
     if (!await file.exists()) {
@@ -104,12 +112,22 @@ abstract final class BackupService {
         );
       }
 
-      // `PRAGMA user_version` dipakai Drift untuk menandai schemaVersion —
-      // sekadar dibaca di sini untuk memastikan file bisa di-query PRAGMA
-      // tanpa error (bukti file tidak korup), migrasi sungguhan berjalan
-      // otomatis lewat `MigrationStrategy` saat [AppDatabase] baru dibuka
-      // setelah [restoreFrom].
-      sqliteDb.select('PRAGMA user_version');
+      // `PRAGMA user_version` adalah tempat Drift menuliskan schemaVersion.
+      // GERBANG MIGRASI (AC-10.2): file dari aplikasi yang LEBIH BARU tidak
+      // boleh direstore — build ini tidak tahu bentuk skemanya dan Drift
+      // hanya bisa migrasi maju, sehingga menerimanya berarti membuka
+      // database yang tabelnya asing dengan data pengguna di dalamnya.
+      //
+      // Sebaliknya, file yang user_version-nya SAMA atau LEBIH LAMA tetap
+      // diterima: migrasi majunya berjalan otomatis lewat
+      // `MigrationStrategy` saat [AppDatabase] baru dibuka setelah
+      // [restoreFrom] (AC-10.3).
+      final versionRows = sqliteDb.select('PRAGMA user_version');
+      final fileVersion =
+          versionRows.isEmpty ? 0 : (versionRows.first['user_version'] as int? ?? 0);
+      if (fileVersion > kAppSchemaVersion) {
+        throw const FileBackupTidakValidException(versiLebihBaruMessage);
+      }
     } on FileBackupTidakValidException {
       rethrow;
     } catch (e) {

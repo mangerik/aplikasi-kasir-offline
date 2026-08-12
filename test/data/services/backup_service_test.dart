@@ -100,6 +100,105 @@ void main() {
     });
   });
 
+  /// GERBANG MIGRASI — AC-10.2. Hanya versi yang sudah beredar duluan yang
+  /// bisa menolak backup dari versi berikutnya, jadi perbandingan
+  /// `PRAGMA user_version` vs [kAppSchemaVersion] wajib sudah rilis SEBELUM
+  /// `schemaVersion` pernah dinaikkan (M12).
+  group('BackupService.validateBackupFile — guard versi skema (AC-10.2)', () {
+    /// Membuat file backup berstruktur sah (seluruh tabel wajib ada), lalu
+    /// memaksa `user_version`-nya ke [version] — persis seperti file yang
+    /// dihasilkan build aplikasi dengan `schemaVersion` tersebut.
+    Future<String> buatBackupDenganUserVersion(int version) async {
+      final path = '${tempDir.path}/backup_v$version.db';
+      final db = AppDatabase(NativeDatabase(File(path)));
+      await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'Sembako', createdAt: 1));
+      await db.customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+      await db.close();
+
+      final raw = sqlite3lib.sqlite3.open(path);
+      raw.execute('PRAGMA user_version = $version');
+      raw.close();
+      return path;
+    }
+
+    test('menolak backup dengan user_version LEBIH TINGGI dari schemaVersion aplikasi', () async {
+      final path = await buatBackupDenganUserVersion(kAppSchemaVersion + 1);
+
+      await expectLater(
+        BackupService.validateBackupFile(path),
+        throwsA(
+          isA<FileBackupTidakValidException>().having(
+            (e) => e.alasan,
+            'alasan',
+            BackupService.versiLebihBaruMessage,
+          ),
+        ),
+      );
+    });
+
+    test('pesan penolakan berbahasa Indonesia & menyuruh memperbarui aplikasi', () {
+      expect(
+        BackupService.versiLebihBaruMessage,
+        'File backup berasal dari versi aplikasi yang lebih baru. '
+        'Perbarui aplikasi ini terlebih dahulu.',
+      );
+    });
+
+    test('menolak juga bila file jauh lebih baru (user_version = schemaVersion + 5)', () async {
+      final path = await buatBackupDenganUserVersion(kAppSchemaVersion + 5);
+
+      await expectLater(
+        BackupService.validateBackupFile(path),
+        throwsA(isA<FileBackupTidakValidException>()),
+      );
+    });
+
+    test('MENERIMA backup dengan user_version SAMA dengan schemaVersion aplikasi', () async {
+      final path = await buatBackupDenganUserVersion(kAppSchemaVersion);
+
+      await expectLater(BackupService.validateBackupFile(path), completes);
+    });
+
+    test('MENERIMA backup versi lama (user_version lebih rendah) — migrasi maju normal (AC-10.3)',
+        () async {
+      // Simulasi backup dari aplikasi versi terdahulu: struktur tabel v1
+      // lengkap, tapi penanda versinya lebih rendah. Drift yang menaikkan
+      // skemanya saat AppDatabase dibuka setelah restore.
+      final path = await buatBackupDenganUserVersion(0);
+
+      await expectLater(BackupService.validateBackupFile(path), completes);
+    });
+
+    test('file non-DB ditolak dengan pesan "bukan file database", bukan pesan versi', () async {
+      final bogusPath = '${tempDir.path}/foto_bukan_backup.db';
+      // Header PNG + isi acak: benar-benar bukan SQLite, jadi PRAGMA
+      // user_version tidak pernah sempat dievaluasi.
+      await File(bogusPath).writeAsBytes([
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        ...List<int>.generate(64, (i) => i % 256),
+      ]);
+
+      await expectLater(
+        BackupService.validateBackupFile(bogusPath),
+        throwsA(
+          isA<FileBackupTidakValidException>().having(
+            (e) => e.alasan,
+            'alasan',
+            isNot(contains('versi aplikasi yang lebih baru')),
+          ),
+        ),
+      );
+    });
+
+    test('schemaVersion AppDatabase konsisten dengan kAppSchemaVersion', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      expect(db.schemaVersion, kAppSchemaVersion);
+      await db.close();
+    });
+  });
+
   group('BackupService.restoreFrom', () {
     test('menimpa file database aktif dengan isi file backup', () async {
       // DB "lama" berisi 1 kategori.

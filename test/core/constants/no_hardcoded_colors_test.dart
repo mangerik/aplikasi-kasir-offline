@@ -87,6 +87,58 @@ void main() {
     );
   });
 
+  /// Sapu M11. Dua celah yang tersisa dari gerbang M7:
+  ///
+  /// 1. `Color(0x…)` / `Color.fromARGB(…)` mentah tidak pernah diperiksa —
+  ///    padahal itulah bentuk warna statis yang paling mudah ditulis. Efek
+  ///    sampingnya: entri allowlist `receipt_widget.dart` selama ini **mati**
+  ///    (berkas itu memakai `Color(0xFFFFFFFF)`, bukan `Colors.white`),
+  ///    sehingga ia memakan satu slot allowlist tanpa menjaga apa pun.
+  /// 2. `AppTextStyles.*` statis memanggang `AppColors.ink` (palet TERANG) ke
+  ///    dalam gaya teks — pulau putih yang tidak pernah tertangkap pencarian
+  ///    string `AppColors.`.
+  test('tidak ada `Color(0x…)` / `Color.fromARGB` telanjang (AC-5.6)', () {
+    final offenders = <String>[];
+    final pattern = RegExp(r'\bColor(\.fromARGB)?\s*\(\s*0x|\bColor\.fromARGB\s*\(');
+    for (final f in dartFiles()) {
+      final rel = f.path;
+      if (allowlist.keys.any(rel.endsWith)) continue;
+      for (final line in codeLines(f)) {
+        if (pattern.hasMatch(line.text)) {
+          offenders.add('$rel:${line.number}: ${line.text.trim()}');
+        }
+      }
+    }
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Warna heksadesimal mentah tidak ikut tema. Pakai token '
+          'context.palette.<token>, atau daftarkan berkasnya di allowlist '
+          'beserta alasannya.\n${offenders.join('\n')}',
+    );
+  });
+
+  test('tidak ada `AppTextStyles.*` statis di layar — gaya teks WAJIB lewat '
+      'context.textStyles (AC-5.6)', () {
+    final offenders = <String>[];
+    for (final f in dartFiles()) {
+      for (final line in codeLines(f)) {
+        if (RegExp(r'\bAppTextStyles\.').hasMatch(line.text)) {
+          offenders.add('${f.path}:${line.number}: ${line.text.trim()}');
+        }
+      }
+    }
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'AppTextStyles.* memanggang warna palet TERANG (AppColors.ink) ke '
+          'dalam gaya. Pakai context.textStyles.<gaya> yang sadar tema.\n'
+          '${offenders.join('\n')}',
+    );
+  });
+
   test('daftar allowlist tidak menumpuk diam-diam', () {
     // Kalau daftar ini mulai panjang, artinya aturannya yang salah — bukan
     // kodenya. Batas ini memaksa diskusi, bukan penambahan baris.
