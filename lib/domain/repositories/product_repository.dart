@@ -1,4 +1,5 @@
 import '../entities/product.dart';
+import '../entities/product_import.dart';
 
 /// Kontrak repository Produk.
 ///
@@ -79,4 +80,37 @@ abstract class ProductRepository {
   /// paling sedikit dulu — dipakai layar "Stok Menipis" (plan.md Milestone
   /// 4 poin 3). Lihat [watchLowStockCount] untuk arti [defaultThreshold].
   Stream<List<Product>> watchLowStock({required double defaultThreshold});
+
+  // -------------------------------------------------------------------
+  // Impor produk dari Excel (PRD v1.1 §4, Milestone 9).
+  // -------------------------------------------------------------------
+
+  /// Memuat SEKALI seluruh data yang dibutuhkan pratinjau impor: peta
+  /// barcode -> id produk (aktif MAUPUN nonaktif, K-4.7), nama produk
+  /// aktif, dan nama kategori yang sudah ada.
+  ///
+  /// Dimuat sekaligus, bukan satu query per baris, supaya file 5.000 baris
+  /// tidak berubah menjadi 5.000 query (bandingkan `getMovements` yang
+  /// juga menghindari N+1).
+  Future<ProductImportLookup> loadImportLookup();
+
+  /// Menulis hasil impor ke database dalam **satu `db.transaction()`**:
+  /// seluruh baris masuk, atau tidak ada satupun (K-4.5, AC-4.15).
+  ///
+  /// - [rows] hanya boleh berisi baris yang sudah lolos validasi. Baris
+  ///   bermasalah yang lolos ke sini membatalkan seluruh impor (penjaga
+  ///   terakhir, melempar `BarisImporTidakValidException`).
+  /// - [columns] adalah kolom yang BENAR-BENAR ada di file. Kolom yang
+  ///   tidak ada tidak pernah menimpa nilai lama; kolom yang ada tapi
+  ///   selnya kosong berarti pengguna memang mengosongkannya.
+  /// - Produk lama dicocokkan **hanya lewat barcode** (K-4.3) dan impor
+  ///   TIDAK PERNAH menghapus produk (K-4.6).
+  /// - [fileName] masuk ke catatan `stock_movements` sebagai
+  ///   `"Impor Excel: <fileName>"` (AC-4.8).
+  Future<ProductImportSummary> importProducts({
+    required List<ProductImportRow> rows,
+    required Set<ProductImportColumn> columns,
+    required ProductImportOptions options,
+    required String fileName,
+  });
 }

@@ -8,6 +8,7 @@ import '../../../domain/entities/sale_result.dart';
 import '../../pos/providers/sale_providers.dart';
 import '../../products/providers/category_providers.dart';
 import '../../products/providers/product_providers.dart';
+import '../../products/screens/product_import_screen.dart';
 import '../providers/settings_providers.dart';
 import 'settings_card.dart';
 
@@ -118,6 +119,16 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
     });
   }
 
+  /// Titik masuk KEDUA wizard impor (PRD v1.1 §4.7; yang pertama menu ⋮ di
+  /// layar Produk). Keduanya membuka layar yang sama lewat
+  /// `Navigator.push`, bukan rute go_router: impor adalah alur sekali
+  /// jalan yang tidak perlu bisa di-deep link.
+  void _openImport() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ProductImportScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return SettingsCard(
@@ -152,6 +163,24 @@ class _ExportSectionState extends ConsumerState<ExportSection> {
           title: 'Laporan Penjualan',
           description: 'Ringkasan omzet & laba per rentang tanggal.',
           onTap: _busy ? null : _exportReport,
+        ),
+        const Divider(height: AppSizes.spaceLg),
+        Text('ARAH SEBALIKNYA', style: context.textStyles.eyebrow),
+        const SizedBox(height: AppSizes.spaceSm),
+        Text(
+          'Punya daftar barang di laptop? Masukkan sekaligus lewat file '
+          '.xlsx — termasuk file "Produk & Stok" di atas yang sudah diedit '
+          'harganya.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: AppSizes.spaceMs),
+        SizedBox(
+          height: AppSizes.buttonHeight,
+          child: OutlinedButton.icon(
+            onPressed: _busy ? null : _openImport,
+            icon: const Icon(Icons.upload_file_rounded),
+            label: const Text('Impor Produk dari Excel'),
+          ),
         ),
       ],
     );

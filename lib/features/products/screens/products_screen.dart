@@ -13,6 +13,7 @@ import '../providers/category_providers.dart';
 import '../providers/product_providers.dart';
 import '../widgets/category_manage_dialog.dart';
 import '../widgets/product_list_tile.dart';
+import 'product_import_screen.dart';
 
 /// Layar daftar produk — pencarian real-time (debounce), filter kategori
 /// (chips), indikator stok menipis, harga format Rupiah (plan.md
@@ -51,6 +52,16 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     ).push(MaterialPageRoute(builder: (_) => const LowStockScreen()));
   }
 
+  /// Titik masuk impor Excel dari layar Produk (PRD v1.1 §4.7). Wizard
+  /// dibuka sebagai layar penuh lewat `Navigator.push` — sama seperti layar
+  /// "Stok Menipis" — bukan rute go_router, karena ia alur sekali jalan
+  /// yang tidak perlu bisa di-deep link.
+  void _openImport() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ProductImportScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productListProvider);
@@ -82,6 +93,23 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             tooltip: 'Kelola kategori',
             icon: const Icon(Icons.sell_outlined),
             onPressed: () => CategoryManageDialog.show(context),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Menu lainnya',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              if (value == 'impor') _openImport();
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem<String>(
+                value: 'impor',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.upload_file_rounded),
+                  title: Text('Impor dari Excel'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: AppSizes.spaceXs),
         ],
