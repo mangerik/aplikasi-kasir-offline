@@ -74,7 +74,7 @@ Rencana disusun sebagai **milestone berurutan**. Setiap milestone menghasilkan a
 - [x] Uji file terbuka rapi di Excel/WPS/Google Sheets
 - [x] Backup database → satu file `.db`, share/simpan
 - [x] Restore: validasi file, konfirmasi ganda, timpa DB, migrasi bila perlu
-- [ ] **Uji pindah perangkat nyata:** backup di device A → restore di device B → data identik
+- [x] **Uji pindah perangkat nyata:** backup di device A → restore di device B → data identik — diuji manual 2026-08-12, aman (sekaligus scan barcode kamera & share struk WhatsApp per laporan-m6 §5)
 - [x] Kunci PIN (set/ubah/hapus; lindungi laporan, pengaturan, void)
 - [x] Pengingat backup > 7 hari
 
