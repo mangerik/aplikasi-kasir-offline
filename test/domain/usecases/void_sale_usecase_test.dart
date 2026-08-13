@@ -11,9 +11,10 @@ import 'package:kasir_warung/domain/usecases/void_sale_usecase.dart';
 /// sungguhan, supaya [VoidSaleUsecase] bisa diuji murni sebagai unit
 /// domain (validasi status sebelum menulis).
 class _FakeSaleRepository implements SaleRepository {
-  _FakeSaleRepository({required this.detailStatus});
+  _FakeSaleRepository({required this.detailStatus, this.detailDebtPaidAt});
 
   final String detailStatus;
+  final DateTime? detailDebtPaidAt;
   bool voidSaleCalled = false;
 
   @override
@@ -56,6 +57,7 @@ class _FakeSaleRepository implements SaleRepository {
       createdAt: DateTime(2026, 8, 11),
       items: const [],
       status: detailStatus,
+      debtPaidAt: detailDebtPaidAt,
     );
   }
 
@@ -93,6 +95,19 @@ void main() {
       final usecase = VoidSaleUsecase(repository);
 
       await expectLater(usecase(1), throwsA(isA<TransaksiSudahDibatalkanException>()));
+      expect(repository.voidSaleCalled, isFalse);
+    });
+
+    test('melempar HutangSudahLunasException bila hutang sudah dilunasi', () async {
+      // Hutang lunas berstatus 'completed' + debt_paid_at terisi — status
+      // saja tidak cukup untuk membedakannya dari penjualan tunai biasa.
+      final repository = _FakeSaleRepository(
+        detailStatus: 'completed',
+        detailDebtPaidAt: DateTime(2026, 8, 12),
+      );
+      final usecase = VoidSaleUsecase(repository);
+
+      await expectLater(usecase(1), throwsA(isA<HutangSudahLunasException>()));
       expect(repository.voidSaleCalled, isFalse);
     });
   });

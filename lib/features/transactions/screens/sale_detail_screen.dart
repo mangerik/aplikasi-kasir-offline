@@ -280,8 +280,12 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
               // Void hanya untuk Pemilik (AC-8.6). Tombolnya TIDAK
               // dirender untuk Kasir — dan `VoidSaleUsecase` menolaknya
               // sekali lagi di lapisan domain, supaya tidak ada jalur lain
-              // yang kelewat.
+              // yang kelewat. Hutang yang SUDAH dilunasi juga tidak boleh
+              // di-void (uang pelunasan sudah diterima) — dijaga tiga
+              // lapis: di sini, di usecase, dan di dalam transaksi
+              // repository.
               if (sale.status != 'voided' &&
+                  sale.debtPaidAt == null &&
                   ref.watch(currentRoleProvider).canVoidSale) ...[
                 const SizedBox(height: AppSizes.spaceLg),
                 OutlinedButton.icon(

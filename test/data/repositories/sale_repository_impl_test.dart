@@ -452,6 +452,45 @@ void main() {
       expect(sale.status, 'completed');
       expect(sale.debtPaidAt, isNotNull);
     });
+
+    test(
+      'markDebtPaid melempar TransaksiBukanHutangException untuk transaksi '
+      'voided & TIDAK menghidupkannya kembali (guard status di UPDATE)',
+      () async {
+        final productId = await insertProduct(stock: 10, sellPrice: 5000);
+        final saved = await repo.saveSale(
+          items: [
+            CartItem(
+              key: 'p_$productId',
+              productId: productId,
+              name: 'Teh Botol',
+              unit: 'pcs',
+              qty: 1,
+              sellPrice: 5000,
+            ),
+          ],
+          transactionDiscount: 0,
+          paymentMethod: 'debt',
+          paidAmount: 0,
+          customerName: 'Budi',
+        );
+
+        // Void menyelip lebih dulu (mis. dari layar lain) — stok sudah
+        // dikembalikan. Pelunasan yang datang terlambat TIDAK boleh
+        // mengubah voided menjadi completed, karena omzetnya akan
+        // terhitung lagi padahal barangnya sudah kembali ke rak.
+        await repo.voidSale(saved.saleId);
+
+        await expectLater(
+          repo.markDebtPaid(saved.saleId),
+          throwsA(isA<TransaksiBukanHutangException>()),
+        );
+
+        final sale = (await db.select(db.sales).get()).single;
+        expect(sale.status, 'voided', reason: 'transaksi voided tidak boleh hidup lagi');
+        expect(sale.debtPaidAt, isNull);
+      },
+    );
   });
 
   group('SaleRepositoryImpl — void transaksi', () {
@@ -597,6 +636,52 @@ void main() {
           db.products,
         )..where((p) => p.id.equals(productId))).getSingle();
         expect(stockAfterSecondAttempt.stock, 10, reason: 'stok tidak dikembalikan dua kali');
+      },
+    );
+
+    test(
+      'voidSale melempar HutangSudahLunasException untuk hutang yang sudah '
+      'dilunasi — status, stok, dan stock_movements tidak berubah',
+      () async {
+        final productId = await insertProduct(stock: 10, sellPrice: 5000);
+        final saved = await repo.saveSale(
+          items: [
+            CartItem(
+              key: 'p_$productId',
+              productId: productId,
+              name: 'Teh Botol',
+              unit: 'pcs',
+              qty: 2,
+              sellPrice: 5000,
+            ),
+          ],
+          transactionDiscount: 0,
+          paymentMethod: 'debt',
+          paidAmount: 0,
+          customerName: 'Budi',
+        );
+        await repo.markDebtPaid(saved.saleId);
+
+        // Uang pelunasan sudah diterima — membatalkan transaksinya akan
+        // menghapus omzet dari laporan tanpa mengeluarkan uang dari laci.
+        await expectLater(
+          repo.voidSale(saved.saleId),
+          throwsA(isA<HutangSudahLunasException>()),
+        );
+
+        final sale = (await db.select(db.sales).get()).single;
+        expect(sale.status, 'completed');
+        expect(sale.voidedAt, isNull);
+
+        final stock = await (db.select(
+          db.products,
+        )..where((p) => p.id.equals(productId))).getSingle();
+        expect(stock.stock, 8, reason: 'stok TIDAK dikembalikan');
+
+        final voidReturns = await (db.select(
+          db.stockMovements,
+        )..where((m) => m.type.equals('void_return'))).get();
+        expect(voidReturns, isEmpty);
       },
     );
   });

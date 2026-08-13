@@ -373,6 +373,7 @@ class _StatusLine extends StatelessWidget {
             LicenseRejection.perangkatLain => 'Perangkat lain',
             LicenseRejection.tidakSah => 'Kode tidak sah',
             LicenseRejection.versiTerlaluBaru => 'Perlu versi baru',
+            LicenseRejection.kodeSudahKedaluwarsa => 'Kode kedaluwarsa',
           },
           tone: AppTone.danger,
           icon: Icons.error_outline_rounded,

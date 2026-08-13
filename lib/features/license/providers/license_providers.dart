@@ -61,6 +61,30 @@ class LicenseController extends Notifier<LicenseStatus> {
 
     final store = ref.read(licenseStoreProvider);
     final now = DateTime.now();
+
+    // Kode yang SAH tapi sudah kedaluwarsa tidak boleh menimpa lisensi
+    // yang masih berlaku — pengguna lifetime yang tak sengaja menempel
+    // kode trial lamanya akan langsung terkunci di layar kedaluwarsa
+    // padahal lisensinya baik-baik saja. Dievaluasi terhadap waktu acuan
+    // yang sama dengan evaluasi normal; saat belum ada lisensi berlaku
+    // (belumAktif/kedaluwarsa) kode lama tetap diterima seperti semula
+    // supaya alur uji "aktivasi kode kedaluwarsa" tidak berubah arti.
+    if (state.state.canSell && !state.gateDisabled) {
+      final candidate = LicenseStatus.evaluate(
+        payload: result.payload,
+        referenceTime: monotonicReferenceTime(
+          deviceNow: now,
+          lastSeenAt: store.readLastSeenAt(),
+          lastSaleAt: await _lastSaleAt(),
+          activatedAt: store.readActivatedAt(),
+        ),
+        activatedAt: now,
+        clockRolledBack: false,
+      );
+      if (!candidate.state.canSell) {
+        return const LicenseRejected(LicenseRejection.kodeSudahKedaluwarsa);
+      }
+    }
     await store.writeToken(result.normalizedToken, now);
     await store.writeLastSeenAt(now);
 

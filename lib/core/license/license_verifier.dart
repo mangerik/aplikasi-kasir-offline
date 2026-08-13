@@ -26,6 +26,13 @@ enum LicenseRejection {
 
   /// Versi format lebih baru daripada yang dikenal aplikasi ini (AC-6.21).
   versiTerlaluBaru,
+
+  /// Kode SAH tapi masa berlakunya sudah habis, sementara perangkat ini
+  /// masih memegang lisensi yang berlaku. Menyimpannya hanya akan MENIMPA
+  /// lisensi bagus dengan yang mati (mis. pengguna lifetime menempel kode
+  /// trial lamanya) — ditolak oleh `LicenseController.activate`, bukan
+  /// oleh verifier (verifier tidak tahu-menahu soal waktu & keadaan).
+  kodeSudahKedaluwarsa,
 }
 
 /// Pesan Bahasa Indonesia per jenis penolakan. Dipakai layar Aktivasi
@@ -44,6 +51,9 @@ extension LicenseRejectionMessage on LicenseRejection {
     LicenseRejection.versiTerlaluBaru =>
       'Kode ini butuh versi aplikasi yang lebih baru. Perbarui aplikasi '
           'dulu, lalu masukkan kembali kodenya.',
+    LicenseRejection.kodeSudahKedaluwarsa =>
+      'Kode ini sudah kedaluwarsa. Lisensi yang sekarang aktif tetap '
+          'dipertahankan — tidak ada yang berubah.',
   };
 }
 

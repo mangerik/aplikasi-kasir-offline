@@ -30,10 +30,17 @@
          untuk hot reload.) -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
         tools:node="remove"/>
+    <!-- allowBackup="false": prefs berisi identitas perangkat fallback
+         (`license_device_id_fallback`) dan saksi waktu lisensi. Bila ikut
+         Android Auto Backup, keduanya bisa dikloning ke HP lain (lisensi
+         ganda) atau lahir ulang lewat clear-data (reset trial). Backup data
+         warung tetap ada lewat fitur "Cadangkan Data" milik aplikasi. -->
     <application
         android:label="Kasir Warung"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        tools:replace="android:allowBackup">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -187,6 +187,19 @@ class TransaksiSudahDibatalkanException implements DomainException {
   String toString() => 'Transaksi ini sudah dibatalkan sebelumnya.';
 }
 
+/// Dilempar saat `VoidSaleUsecase`/`SaleRepository.voidSale` dipanggil
+/// untuk hutang yang SUDAH dilunasi (`debt_paid_at` terisi). Uang
+/// pelunasannya sudah diterima fisik; membatalkan transaksinya akan
+/// menghapus omzet dari laporan tanpa mengeluarkan uang dari laci — celah
+/// selisih kas yang tidak bisa ditelusuri.
+class HutangSudahLunasException implements DomainException {
+  const HutangSudahLunasException();
+
+  @override
+  String toString() =>
+      'Hutang ini sudah dilunasi, jadi transaksinya tidak bisa dibatalkan.';
+}
+
 /// Dilempar saat PIN yang diisi (set/ubah) BUKAN 6 digit angka (plan.md
 /// Milestone 5 poin 6).
 class PinTidakValidException implements DomainException {

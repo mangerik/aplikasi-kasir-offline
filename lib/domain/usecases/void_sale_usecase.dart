@@ -27,13 +27,21 @@ class VoidSaleUsecase {
   final AppUser? actor;
 
   /// Melempar `TransaksiTidakDitemukanException` bila [saleId] tidak ada,
-  /// atau `TransaksiSudahDibatalkanException` bila transaksi tersebut
-  /// sudah pernah di-void sebelumnya — TIDAK menyentuh database sama
-  /// sekali di kedua kasus itu.
+  /// `TransaksiSudahDibatalkanException` bila transaksi tersebut sudah
+  /// pernah di-void sebelumnya, atau `HutangSudahLunasException` bila
+  /// transaksi itu hutang yang sudah dilunasi — TIDAK menyentuh database
+  /// sama sekali di ketiga kasus itu.
   Future<void> call(int saleId) async {
     final sale = await _repository.getDetail(saleId);
     if (sale.status == 'voided') {
       throw const TransaksiSudahDibatalkanException();
+    }
+    // Hutang lunas TIDAK boleh di-void: uangnya sudah diterima, sedangkan
+    // void akan mengembalikan stok & menghapus omzetnya dari laporan —
+    // laci kas dan laporan langsung tidak cocok. Pengecekan yang sama
+    // diulang di dalam `db.transaction()` repository sebagai jaring akhir.
+    if (sale.debtPaidAt != null) {
+      throw const HutangSudahLunasException();
     }
     final by = actor;
     if (by != null && !by.role.canVoidSale) {

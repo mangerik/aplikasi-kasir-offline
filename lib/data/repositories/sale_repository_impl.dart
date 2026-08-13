@@ -343,9 +343,23 @@ class SaleRepositoryImpl implements SaleRepository {
   @override
   Future<void> markDebtPaid(int saleId) async {
     final now = DateFormatter.toEpochMillis(DateTime.now());
-    await (_db.update(_db.sales)..where((s) => s.id.equals(saleId))).write(
-      db.SalesCompanion(status: const Value('completed'), debtPaidAt: Value(now)),
-    );
+    // Syarat `status = 'debt_unpaid'` WAJIB ada di UPDATE-nya sendiri —
+    // bukan hanya di usecase. Tanpa ini, void yang menyelip di antara
+    // pengecekan usecase dan penulisan di sini akan "dihidupkan kembali"
+    // menjadi completed padahal stoknya sudah dikembalikan.
+    final updated =
+        await (_db.update(_db.sales)..where(
+              (s) => s.id.equals(saleId) & s.status.equals('debt_unpaid'),
+            ))
+            .write(
+              db.SalesCompanion(
+                status: const Value('completed'),
+                debtPaidAt: Value(now),
+              ),
+            );
+    if (updated == 0) {
+      throw const TransaksiBukanHutangException();
+    }
   }
 
   @override
@@ -361,6 +375,12 @@ class SaleRepositoryImpl implements SaleRepository {
       }
       if (sale.status == 'voided') {
         throw const TransaksiSudahDibatalkanException();
+      }
+      // Jaring akhir di dalam transaksi yang sama dengan penulisan: hutang
+      // yang sudah dilunasi tidak boleh dibatalkan (uangnya sudah masuk
+      // laci). Validasi ramah-pengguna ada di `VoidSaleUsecase`.
+      if (sale.debtPaidAt != null) {
+        throw const HutangSudahLunasException();
       }
 
       final items = await (_db.select(
