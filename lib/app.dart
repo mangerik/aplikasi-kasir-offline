@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_palette.dart';
 import 'core/constants/app_theme.dart';
+import 'core/license/license_status.dart';
 import 'core/router/app_router.dart';
 import 'data/db/database_provider.dart';
 import 'data/services/seed_data_service.dart';
 import 'features/auth/widgets/auto_lock_scope.dart';
 import 'features/license/providers/license_providers.dart';
+import 'features/settings/providers/auto_backup_providers.dart';
 import 'features/settings/providers/theme_providers.dart';
 
 /// Root widget aplikasi: `MaterialApp.router` + tema + navigasi
@@ -41,6 +43,9 @@ class _KasirAppState extends ConsumerState<KasirApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(licenseStatusProvider.notifier).revalidate();
+      // Backup otomatis harian (revisi pasca-v1.2.0): berjalan di
+      // background setelah frame pertama, tidak pernah melempar.
+      ref.read(autoBackupServiceProvider).runDailyIfNeeded();
     });
   }
 
@@ -63,6 +68,20 @@ class _KasirAppState extends ConsumerState<KasirApp>
 
   @override
   Widget build(BuildContext context) {
+    // Potret data TEPAT saat masa berlaku lisensi habis: perpindahan dari
+    // masih-berlaku ke kedaluwarsa (dari revalidate mana pun — cold start,
+    // resumed, atau setelah penjualan) memicu satu backup otomatis sebelum
+    // pengguna melihat layar terkunci.
+    ref.listen(licenseStatusProvider, (previous, next) {
+      final wasUsable = previous?.state.canSell ?? false;
+      final nowExpired =
+          next.state == LicenseState.kedaluwarsaTrial ||
+          next.state == LicenseState.kedaluwarsaTahunan;
+      if (wasUsable && nowExpired) {
+        ref.read(autoBackupServiceProvider).onLicenseExpired();
+      }
+    });
+
     // Mode tema (PRD v1.1 §5.3.C): nilainya sudah dimuat dari
     // shared_preferences sebelum runApp(), jadi frame pertama langsung benar.
     final themeMode = ref.watch(themeModeProvider);

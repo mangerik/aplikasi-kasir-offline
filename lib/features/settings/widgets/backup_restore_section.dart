@@ -8,6 +8,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../data/db/database_provider.dart';
 import '../../../data/services/backup_service.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../providers/auto_backup_providers.dart';
 import '../providers/settings_providers.dart';
 import 'settings_card.dart';
 
@@ -47,7 +48,9 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
 
       final nowMillis = DateFormatter.toEpochMillis(DateTime.now());
       await ref.read(settingsRepoProvider).setValue('last_backup_at', nowMillis.toString());
-      ref.invalidate(lastBackupAtProvider);
+      ref
+        ..invalidate(lastBackupAtProvider)
+        ..invalidate(backupHistoryProvider);
 
       await BackupService.share(path);
       if (!mounted) return;
@@ -64,15 +67,21 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
     }
   }
 
-  Future<void> _restore() async {
-    // file_picker 12.x menghapus `FilePicker.platform`; API-nya kini static
-    // langsung di kelas `FilePicker` (lihat `FilePicker.pickFiles`).
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['db'],
-      dialogTitle: 'Pilih file backup (.db)',
-    );
-    final path = result?.files.single.path;
+  /// [presetPath] terisi bila restore dipicu dari panel "Riwayat di
+  /// Perangkat" — file picker dilewati, sisanya (validasi + konfirmasi
+  /// ganda) tetap jalur yang sama persis.
+  Future<void> _restore({String? presetPath}) async {
+    var path = presetPath;
+    if (path == null) {
+      // file_picker 12.x menghapus `FilePicker.platform`; API-nya kini static
+      // langsung di kelas `FilePicker` (lihat `FilePicker.pickFiles`).
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['db'],
+        dialogTitle: 'Pilih file backup (.db)',
+      );
+      path = result?.files.single.path;
+    }
     if (path == null || !mounted) return;
 
     setState(() {
@@ -259,7 +268,137 @@ class _BackupRestoreSectionState extends ConsumerState<BackupRestoreSection> {
             ),
           ],
         ),
+        const SizedBox(height: AppSizes.spaceLg),
+        Text('RIWAYAT DI PERANGKAT', style: context.textStyles.eyebrow),
+        const SizedBox(height: AppSizes.spaceSm),
+        ref
+            .watch(backupHistoryProvider)
+            .when(
+              data: (files) => files.isEmpty
+                  ? Text(
+                      'Belum ada file backup di perangkat ini.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    )
+                  : Column(
+                      children: [
+                        for (final file in files) ...[
+                          _BackupHistoryTile(
+                            info: file,
+                            enabled: !_busy,
+                            onRestore: () => _restore(presetPath: file.path),
+                          ),
+                          const SizedBox(height: AppSizes.spaceSm),
+                        ],
+                      ],
+                    ),
+              loading: () => const AppLoadingView(compact: true),
+              // Riwayat hanyalah kenyamanan — kegagalan membacanya tidak
+              // perlu kartu error, cukup tampil kosong.
+              error: (_, _) => Text(
+                'Belum ada file backup di perangkat ini.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+        const SizedBox(height: AppSizes.spaceMs),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.schedule_outlined,
+              size: AppSizes.iconSm,
+              color: context.palette.inkSecondary,
+            ),
+            const SizedBox(width: AppSizes.spaceSm),
+            Expanded(
+              child: Text(
+                'Backup otomatis dibuat sekali sehari dan tepat saat masa '
+                'berlaku habis; ${BackupService.autoBackupKeep} terbaru '
+                'disimpan. File di daftar ini ikut hilang bila aplikasi '
+                'dihapus — untuk salinan yang benar-benar aman, gunakan '
+                '"Backup Sekarang" lalu simpan filenya di luar HP ini.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+}
+
+/// Satu baris riwayat backup: tanggal (informasi utama), ukuran + asal
+/// (Otomatis/Manual), dan aksi pulihkan.
+class _BackupHistoryTile extends StatelessWidget {
+  const _BackupHistoryTile({
+    required this.info,
+    required this.enabled,
+    required this.onRestore,
+  });
+
+  final BackupFileInfo info;
+  final bool enabled;
+  final VoidCallback onRestore;
+
+  static String _formatSize(int bytes) {
+    if (bytes >= 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    if (bytes >= 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    return '$bytes B';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      color: context.palette.surfaceAlt,
+      radius: AppSizes.radiusMd,
+      padding: const EdgeInsets.all(AppSizes.spaceMs),
+      child: Row(
+        children: [
+          AppIconBadge(
+            icon: info.isAuto
+                ? Icons.schedule_outlined
+                : Icons.save_alt_outlined,
+            tone: AppTone.primary,
+            size: AppIconBadgeSize.sm,
+          ),
+          const SizedBox(width: AppSizes.spaceMs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormatter.formatDateTime(info.modifiedAt),
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: AppSizes.spaceXs),
+                Row(
+                  children: [
+                    AppPill(
+                      label: info.isAuto ? 'Otomatis' : 'Manual',
+                      tone: info.isAuto ? AppTone.neutral : AppTone.primary,
+                      dense: true,
+                    ),
+                    const SizedBox(width: AppSizes.spaceSm),
+                    Text(
+                      _formatSize(info.sizeBytes),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.spaceSm),
+          IconButton(
+            onPressed: enabled ? onRestore : null,
+            tooltip: 'Pulihkan dari backup ini',
+            icon: const Icon(Icons.restore_outlined),
+          ),
+        ],
+      ),
     );
   }
 }

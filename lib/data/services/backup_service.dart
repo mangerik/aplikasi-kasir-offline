@@ -19,8 +19,38 @@ import '../db/app_database.dart';
 ///   [restoreFrom] dipanggil (service ini tidak menutup koneksi sendiri —
 ///   itu tanggung jawab provider Riverpod yang memegang instance
 ///   `AppDatabase`, lihat `settings/providers/backup_providers.dart`).
+/// Satu file backup yang ditemukan di folder `backups/` perangkat —
+/// bahan layar "Riwayat Backup di Perangkat" (revisi pasca-v1.2.0).
+class BackupFileInfo {
+  const BackupFileInfo({
+    required this.path,
+    required this.fileName,
+    required this.modifiedAt,
+    required this.sizeBytes,
+    required this.isAuto,
+  });
+
+  final String path;
+  final String fileName;
+  final DateTime modifiedAt;
+  final int sizeBytes;
+
+  /// `true` bila file lahir dari backup OTOMATIS (harian / saat lisensi
+  /// habis) — hanya kelompok ini yang dirotasi; file buatan manual tidak
+  /// pernah dihapus sistem.
+  final bool isAuto;
+}
+
 abstract final class BackupService {
   static const String _dbFileName = 'kasir_warung.sqlite';
+
+  /// Awalan nama file backup OTOMATIS — pembeda dari backup manual, dan
+  /// kunci rotasi: hanya file berawalan ini yang boleh dihapus otomatis.
+  static const String autoBackupPrefix = 'kasir_backup_otomatis_';
+
+  /// Banyak file backup otomatis yang dipertahankan (keputusan user,
+  /// revisi 2026-08-13): rotasi menghapus yang paling lama di luar 7 ini.
+  static const int autoBackupKeep = 7;
 
   /// Tabel wajib ada di file backup yang valid — sesuai daftar tabel Drift
   /// di `app_database.dart` (architecture.md §4).
@@ -63,6 +93,110 @@ abstract final class BackupService {
     final now = DateTime.now();
     String two(int n) => n.toString().padLeft(2, '0');
     return 'kasir_backup_${now.year}${two(now.month)}${two(now.day)}_${two(now.hour)}${two(now.minute)}.db';
+  }
+
+  /// Backup OTOMATIS: sama persis dengan [createBackup], tapi bernama
+  /// berawalan [autoBackupPrefix] lalu merotasi kelompoknya sendiri —
+  /// hanya [autoBackupKeep] file otomatis terbaru yang dipertahankan.
+  /// Backup manual TIDAK pernah ikut terhapus.
+  static Future<String> createAutoBackup(AppDatabase db) async {
+    await db.customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+
+    final dbFile = File(await _dbFilePath());
+    if (!await dbFile.exists()) {
+      throw const FileBackupTidakValidException('Database aplikasi tidak ditemukan.');
+    }
+
+    final docsDir = await getApplicationDocumentsDirectory();
+    final backupDir = Directory('${docsDir.path}/backups');
+    if (!await backupDir.exists()) {
+      await backupDir.create(recursive: true);
+    }
+
+    final now = DateTime.now();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final base =
+        '$autoBackupPrefix${now.year}${two(now.month)}${two(now.day)}'
+        '_${two(now.hour)}${two(now.minute)}${two(now.second)}';
+    // Dua backup dalam detik yang sama (mis. pemicu harian & pemicu
+    // lisensi berhimpit) tidak boleh saling timpa.
+    var candidate = File('${backupDir.path}/$base.db');
+    var counter = 2;
+    while (await candidate.exists()) {
+      candidate = File('${backupDir.path}/${base}_${counter++}.db');
+    }
+
+    final backupFile = await dbFile.copy(candidate.path);
+    await _pruneAutoBackups(backupDir);
+    return backupFile.path;
+  }
+
+  static Future<void> _pruneAutoBackups(Directory backupDir) async {
+    final autos = <BackupFileInfo>[];
+    await for (final entry in backupDir.list()) {
+      if (entry is! File) continue;
+      final name = entry.uri.pathSegments.last;
+      if (!name.startsWith(autoBackupPrefix) || !name.endsWith('.db')) continue;
+      final stat = await entry.stat();
+      autos.add(
+        BackupFileInfo(
+          path: entry.path,
+          fileName: name,
+          modifiedAt: stat.modified,
+          sizeBytes: stat.size,
+          isAuto: true,
+        ),
+      );
+    }
+    if (autos.length <= autoBackupKeep) return;
+
+    autos.sort(_newestFirst);
+    for (final old in autos.skip(autoBackupKeep)) {
+      try {
+        await File(old.path).delete();
+      } catch (_) {
+        // File yang gagal dihapus (mis. sedang dibaca) dibiarkan; rotasi
+        // berikutnya akan mencobanya lagi.
+      }
+    }
+  }
+
+  static int _newestFirst(BackupFileInfo a, BackupFileInfo b) {
+    final byTime = b.modifiedAt.compareTo(a.modifiedAt);
+    return byTime != 0 ? byTime : b.fileName.compareTo(a.fileName);
+  }
+
+  /// Seluruh file backup (otomatis + manual) yang ada di folder `backups/`
+  /// perangkat, terbaru lebih dulu. TIDAK PERNAH melempar — kegagalan
+  /// membaca folder (mis. belum pernah backup) berarti daftar kosong,
+  /// karena daftar riwayat tidak boleh merobohkan layar Pengaturan.
+  static Future<List<BackupFileInfo>> listBackups() async {
+    try {
+      final docsDir = await getApplicationDocumentsDirectory();
+      final backupDir = Directory('${docsDir.path}/backups');
+      if (!await backupDir.exists()) return const [];
+
+      final infos = <BackupFileInfo>[];
+      await for (final entry in backupDir.list()) {
+        if (entry is! File) continue;
+        final name = entry.uri.pathSegments.last;
+        if (!name.endsWith('.db')) continue;
+        final stat = await entry.stat();
+        infos.add(
+          BackupFileInfo(
+            path: entry.path,
+            fileName: name,
+            modifiedAt: stat.modified,
+            sizeBytes: stat.size,
+            isAuto: name.startsWith(autoBackupPrefix),
+          ),
+        );
+      }
+      infos.sort(_newestFirst);
+      return infos;
+    } catch (_) {
+      return const [];
+    }
   }
 
   /// Bagikan file backup lewat `share_plus`.

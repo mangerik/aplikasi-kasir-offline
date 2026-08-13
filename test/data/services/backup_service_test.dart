@@ -259,4 +259,101 @@ void main() {
       expect(await shmFile.exists(), isFalse);
     });
   });
+
+  group('BackupService.createAutoBackup — rotasi & penamaan', () {
+    test('menghasilkan file berawalan otomatis yang valid & tidak saling '
+        'timpa dalam detik yang sama', () async {
+      final db = AppDatabase(NativeDatabase(File(dbPath)));
+      await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'Sembako', createdAt: 1));
+
+      final first = await BackupService.createAutoBackup(db);
+      final second = await BackupService.createAutoBackup(db);
+      await db.close();
+
+      expect(first, isNot(second));
+      expect(await File(first).exists(), isTrue);
+      expect(await File(second).exists(), isTrue);
+      expect(
+        first.split('/').last,
+        startsWith(BackupService.autoBackupPrefix),
+      );
+      await BackupService.validateBackupFile(first);
+    });
+
+    test('rotasi menyisakan ${BackupService.autoBackupKeep} file otomatis '
+        'terbaru; backup manual TIDAK ikut terhapus', () async {
+      final db = AppDatabase(NativeDatabase(File(dbPath)));
+      await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'Sembako', createdAt: 1));
+
+      // Satu backup manual sebagai saksi bahwa rotasi tidak menyentuhnya.
+      final manualPath = await BackupService.createBackup(db);
+
+      // File otomatis lama tiruan dengan mtime berjenjang di masa lalu —
+      // supaya urutan "terbaru" deterministik tanpa menunggu jam.
+      final backupDir = Directory('${tempDir.path}/backups');
+      final now = DateTime.now();
+      final oldNames = <String>[];
+      for (var i = 0; i < 6; i++) {
+        final name = '${BackupService.autoBackupPrefix}lama_$i.db';
+        final file = File('${backupDir.path}/$name');
+        await File(manualPath).copy(file.path);
+        await file.setLastModified(now.subtract(Duration(days: 30 - i)));
+        oldNames.add(name);
+      }
+
+      // 3 backup otomatis sungguhan → total otomatis 9 → 2 tertua gugur.
+      for (var i = 0; i < 3; i++) {
+        await BackupService.createAutoBackup(db);
+      }
+      await db.close();
+
+      final remaining = (await backupDir.list().toList())
+          .whereType<File>()
+          .map((f) => f.uri.pathSegments.last)
+          .toList();
+      final autos = remaining
+          .where((n) => n.startsWith(BackupService.autoBackupPrefix))
+          .toList();
+
+      expect(autos, hasLength(BackupService.autoBackupKeep));
+      expect(remaining, contains(manualPath.split('/').last));
+      // Yang gugur adalah dua file tiruan PALING TUA.
+      expect(autos, isNot(contains(oldNames[0])));
+      expect(autos, isNot(contains(oldNames[1])));
+      expect(autos, contains(oldNames[2]));
+    });
+  });
+
+  group('BackupService.listBackups', () {
+    test('folder belum ada → daftar kosong, tidak melempar', () async {
+      expect(await BackupService.listBackups(), isEmpty);
+    });
+
+    test('mengurutkan terbaru dulu & menandai otomatis vs manual', () async {
+      final db = AppDatabase(NativeDatabase(File(dbPath)));
+      await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'Sembako', createdAt: 1));
+
+      final manualPath = await BackupService.createBackup(db);
+      // Manual dibuat lebih dulu → dipaksa lebih tua supaya urutan pasti.
+      await File(manualPath)
+          .setLastModified(DateTime.now().subtract(const Duration(days: 1)));
+      final autoPath = await BackupService.createAutoBackup(db);
+      await db.close();
+
+      final list = await BackupService.listBackups();
+
+      expect(list, hasLength(2));
+      expect(list.first.path, autoPath);
+      expect(list.first.isAuto, isTrue);
+      expect(list.last.path, manualPath);
+      expect(list.last.isAuto, isFalse);
+      expect(list.first.sizeBytes, greaterThan(0));
+    });
+  });
 }
