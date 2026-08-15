@@ -61,3 +61,8 @@ app.*.map.json
 *.pem
 lisensi-terbit.csv
 lisensi-*.png
+
+# Keystore rilis & kredensialnya — aset penjual, TIDAK PERNAH ikut repo.
+*.jks
+*.keystore
+android/key.properties
